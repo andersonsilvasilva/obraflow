@@ -75,3 +75,19 @@
 1. ~~CI verde~~ e ~~tenant inicial~~ concluídos.
 3. Definir a política de escopo de tokens e a retenção da auditoria.
 4. Fase 2 (Cadastros) — somente após autorização.
+
+## 7. Homologação técnica (2026-11-12)
+
+Aprovada pelo responsável. Evidências:
+
+| Evidência | Resultado |
+|---|---|
+| Commit de código homologado | `eeb84fdd8961cc8bdf16e391e9ed2751dbcad46f` — CI verde (run 43307638571): API MySQL 8.0, API MySQL 8.4, Web |
+| Commit da documentação de homologação | `c66cb20e556a30e7ef374fde54e9ac4f86293a44` — CI verde (run 43310894882): os mesmos 3 jobs |
+| Backend (MySQL 8.0.30 local) | 198/198 testes, 1.101 asserções |
+| Autenticação + isolamento multi-tenant | 66/66 testes (451 asserções) |
+| Frontend | 14/14 |
+| Provisionamento inicial | Conferido por leitura e aprovado |
+| Pendência | Razão social e CNPJ do tenant HighTech (sem dados fictícios) |
+
+A Fase 2 **não foi iniciada**: depende de autorização expressa.
