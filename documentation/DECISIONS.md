@@ -30,6 +30,7 @@ Formato: ID · data · decisão · justificativa. Decisões de dados: [DB_DECISI
 | A-24 | 2026-11-12 | Provisionamento só por CLI protegido; sem interface de superadmin | [PROVISIONAMENTO.md](PROVISIONAMENTO.md) |
 | A-25 | 2026-11-12 | Decisões de implementação D-24…D-29 (Role sem escopo global, último admin com lock, ordem banco→sessão, AuthenticateSession do Sanctum, convites, abilities pendentes) | [DB_DECISIONS.md](DB_DECISIONS.md) |
 | A-27 | 2026-11-12 | **D-29 aprovada e implementada:** escopo dos tokens por abilities (obrigatórias, sem curinga), interseção com as permissões do usuário; acréscimo: abilities de gestão de acesso vetadas | [DB_DECISIONS.md](DB_DECISIONS.md) D-29 |
+| A-28 | 2026-11-12 | **Homologação técnica da Fase 1 aprovada** (MySQL 8.0 local 198/198; CI verde em 8.0 e 8.4; auth/isolamento 66/66; frontend 14/14). Tenant HighTech provisionado e conferido; razão social/CNPJ pendentes (sem dados fictícios). Fase 2 **não** autorizada | [FASE1_RELATORIO.md](FASE1_RELATORIO.md) |
 | A-26 | 2026-11-12 | `documentation/telas_modelos.zip` e os `.zip` do SINAPI foram removidos pelo usuário (duplicavam as pastas); as pastas SINAPI de MT (2024-12, Desonerado/Não Desonerado) permanecem como **referência**, sem importação | — |
 
 ## Divergências registradas

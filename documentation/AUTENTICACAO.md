@@ -84,3 +84,23 @@ Corpo da emissão: `POST /api/v1/tokens {"name": "...", "expires_in_days": 1..90
 ## 8. CORS
 
 `config/cors.php`: origem = `FRONTEND_URL`, `supports_credentials = true`, cabeçalhos permitidos incluem `X-Tenant-Hint`, `X-XSRF-TOKEN` e `X-Request-Id`.
+
+## 9. Testar o login pela API (sem expor a senha)
+
+A senha é digitada **só por você**, em prompt oculto; nunca em argumento de comando, arquivo ou chat. Pré-requisito: `php artisan serve` em `obraflow-api` (http://localhost:8000). O login é por sessão e exige `Origin` de domínio stateful (`SANCTUM_STATEFUL_DOMAINS=localhost:5173`).
+
+PowerShell:
+
+```powershell
+$base = "http://localhost:8000"; $h = @{ Origin = "http://localhost:5173"; Accept = "application/json"; Referer = "http://localhost:5173/" }
+$s = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+Invoke-WebRequest "$base/sanctum/csrf-cookie" -Headers $h -WebSession $s | Out-Null
+$xsrf = [uri]::UnescapeDataString(($s.Cookies.GetCookies($base) | ? Name -eq "XSRF-TOKEN").Value)
+$pw = Read-Host "Senha" -AsSecureString
+$plain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pw))
+$body = @{ email = "barrosanderson@gmail.com"; password = $plain } | ConvertTo-Json
+Invoke-RestMethod "$base/api/v1/auth/login" -Method Post -WebSession $s -Headers ($h + @{ "X-XSRF-TOKEN" = $xsrf }) -ContentType "application/json" -Body $body
+Invoke-RestMethod "$base/api/v1/auth/me" -WebSession $s -Headers $h     # tenant ativo, papéis e permissões
+```
+
+Esperado: login `200` com o tenant `hightech` selecionado; `me` lista o papel `admin` e as 11 permissões. Senha errada ⇒ `401` genérico (igual a conta inexistente); mais de 5 tentativas/min ⇒ `429`.

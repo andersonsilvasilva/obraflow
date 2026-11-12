@@ -22,7 +22,7 @@ cd obraflow-api
 composer install
 cp .env.example .env            # preencha DB_PASSWORD etc. — nunca versione o .env
 php artisan key:generate
-# crie o banco "obraflow" no MySQL (nenhuma migration existe ainda — aguardam aprovação do modelo)
+# crie o banco "obraflow" no MySQL (veja documentation/AMBIENTE_LOCAL.md)
 php artisan serve               # http://localhost:8000
 curl http://localhost:8000/api/v1/health
 ```
@@ -75,4 +75,6 @@ vendor/bin/pest                                        # 198 testes (usa o banco
 - **Fase 1 implementada:** identidade global, tenancy, autenticação (sessão + tokens por tenant), Spatie Teams, convites, provisionamento CLI e auditoria — [FASE1_RELATORIO.md](documentation/FASE1_RELATORIO.md).
 - Sem módulos de negócio (empresas, obras, orçamentos… são fases futuras).
 - O frontend usa dados **demonstrativos** (`VITE_USE_MOCKS=true`) e ainda **não** tem tela de login.
-- Redis adiado: drivers locais (`file`/`sync`). MySQL 8.4 a comprovar no CI.
+- **Homologação técnica da Fase 1 aprovada.** CI (GitHub Actions) verde em MySQL 8.0 e 8.4. Tenant inicial HighTech provisionado; razão social/CNPJ pendentes.
+- Redis adiado: drivers locais (`file`/`sync`).
+- **Fase 2 não iniciada** (aguarda autorização expressa).

@@ -15,9 +15,9 @@
 | Spatie e Sanctum integrados | ✅ | `AccessControlTest` (23), `TokenTest`; morph map; FKs compostas nas tabelas do pacote |
 | Auditoria operacional | ✅ | `AuditTest` (11): **os 32 eventos do catálogo são emitidos**; atomicidade; escopo; imutabilidade |
 | Provisionamento inicial | ✅ | `ProvisioningTest` (16) |
-| Testes automatizados aprovados | ✅ | **Backend 180/180 (963 asserções) · Frontend 14/14**; Pint e `composer audit` limpos; build e lint do frontend limpos |
+| Testes automatizados aprovados | ✅ | **Backend 198/198 (1.101 asserções) · Frontend 14/14**; Pint e `composer audit` limpos; build e lint do frontend limpos |
 | Documentação atualizada | ✅ | [AUTENTICACAO.md](AUTENTICACAO.md), [PROVISIONAMENTO.md](PROVISIONAMENTO.md), [TESTES.md](TESTES.md), [AMBIENTE_LOCAL.md](AMBIENTE_LOCAL.md) + atualização de DATABASE, DB_CONSTRAINTS, MULTITENANCY, DB_MIGRATION_PLAN, DB_DECISIONS, ARCHITECTURE, API, SECURITY, ROADMAP, DECISIONS |
-| **Compatibilidade com MySQL 8.4** | ⏳ **NÃO comprovada** | Matriz 8.0/8.4 está no CI, mas o CI **ainda não rodou** (sem push). **Obrigatório antes da homologação.** |
+| **Compatibilidade com MySQL 8.4** | ✅ | CI verde na matriz 8.0/8.4 (commit `eeb84fd`, run 43307638571) |
 
 ## 2. Etapas e entregas
 
@@ -46,7 +46,7 @@
 
 | # | Risco | Estado |
 |---|---|---|
-| R1 | **MySQL 8.4** não testado; **CI nunca executado** | Pendente — bloqueia a homologação |
+| R1 | ~~MySQL 8.4 não testado; CI nunca executado~~ | ✅ Resolvido: CI verde em 8.0 e 8.4 |
 | R2 | ~~Token herdava as permissões do emissor~~ — **resolvido (D-29):** abilities obrigatórias ∩ permissões do usuário; sem curinga | ✅ Implementado e testado (18 testes) |
 | R3 | **Abas do navegador:** mitigado (`X-Tenant-Hint`, `BroadcastChannel`), mas não eliminado — a sessão tem um tenant por navegador | Documentado |
 | R4 | Imutabilidade de `audit_logs` depende de **privilégios do banco em produção**; no dev (usuário com todos os privilégios) só vale a trava do modelo. Sem triggers | Configurar o usuário de produção |
@@ -61,16 +61,17 @@
 
 ## 5. Pendências (itens que não foram feitos)
 
-- Executar o CI e comprovar o MySQL 8.4 (R1).
+- ~~Executar o CI e comprovar o MySQL 8.4 (R1)~~ — **feito** (CI verde).
+- **Homologação técnica da Fase 1 aprovada pelo responsável.** A Fase 2 depende de autorização expressa.
+- Razão social (`legal_name`) e CNPJ (`document_number`) do tenant HighTech: **pendentes**, sem dados fictícios; exigem valores reais e autorização para alterar o tenant ([PROVISIONAMENTO.md](PROVISIONAMENTO.md)).
 - ~~Decidir o escopo por `abilities` dos tokens (D-29)~~ — **decidido e implementado** (backend agora **198 testes, 1.101 asserções**).
-- Criar o tenant inicial no banco `obraflow` (`obraflow:provision`) — **não executei** (não foi autorizado criar dados nele).
+- ~~Criar o tenant inicial~~ — **feito e conferido** (autorizado): tenant HighTech (`hightech`), 1 administrador, 3 papéis, 9 eventos de auditoria.
 - Análise das 9 telas de referência novas (Cadastro de Recursos, Perfil…).
 - Decidir o destino das pastas SINAPI de MT (2024-12) em `documentation/` (≈ 50 MB; referência, **sem** importação — a Fase 4 trata disso).
 - D-P02 (BDI) e D-P03 (encargos): adiadas para a Fase 4, conforme aprovação.
 
 ## 6. Próximos passos recomendados
 
-1. Subir o repositório e **ver o CI verde nas duas versões do MySQL**.
-2. Rodar `obraflow:provision` no banco `obraflow` para criar o primeiro tenant/administrador.
+1. ~~CI verde~~ e ~~tenant inicial~~ concluídos.
 3. Definir a política de escopo de tokens e a retenção da auditoria.
 4. Fase 2 (Cadastros) — somente após autorização.

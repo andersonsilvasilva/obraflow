@@ -57,11 +57,11 @@ npm test && npm run lint && npm run build
 | 15 | Proteção do último administrador | `AccessControlTest`, `ProvisioningTest` |
 | 16 | Autenticação com sessão e com token | `LoginSessionTest`, `TokenTest` ("funciona igual…") |
 | 17 | Round-trip de datas em UTC | `TokenInvitationAuditIntegrityTest` |
-| 18 | Migrations em MySQL 8.0.30 | `SchemaTest`, `MigrationsTest` (executados no 8.0.30 local) |
+| 18 | Migrations em MySQL 8.0.30 | `SchemaTest`, `MigrationsTest` (8.0.30 local; **8.0 e 8.4 no CI**) |
 
 ## 4. CI
 
-`.github/workflows/ci.yml`: matriz **MySQL 8.0 e 8.4**, `composer audit`, Pint, Pest; web com lint, testes, build e `npm audit --omit=dev`. ⚠️ **O CI ainda não foi executado** (o repositório não teve push) e o **MySQL 8.4 não foi testado**: a compatibilidade com o 8.4 deve ser comprovada por esse pipeline **antes da homologação**.
+`.github/workflows/ci.yml`: matriz **MySQL 8.0 e 8.4**, `composer audit`, Pint, Pest; web com lint, testes, build e `npm audit --omit=dev`. **CI executado e aprovado** (GitHub Actions, commit `eeb84fd`, run 43307638571): API/Pest em **MySQL 8.0 e 8.4**, `composer audit`, Pint, e Web (lint, testes, build, `npm audit --omit=dev`) — todos `success`. A versão do MySQL vem da matriz do workflow (imagem `mysql:8.0`/`mysql:8.4`); o log do passo de versão não foi lido. https://github.com/andersonsilvasilva/obraflow/actions/runs/43307638571
 
 ## 5. O que o ambiente de teste precisou simular
 
