@@ -25,6 +25,7 @@ npm test && npm run lint && npm run build
 | Modelos, `BelongsToTenant`, `TenantContext`, morph map | `Feature/Models` | 16 |
 | Login, sessões, recuperação de senha | `Feature/Auth/LoginSessionTest` | 15 |
 | Tokens (emissão, uso, expiração, revogação) | `Feature/Auth/TokenTest` | 16 |
+| **Escopo dos tokens (D-29):** abilities obrigatórias, sem curinga, interseção com o usuário, sem tenant, **rotas sem `SetTenantContext`** | `Feature/Auth/TokenAbilitiesTest` | 18 |
 | Isolamento, seleção/troca de tenant, bloqueios, abas | `Feature/Tenancy` | 17 |
 | Papéis, permissões, vínculos, último administrador | `Feature/Access/AccessControlTest` | 23 |
 | Convites | `Feature/Access/InvitationTest` | 15 |
@@ -32,7 +33,7 @@ npm test && npm run lint && npm run build
 | Auditoria (catálogo, atomicidade, escopo, imutabilidade) | `Feature/Audit` | 11 |
 | Sanitizador de auditoria | `Unit/Audit` | 5 |
 | API: erros padronizados e health | `Feature/Core` | 9 |
-| **Backend** | | **180 (963 asserções)** |
+| **Backend** | | **198 (1.101 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

@@ -47,7 +47,7 @@
 | # | Risco | Estado |
 |---|---|---|
 | R1 | **MySQL 8.4** não testado; **CI nunca executado** | Pendente — bloqueia a homologação |
-| R2 | Token age com as permissões do usuário emissor; `abilities` não restringem rotas (D-29) | Pendente de decisão |
+| R2 | ~~Token herdava as permissões do emissor~~ — **resolvido (D-29):** abilities obrigatórias ∩ permissões do usuário; sem curinga | ✅ Implementado e testado (18 testes) |
 | R3 | **Abas do navegador:** mitigado (`X-Tenant-Hint`, `BroadcastChannel`), mas não eliminado — a sessão tem um tenant por navegador | Documentado |
 | R4 | Imutabilidade de `audit_logs` depende de **privilégios do banco em produção**; no dev (usuário com todos os privilégios) só vale a trava do modelo. Sem triggers | Configurar o usuário de produção |
 | R5 | Sem teste de concorrência real (o *lock* é verificado pela consulta, não por duas conexões) | Aceito |
@@ -62,7 +62,7 @@
 ## 5. Pendências (itens que não foram feitos)
 
 - Executar o CI e comprovar o MySQL 8.4 (R1).
-- Decidir o escopo por `abilities` dos tokens (D-29).
+- ~~Decidir o escopo por `abilities` dos tokens (D-29)~~ — **decidido e implementado** (backend agora **198 testes, 1.101 asserções**).
 - Criar o tenant inicial no banco `obraflow` (`obraflow:provision`) — **não executei** (não foi autorizado criar dados nele).
 - Análise das 9 telas de referência novas (Cadastro de Recursos, Perfil…).
 - Decidir o destino das pastas SINAPI de MT (2024-12) em `documentation/` (≈ 50 MB; referência, **sem** importação — a Fase 4 trata disso).

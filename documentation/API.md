@@ -77,7 +77,7 @@ Fornecido pelo Sanctum para o fluxo SPA.
 | `POST /invitations/accept` | pública (throttle) | Aceite de convite (o token do e-mail é a credencial) |
 | `GET /tenant` | `tenant.view` | Tenant ativo e papéis do usuário |
 | `GET /tenant/settings` · `PUT /tenant/settings/{key}` | `settings.view` · `settings.manage` | Configurações do tenant (dado de negócio de exemplo) |
-| `GET /tokens` · `POST /tokens` · `DELETE /tokens/{id}` | `tokens.manage` | Tokens de API do tenant ativo (expiração 1–90 dias obrigatória) |
+| `GET /tokens` · `POST /tokens` · `DELETE /tokens/{id}` | `tokens.manage` | Tokens de API do tenant ativo. Corpo: `name`, `expires_in_days` (1–90, obrigatório) e `abilities` (obrigatórias, sem curinga, sem gestão de acesso) |
 | `GET /members` | `members.view` | Membros e papéis |
 | `POST /members/{id}/suspend` · `…/reactivate` · `DELETE /members/{id}` | `members.manage` | Ciclo de vida do vínculo (último admin protegido) |
 | `POST /members/{id}/roles` · `DELETE /members/{id}/roles/{roleId}` | `roles.manage` | Atribuir/retirar papel |

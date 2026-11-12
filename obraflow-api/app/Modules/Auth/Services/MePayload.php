@@ -37,7 +37,7 @@ final class MePayload
             $active = $this->tenantArray($tenant);
             $permissions = $this->context->run(
                 $tenant,
-                fn () => $user->getAllPermissions()->pluck('name')->sort()->values()->all(),
+                fn () => $user->effectivePermissionNames(),
                 $user,
             );
         } catch (ApiException) {

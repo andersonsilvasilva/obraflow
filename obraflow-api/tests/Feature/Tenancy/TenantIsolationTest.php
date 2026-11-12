@@ -156,7 +156,7 @@ it('vínculo suspenso ou removido bloqueia na PRÓXIMA requisição (sessão e t
         $browser->login($user->email)->assertOk();
         $browser->get('/api/v1/tenant')->assertOk();
 
-        $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5])->json('token');
+        $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
         $this->withToken($token)->getJson('/api/v1/tenant')->assertOk();
 
         TenantUser::query()->where('tenant_id', $this->A->id)->where('user_id', $user->id)->update(['membership_status' => $status->value]);
@@ -181,7 +181,7 @@ it('tenant suspenso ou cancelado bloqueia (seleção, sessão aberta e token)', 
         $user = Scenario::member($tenant, 'admin');
         $browser = new Browser($this);
         $browser->login($user->email)->assertOk();
-        $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5])->json('token');
+        $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
 
         $tenant->forceFill(['status' => $status])->save();
 
@@ -205,7 +205,7 @@ it('usuário bloqueado perde acesso também por token', function () {
     $user = Scenario::member($this->A, 'admin');
     $browser = new Browser($this);
     $browser->login($user->email)->assertOk();
-    $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5])->json('token');
+    $token = $browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
     $this->withToken($token)->getJson('/api/v1/tenant')->assertOk();
 
     $user->forceFill(['status' => 'blocked'])->save();
@@ -252,7 +252,7 @@ it('o hint também se aplica a requisições com token', function () {
     $user = Scenario::member($this->A, 'admin');
     $b = new Browser($this);
     $b->login($user->email)->assertOk();
-    $token = $b->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5])->json('token');
+    $token = $b->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
 
     $this->withToken($token)->withHeaders(['X-Tenant-Hint' => $this->A->uuid])->getJson('/api/v1/tenant')->assertOk();
     $this->withToken($token)->withHeaders(['X-Tenant-Hint' => $this->B->uuid])->getJson('/api/v1/tenant')->assertStatus(409);

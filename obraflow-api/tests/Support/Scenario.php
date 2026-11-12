@@ -13,6 +13,9 @@ final class Scenario
 {
     public const PASSWORD = 'Senha-de-Teste-123';
 
+    /** Abilities mínimas usadas pelos testes que precisam de um token funcional (menor privilégio, sem curinga). */
+    public const TOKEN_ABILITIES = ['tenant.view', 'settings.view', 'settings.manage', 'audit.view'];
+
     /** Instala o catálogo de permissões (dado de referência) — chame uma vez por teste. */
     public static function catalog(): void
     {

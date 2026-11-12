@@ -27,7 +27,7 @@ function issueToken(object $test, string $email, int $days = 30, string $name = 
     $browser = new Browser($test);
     $browser->login($email)->assertOk();
 
-    return $browser->post('/api/v1/tokens', ['name' => $name, 'expires_in_days' => $days])->assertCreated()->json('token');
+    return $browser->post('/api/v1/tokens', ['name' => $name, 'expires_in_days' => $days, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated()->json('token');
 }
 
 // ---------------------------------------------------------------- emissão
@@ -35,7 +35,7 @@ it('emite token FIXADO no tenant do emissor, exibe o valor uma só vez e audita 
     $browser = new Browser($this);
     $browser->login($this->adminA->email)->assertOk();
 
-    $res = $browser->post('/api/v1/tokens', ['name' => 'ERP', 'expires_in_days' => 30])->assertCreated();
+    $res = $browser->post('/api/v1/tokens', ['name' => 'ERP', 'expires_in_days' => 30, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated();
     $plain = $res->json('token');
 
     expect($plain)->toBeString()->toContain('|');
@@ -58,19 +58,19 @@ it('a expiração é obrigatória e limitada a 90 dias', function () {
     $browser = new Browser($this);
     $browser->login($this->adminA->email)->assertOk();
 
-    foreach ([[], ['expires_in_days' => 0], ['expires_in_days' => 91], ['expires_in_days' => 'abc'], ['expires_in_days' => null]] as $bad) {
+    foreach ([[], ['expires_in_days' => 0, 'abilities' => Scenario::TOKEN_ABILITIES], ['expires_in_days' => 91, 'abilities' => Scenario::TOKEN_ABILITIES], ['expires_in_days' => 'abc'], ['expires_in_days' => null]] as $bad) {
         $browser->post('/api/v1/tokens', ['name' => 'x'] + $bad)->assertStatus(422)->assertJsonPath('error.code', 'validation_failed');
     }
 
-    $browser->post('/api/v1/tokens', ['name' => 'ok', 'expires_in_days' => 90])->assertCreated();
+    $browser->post('/api/v1/tokens', ['name' => 'ok', 'expires_in_days' => 90, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated();
     expect(PersonalAccessToken::query()->count())->toBe(1);
 });
 
 it('o serviço também recusa validade fora do limite (defesa em profundidade)', function () {
     $service = app(IssueApiToken::class);
 
-    expect(fn () => $service->issue($this->adminA, $this->A, 'x', 91))->toThrow(ApiException::class)
-        ->and(fn () => $service->issue($this->adminA, $this->A, 'x', 0))->toThrow(ApiException::class)
+    expect(fn () => $service->issue($this->adminA, $this->A, 'x', 91, ['tenant.view']))->toThrow(ApiException::class)
+        ->and(fn () => $service->issue($this->adminA, $this->A, 'x', 0, ['tenant.view']))->toThrow(ApiException::class)
         ->and(PersonalAccessToken::query()->count())->toBe(0);
 });
 
@@ -78,14 +78,16 @@ it('quem não tem tokens.manage não emite, lista nem revoga', function () {
     $browser = new Browser($this);
     $browser->login($this->memberA->email)->assertOk();
 
-    $browser->post('/api/v1/tokens', ['name' => 'x', 'expires_in_days' => 10])->assertForbidden()->assertJsonPath('error.code', 'forbidden');
+    $browser->post('/api/v1/tokens', ['name' => 'x', 'expires_in_days' => 10, 'abilities' => Scenario::TOKEN_ABILITIES])->assertForbidden()->assertJsonPath('error.code', 'forbidden');
     $browser->get('/api/v1/tokens')->assertForbidden();
     $browser->delete('/api/v1/tokens/1')->assertForbidden();
 });
 
-it('é impossível emitir token para um tenant onde o usuário não tem vínculo (FK composta)', function () {
-    expect(fn () => app(IssueApiToken::class)->issue($this->adminA, $this->B, 'x', 10))
-        ->toThrow(ApiException::class, 'vínculo');
+// Camadas: (1) o PrivilegeGuard recusa primeiro — sem vínculo não há permissão no tenant; (2) se algo burlasse,
+// a FK composta recusaria (ver TenantIntegrityTest e TenantIsolationTest "token com tenant_id de outro tenant").
+it('é impossível emitir token para um tenant onde o usuário não tem vínculo', function () {
+    expect(fn () => app(IssueApiToken::class)->issue($this->adminA, $this->B, 'x', 10, ['tenant.view']))
+        ->toThrow(ApiException::class);
 
     expect(PersonalAccessToken::query()->count())->toBe(0); // a transação foi revertida
 });
@@ -149,7 +151,7 @@ it('token expirado (expires_at) deixa de funcionar e a negação é auditada', f
 });
 
 it('teto de segurança: mesmo sem expires_at nenhum token vale mais que 90 dias desde a criação', function () {
-    $legacy = $this->adminA->createToken('legado');
+    $legacy = $this->adminA->createToken('legado', ['tenant.view']);
     $legacy->accessToken->forceFill(['tenant_id' => $this->A->id])->save(); // sem expires_at
 
     $this->withToken($legacy->plainTextToken)->getJson('/api/v1/tenant')->assertOk();
@@ -162,7 +164,7 @@ it('teto de segurança: mesmo sem expires_at nenhum token vale mais que 90 dias 
 it('revogar o token o inutiliza imediatamente e audita sem expor o valor', function () {
     $browser = new Browser($this);
     $browser->login($this->adminA->email)->assertOk();
-    $created = $browser->post('/api/v1/tokens', ['name' => 'rev', 'expires_in_days' => 10])->assertCreated();
+    $created = $browser->post('/api/v1/tokens', ['name' => 'rev', 'expires_in_days' => 10, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated();
     $plain = $created->json('token');
 
     $this->withToken($plain)->getJson('/api/v1/tenant')->assertOk();
@@ -177,7 +179,7 @@ it('revogar o token o inutiliza imediatamente e audita sem expor o valor', funct
 it('admin de outro tenant não vê nem revoga token de A (404)', function () {
     $browserA = new Browser($this);
     $browserA->login($this->adminA->email)->assertOk();
-    $id = $browserA->post('/api/v1/tokens', ['name' => 'a', 'expires_in_days' => 10])->assertCreated()->json('data.id');
+    $id = $browserA->post('/api/v1/tokens', ['name' => 'a', 'expires_in_days' => 10, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated()->json('data.id');
 
     $browserB = new Browser($this);
     $browserB->login($this->adminB->email)->assertOk();
@@ -199,7 +201,7 @@ it('funciona igual com sessão e com token (mesmo usuário, mesmas permissões)'
     $browser->login($this->adminA->email)->assertOk();
     $viaSessao = $browser->get('/api/v1/tenant')->assertOk()->json('data');
 
-    $plain = $browser->post('/api/v1/tokens', ['name' => 'p', 'expires_in_days' => 5])->json('token');
+    $plain = $browser->post('/api/v1/tokens', ['name' => 'p', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
     $viaToken = $this->withToken($plain)->getJson('/api/v1/tenant')->assertOk()->json('data');
 
     expect($viaToken)->toBe($viaSessao);

@@ -29,6 +29,18 @@ final class PermissionCatalog
 
     public const ADMIN_ROLE = 'admin';
 
+    /**
+     * Permissões de GESTÃO DE ACESSO: nunca podem ser abilities de um token (D-29). Um token vazado não pode
+     * emitir outros tokens, mexer em papéis, suspender usuários ou convidar pessoas.
+     */
+    public const RESTRICTED_FOR_TOKENS = ['tokens.manage', 'roles.manage', 'members.manage', 'members.invite'];
+
+    /** @return list<string> abilities que um token PODE receber (catálogo menos gestão de acesso) */
+    public static function tokenAssignable(): array
+    {
+        return array_values(array_diff(array_keys(self::PERMISSIONS), self::RESTRICTED_FOR_TOKENS));
+    }
+
     /** Papéis de sistema criados em cada tenant no provisionamento (não podem ser excluídos nem editados). */
     public static function systemRoles(): array
     {

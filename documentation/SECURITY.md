@@ -34,7 +34,8 @@
 - **Anti-escalação de privilégio:** ninguém concede permissões, atribui papel ou convida com papel que contenha permissões que o autor não possui.
 - **Último administrador ativo** protegido sob *lock* de linha (sem corrida).
 - Auditoria de acesso completa (32 eventos, todos exercitados por testes); segredos mascarados por chave e por valor.
-- ⚠️ Pendências: escopo por `abilities` nos tokens (D-29); MFA; TLS/HSTS/CSP; política de retenção da auditoria.
+- **Tokens (D-29):** menor privilégio — abilities obrigatórias e explícitas, sem curinga, nunca de gestão de acesso; autorização = abilities ∩ permissões vivas do usuário; nenhuma rota de negócio escapa do `SetTenantContext` (teste estrutural).
+- ⚠️ Pendências: MFA; TLS/HSTS/CSP; política de retenção da auditoria.
 
 ## 4. Autorização
 

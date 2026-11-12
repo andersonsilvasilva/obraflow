@@ -60,12 +60,14 @@ Quem precisa operar vários tenants em paralelo deve usar **tokens** (cada um fi
 | Tenant | Gravado na emissão, **imutável** (FK composta: o usuário precisa ter vínculo) |
 | Expiração | **Obrigatória** (`expires_in_days` 1–90) + teto de segurança de 90 dias desde a criação (`sanctum.expiration`) |
 | Valor | Exibido **uma única vez**; no banco, apenas o hash; nunca em auditoria nem em listagens |
-| Sem `tenant_id` | Acessa só `auth/*` — **nunca** dados de negócio (`403 tenant_required`) |
+| **Abilities (D-29)** | **Obrigatórias** (≥ 1), explícitas, do catálogo; **sem curinga** (`*` recusado na emissão e ignorado no uso); **nunca** permissões de gestão de acesso (`tokens.manage`, `roles.manage`, `members.manage`, `members.invite`); precisam caber nas permissões do emissor |
+| Autorização do token | **abilities ∩ permissões vivas do usuário** no tenant (se o emissor perde o papel, o token perde junto) |
+| Sem `tenant_id` | Acessa só `auth/*` — **nunca** dados de negócio (`403 tenant_required`), mesmo que tenha abilities |
 | A cada uso | Revalida usuário ativo, vínculo ativo e tenant ativo |
 | Revogação | `DELETE /tokens/{id}`; automática ao suspender/remover o vínculo, bloquear o usuário, redefinir a senha e no logout com o token |
 | Expirado | `401`; a negação é auditada (`token.expired_use_denied`) |
 
-⚠️ **Pendência:** o token age com as **permissões do usuário que o emitiu** no tenant (papéis Spatie). As `abilities` do Sanctum são gravadas (`*` por padrão) mas **ainda não restringem** rotas. Escopo por ability fica para a fase em que existirem endpoints de negócio.
+Corpo da emissão: `POST /api/v1/tokens {"name": "...", "expires_in_days": 1..90, "abilities": ["tenant.view", "settings.view"]}`. Decisão completa em [DB_DECISIONS.md](DB_DECISIONS.md) D-29. Um teste estrutural garante que **toda** rota de negócio passa pelo `SetTenantContext`.
 
 ## 6. Recuperação de senha e sessões
 

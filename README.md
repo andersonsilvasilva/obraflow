@@ -67,7 +67,7 @@ docker compose ps               # todos devem ficar "healthy"
 cd obraflow-api
 php artisan migrate                                    # 15 tabelas (banco 'obraflow', usuário exclusivo — ver documentation/AMBIENTE_LOCAL.md)
 php artisan obraflow:provision --name="Minha Construtora" --admin-email=admin@empresa.com --admin-name="Fulano"
-vendor/bin/pest                                        # 180 testes (usa o banco 'obraflow_testing')
+vendor/bin/pest                                        # 198 testes (usa o banco 'obraflow_testing')
 ```
 
 ## Estado

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\MembershipStatus;
 use App\Enums\UserStatus;
+use App\Modules\Access\Services\PermissionCatalog;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\PersonalAccessToken as SanctumToken;
+use Spatie\Permission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -25,7 +28,11 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable;
+
+    use HasRoles {
+        hasPermissionTo as protected spatieHasPermissionTo;
+    }
 
     /** Guard único para sessão (web) e token (sanctum): evita permissões divididas por guard (R9). */
     protected $guard_name = 'web';
@@ -50,6 +57,54 @@ class User extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === UserStatus::Active;
+    }
+
+    /**
+     * Autorização efetiva (D-29). Passa por aqui o Gate do Spatie, o middleware `can:` e `$user->can()`:
+     *  - sessão (SPA): só as permissões do usuário no tenant ativo;
+     *  - token: a INTERSEÇÃO entre as `abilities` do token e as permissões que o usuário tem AGORA no tenant.
+     *    Wildcard (`*`) nunca vale; abilities de gestão de acesso nunca valem para token.
+     *
+     * @param  mixed  $permission
+     * @param  string|null  $guardName
+     */
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        if (! $this->tokenAllows($permission)) {
+            return false;
+        }
+
+        return $this->spatieHasPermissionTo($permission, $guardName);
+    }
+
+    /** Nomes das permissões efetivas (para `/auth/me`): as do usuário, reduzidas pelas abilities se for token. */
+    public function effectivePermissionNames(): array
+    {
+        return $this->getAllPermissions()->pluck('name')
+            ->filter(fn (string $name) => $this->tokenAllows($name))
+            ->sort()->values()->all();
+    }
+
+    private function tokenAllows(mixed $permission): bool
+    {
+        $token = $this->currentAccessToken();
+
+        if (! $token instanceof SanctumToken) {
+            return true; // sessão ou contexto sem token: sem restrição por abilities
+        }
+
+        $name = match (true) {
+            is_string($permission) => $permission,
+            $permission instanceof PermissionContract => $permission->name,
+            default => null, // formato desconhecido: falha fechada
+        };
+
+        if ($name === null || in_array($name, PermissionCatalog::RESTRICTED_FOR_TOKENS, true)) {
+            return false;
+        }
+
+        // Comparação EXATA: o curinga '*' do Sanctum é deliberadamente ignorado.
+        return in_array($name, $token->abilities ?? [], true);
     }
 
     /** @return HasMany<TenantUser, $this> */

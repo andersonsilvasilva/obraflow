@@ -119,8 +119,22 @@ Cada decisão: contexto → decisão → alternativas avaliadas → consequênci
 ### D-28 — Convites *(implementada)*
 - Aceite **público** (o token do e-mail é a credencial; busca deliberadamente sem escopo de tenant), com *throttle*; roda dentro do contexto do tenant do convite (o escopo global exige tenant até para o `UPDATE`). Respostas iguais para token desconhecido/usado/revogado. Conta nova exige nome e senha forte; conta existente não precisa de senha. Convite recusado para membro ativo/suspenso e quando já há convite pendente (coluna gerada + `UNIQUE`).
 
-### D-29 — Escopo (`abilities`) de tokens *(PENDENTE)*
-- O token age com as permissões do **usuário que o emitiu** no tenant; as `abilities` do Sanctum são gravadas (`*`) mas **ainda não restringem** rotas. Decidir o modelo de escopo quando houver endpoints de negócio.
+### D-29 — Escopo dos tokens de API *(APROVADA e IMPLEMENTADA)*
+**Tokens de integração**
+- Vinculados **obrigatoriamente** a um tenant (`tenant_id`, imutável; FK composta exige vínculo); **não operam em mais de um tenant** e não trocam de tenant (`tenant_fixed`).
+- **Menor privilégio:** `abilities` **obrigatórias e explícitas**, escolhidas no catálogo de permissões. **Sem curinga**: `*` é recusado na emissão e **ignorado no uso** (token legado com `*` não recebe nada).
+- **Autorização = abilities do token ∩ permissões vivas do usuário no tenant** (`User::hasPermissionTo`, por onde passam o Gate, `can:` e `$user->can()`). Se o emissor perde um papel, o token perde junto.
+- **Ninguém delega o que não tem:** as abilities precisam caber nas permissões do emissor (`privilege_escalation`).
+- **Expiração obrigatória**, máximo **90 dias** (+ teto `sanctum.expiration`); **revogação individual** (`DELETE /tokens/{id}`).
+- **Nenhum token contorna o `SetTenantContext`:** um teste **estrutural** percorre todas as rotas e falha se uma rota de negócio não passar por ele.
+
+**Tokens sem tenant:** só fluxos `auth/*` (`me`, `tenants`, `logout`); **proibidos** em todo endpoint de negócio; sem acesso global/administrativo.
+
+**Sessões SPA:** continuam por cookie Sanctum; abilities não se aplicam; não são substituídas por tokens.
+
+**Fora do escopo (não implementado):** superadmin, tokens globais de negócio, acesso simultâneo a vários tenants.
+
+> **Acréscimo da implementação (sinalizar na homologação):** além do que foi definido, as quatro permissões de **gestão de acesso** (`tokens.manage`, `roles.manage`, `members.manage`, `members.invite`) **nunca** podem ser abilities de token (recusadas na emissão e ignoradas no uso). Evita que um token vazado emita outros tokens, altere papéis, suspenda usuários ou convide pessoas. É uma restrição **extra** e pode ser revertida por decisão sua (`PermissionCatalog::RESTRICTED_FOR_TOKENS`).
 
 ## Decisões pendentes (precisam de resposta)
 

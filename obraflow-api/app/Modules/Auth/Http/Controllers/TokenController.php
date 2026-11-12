@@ -34,7 +34,7 @@ class TokenController extends Controller
             $context->tenantOrFail(),
             $request->validated('name'),
             (int) $request->validated('expires_in_days'),
-            $request->validated('abilities', ['*']),
+            $request->validated('abilities'),
         );
 
         return response()->json([

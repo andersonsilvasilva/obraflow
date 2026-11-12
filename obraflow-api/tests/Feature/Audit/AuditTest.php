@@ -65,7 +65,7 @@ it('TODO evento do catálogo é de fato emitido por alguma operação real', fun
     $b->delete("/api/v1/roles/{$descartavel}")->assertNoContent();                  // role.deleted
 
     // --- tokens
-    $tok = $b->post('/api/v1/tokens', ['name' => 'a', 'expires_in_days' => 5])->assertCreated()->json('data.id'); // token.created
+    $tok = $b->post('/api/v1/tokens', ['name' => 'a', 'expires_in_days' => 5, 'abilities' => Scenario::TOKEN_ABILITIES])->assertCreated()->json('data.id'); // token.created
     $b->delete("/api/v1/tokens/{$tok}")->assertNoContent();                         // token.revoked
     $expirado = $dono->createToken('vencido', ['*'], now()->subMinute());
     $expirado->accessToken->forceFill(['tenant_id' => $tenant->id])->save();
@@ -207,7 +207,7 @@ it('login falho NÃO grava o e-mail em claro nem a senha — só o HMAC', functi
 
 it('nenhum registro de auditoria contém senha, token ou hash, mesmo após o roteiro completo de operações', function () {
     $this->browser->login($this->adminA->email)->assertOk();
-    $plain = $this->browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 3])->json('token');
+    $plain = $this->browser->post('/api/v1/tokens', ['name' => 't', 'expires_in_days' => 3, 'abilities' => Scenario::TOKEN_ABILITIES])->json('token');
     $this->browser->post('/api/v1/auth/logout-others', ['password' => Scenario::PASSWORD])->assertOk();
 
     $json = json_encode(AuditLog::query()->get()->toArray());
