@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    name: API (Pest) — MySQL ${{ matrix.mysql }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # A compatibilidade com o MySQL 8.4 DEVE ser comprovada aqui antes da homologação (FASE1_MODELO §7).
+        # O ambiente local (Laragon) usa 8.0.30.
+        mysql: ['8.0', '8.4']
+    defaults:
+      run:
+        working-directory: obraflow-api
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          # Credenciais EFÊMERAS de um banco descartável do job (não são segredos reais).
+          MYSQL_ROOT_PASSWORD: ci-root-descartavel
+          MYSQL_DATABASE: obraflow_testing
+          MYSQL_USER: obraflow_app
+          MYSQL_PASSWORD: ci-app-descartavel
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-descartavel --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: obraflow_testing
+      DB_USERNAME: obraflow_app
+      DB_PASSWORD: ci-app-descartavel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo_mysql, bcmath, zip
+          coverage: none
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer audit
+      - run: cp .env.example .env && php artisan key:generate
+      - run: vendor/bin/pint --test
+      - name: Versão do MySQL em uso
+        run: mysql -h127.0.0.1 -uobraflow_app -pci-app-descartavel -N -e "SELECT VERSION(), @@sql_mode, @@time_zone"
+      - name: Testes (migrations, integridade, isolamento multi-tenant, autenticação, auditoria)
+        run: vendor/bin/pest
+
+  web:
+    name: Web (React / Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: obraflow-web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: obraflow-web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev

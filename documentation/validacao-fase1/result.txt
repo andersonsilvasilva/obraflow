@@ -1,0 +1,110 @@
+
+== 0. Esquema ==
+  [PASS] 15 tabelas criadas
+  [PASS] todas as tabelas têm PRIMARY KEY (compatível com sql_require_primary_key=1)
+  [PASS] roles.tenant_id é NOT NULL
+  [PASS] todas as FKs são RESTRICT (nenhuma CASCADE/SET NULL)
+
+== 1. Dados base ==
+  [PASS] tenants, usuários, vínculos e papéis criados
+
+== 2. Papéis × tenant × vínculo (model_has_roles) ==
+  [PASS] atribuir papel de A a usuário vinculado a A
+  [PASS] papel do tenant B no vínculo do tenant A é RECUSADO (FK composta role)
+  [PASS] papel de A atribuído a usuário SEM vínculo é RECUSADO (FK composta membro)
+  [PASS] papel de A atribuído em B a usuário que só é de A é RECUSADO
+  [PASS] mesma pessoa admin em A e viewer em B (usuário global em dois tenants)
+  [PASS] model_type diferente de "user" é RECUSADO (CHECK)
+  [PASS] papel sem tenant (NULL) é RECUSADO
+  [PASS] papel duplicado no MESMO tenant é RECUSADO
+  [PASS] mesmo nome de papel em OUTRO tenant é permitido
+  [PASS] excluir papel que tem atribuição é RECUSADO (RESTRICT)
+  [PASS] excluir vínculo referenciado por atribuição é RECUSADO
+  [PASS] excluir tenant com papéis é RECUSADO
+  [PASS] vincular permissão global a papel do tenant
+  [PASS] excluir permissão em uso é RECUSADO
+  [PASS] permissão direta a usuário SEM vínculo é RECUSADA
+  [PASS] permissão direta a usuário COM vínculo é aceita pelo banco
+
+== 3. Vínculos, usuários e tenants ==
+  [PASS] vínculo duplicado (tenant,user) é RECUSADO
+  [PASS] vínculo com status inválido é RECUSADO
+  [PASS] vínculo com usuário inexistente é RECUSADO
+  [PASS] e-mail duplicado ignorando CAIXA é RECUSADO
+  [PASS] e-mails que diferem só por ACENTO coexistem (collation as_ci)
+  [PASS] status de usuário inválido é RECUSADO
+  [PASS] slug de tenant duplicado é RECUSADO
+  [PASS] status de tenant inválido é RECUSADO
+
+== 4. Domínios e configurações ==
+  [PASS] um domínio primário por tenant
+  [PASS] segundo domínio primário no mesmo tenant é RECUSADO
+  [PASS] vários domínios NÃO primários no mesmo tenant
+  [PASS] outro tenant pode ter o seu primário
+  [PASS] mesmo domínio em dois tenants é RECUSADO
+  [PASS] configuração por tenant
+  [PASS] configuração duplicada no tenant é RECUSADA
+  [PASS] mesma chave em outro tenant é permitida
+
+== 5. Tokens (Sanctum + tenant) ==
+  [PASS] token COM tenant para usuário vinculado
+  [PASS] token com tenant para usuário SEM vínculo é RECUSADO
+  [PASS] token do tenant B para usuário que só é de A é RECUSADO
+  [PASS] token SEM tenant é aceito pelo banco (regra de negócio o barra nas rotas)
+  [PASS] tokenable_type diferente de "user" é RECUSADO
+  [PASS] token com tenant inexistente é RECUSADO
+
+== 6. Convites ==
+  [PASS] convite válido
+  [PASS] convite feito por quem NÃO é membro do tenant é RECUSADO
+  [PASS] convite com papel de OUTRO tenant é RECUSADO
+  [PASS] segundo convite PENDENTE para o mesmo e-mail/tenant é RECUSADO
+  [PASS] mesmo e-mail com outra CAIXA também é RECUSADO
+  [PASS] convite revogado não bloqueia novo convite do mesmo e-mail
+  [PASS] mesmo e-mail pendente em OUTRO tenant é permitido
+  [PASS] convite "accepted" sem accepted_at/accepted_user_id é RECUSADO (CHECK)
+  [PASS] convite "accepted" completo
+  [PASS] aceito por usuário SEM vínculo no tenant é RECUSADO
+  [PASS] token_hash duplicado é RECUSADO
+  [PASS] token_hash usa ascii_bin (comparação exata)
+
+== 7. Auditoria ==
+  [PASS] evento fora de tenant (tenant_id NULL)
+  [PASS] evento com tenant, ator e JSON
+  [PASS] evento com tenant inexistente é RECUSADO
+  [PASS] created_at guarda microssegundos
+  [PASS] audit_logs não possui updated_at
+
+== 8. Compatibilidade do MySQL (riscos R5, R6 e plugin de autenticação) ==
+  [PASS] usuário com caching_sha2_password conecta pelo pdo_mysql do PHP 8.4.2
+  [PASS] usuário SEM SUPER não consegue criar TRIGGER (log_bin=1) — confirma "sem triggers"
+  [PASS] root (SUPER) consegue criar trigger — por isso o dev local "funcionaria" e produção não
+  [PASS] usuário de produção INSERE em audit_logs
+  [PASS] usuário de produção NÃO consegue UPDATE em audit_logs
+  [PASS] usuário de produção NÃO consegue DELETE em audit_logs
+  [PASS] DEMONSTRAÇÃO R5: sessão fora de UTC DESLOCA o TIMESTAMP (gravou 12:00, lê-se 2026-01-01 16:00:00 em UTC)
+  [PASS] com time_zone=+00:00 na conexão o round-trip é exato
+
+== 9. Spatie Permission (Teams) + Sanctum REAIS sobre o esquema ==
+  [PASS] R9 achado: Guard::getNames(App\Models\User)=["web"] | SbUser (com $guard_name fixo)=["web"]
+  [PASS] Spatie: Role::create SEM contexto de tenant FALHA FECHADO (tenant_id NULL recusado)
+  [PASS] Spatie: papel criado sob o contexto A recebe tenant_id=A
+  [PASS] Spatie: papel criado sob o contexto B recebe tenant_id=B
+  [PASS] Spatie: s1 é admin em A
+  [PASS] Spatie: s1 NÃO tem papel admin ao trocar para B (sem vínculo em B)
+  [PASS] Spatie: s2 em A — é admin e pode members.invite_sp
+  [PASS] Spatie: s2 em B — é viewer, NÃO é admin e NÃO pode members.invite_sp
+  [PASS] ARMADILHA: reutilizar o MESMO objeto após trocar de tenant MANTÉM o papel do tenant anterior (obrigatório limpar relações)
+  [PASS] Spatie: após unsetRelation o papel de A deixa de valer em B
+  [PASS] Spatie: assignRole com OBJETO de papel do tenant B sob o contexto A é recusado pelo banco
+  [PASS] Spatie: assignRole por NOME de papel do tenant B sob o contexto A não encontra o papel
+  [PASS] Spatie: assignRole a usuário SEM vínculo no tenant é recusado pelo banco
+  [PASS] não existe nenhum papel global (tenant_id NULL)
+  [PASS] Sanctum: createToken grava tokenable_type="user" (passa no CHECK)
+  [PASS] Sanctum: o token nasce SEM tenant (o pacote não conhece tenant) => middleware deve barrá-lo nos dados de negócio
+  [PASS] vincular o token ao tenant A (usuário é membro)
+  [PASS] vincular o MESMO token ao tenant B (usuário não é membro) é RECUSADO
+  [PASS] guard_name do usuário para o Spatie = ["web"] (deve ser fixado em "web")
+
+==============================
+RESULTADO: 87 aprovados, 0 reprovados
