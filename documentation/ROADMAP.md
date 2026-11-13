@@ -7,7 +7,7 @@
 | **0 — Fundação** | API Laravel, SPA React, infraestrutura, CI, documentação, identidade visual, protótipo navegável | ✅ |
 | **0.5 — Modelo de dados** | Modelagem completa ([DATABASE.md](DATABASE.md)) | ✅ proposta entregue |
 | **1 — Identidade, tenancy e acesso** | 15 tabelas ([FASE1_MODELO.md](FASE1_MODELO.md)); autenticação Sanctum (SPA + token por tenant); seleção e troca de tenant; Spatie Teams sem papéis globais; auditoria de acesso; testes de isolamento. **Decisões D-P01 aprovada.** | ✅ **Implementada** (15 migrations, autenticação, tenancy, Spatie Teams, convites, provisionamento, auditoria; 180 + 14 testes). **Homologada** (CI verde em MySQL 8.0/8.4) — [FASE1_RELATORIO.md](FASE1_RELATORIO.md) |
-| **2 — Cadastros** | Unidades, empresas, filiais, clientes, fornecedores, contatos/endereços, documentos (disco privado + URL assinada; S3 por configuração) | 🔨 **Em andamento** — modelo aprovado ([FASE2_MODELO.md](FASE2_MODELO.md)) |
+| **2 — Cadastros** | Unidades, empresas, filiais, clientes, fornecedores, contatos/endereços, documentos (disco privado + URL assinada; S3 por configuração) | ✅ **Implementada** (18 tabelas, API, permissões, auditoria; 286 testes; CI verde 8.0/8.4) — **aguarda homologação** ([FASE2_RELATORIO.md](FASE2_RELATORIO.md)) |
 | **3 — Equipes e Obras** | Funcionários, equipamentos, obras, membros, fases, acesso por obra | ⏳ |
 | **4 — Referências e Orçamentos (prioritário)** | Bases técnicas (SINAPI/SUDECAP) importadas com rastreio; versões, composições, BDI, encargos, Curva ABC, aprovação, importações. **Só após D-P02 e D-P03** | ⏳ |
 | **5 — Contratos e Medições** | Contratos, aditivos, medições com aprovação | ⏳ |
