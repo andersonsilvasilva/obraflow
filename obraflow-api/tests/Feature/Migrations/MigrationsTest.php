@@ -18,13 +18,22 @@ it('o MySQL em uso é compatível com o modelo (>= 8.0.16: CHECK aplicado)', fun
     expect(version_compare($version, '8.0.16', '>='))->toBeTrue("MySQL {$version} não aplica CHECK");
 });
 
-it('migrate:fresh cria as 15 tabelas, rollback remove todas e migrate recria (up/down simétricos)', function () {
-    Artisan::call('migrate:fresh', ['--force' => true]);
-    expect(tableCount())->toBe(15);
+/** Cada migration cria exatamente uma tabela. */
+function migrationCount(): int
+{
+    return count(glob(database_path('migrations/*.php')));
+}
 
-    Artisan::call('migrate:rollback', ['--force' => true, '--step' => 15]);
+it('migrate:fresh cria uma tabela por migration, rollback remove todas e migrate recria (up/down simétricos)', function () {
+    $n = migrationCount();
+    expect($n)->toBe(22);
+
+    Artisan::call('migrate:fresh', ['--force' => true]);
+    expect(tableCount())->toBe($n);
+
+    Artisan::call('migrate:rollback', ['--force' => true, '--step' => $n]);
     expect(tableCount())->toBe(0);
 
     Artisan::call('migrate', ['--force' => true]);
-    expect(tableCount())->toBe(15);
+    expect(tableCount())->toBe($n);
 });

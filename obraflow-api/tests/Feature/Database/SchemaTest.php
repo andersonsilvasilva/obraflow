@@ -8,16 +8,24 @@ const PHASE1_TABLES = [
     'tenant_settings', 'tenant_users', 'tenants', 'user_invitations', 'users',
 ];
 
+/** Fase 2 (FASE2_MODELO.md), acrescentadas por etapa. */
+const PHASE2_TABLES = [
+    'companies', 'company_addresses', 'company_branch_addresses', 'company_branch_contacts', 'company_branches',
+    'company_contacts', 'units_of_measure',
+];
+
 function dbName(): string
 {
     return DB::connection()->getDatabaseName();
 }
 
-it('cria exatamente as 15 tabelas da Fase 1 (mais a tabela migrations)', function () {
+it('cria exatamente as tabelas das Fases 1 e 2 (mais a tabela migrations)', function () {
     $tables = collect(DB::select('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?', [dbName()]))
         ->pluck('t')->map(fn ($t) => strtolower($t))->reject(fn ($t) => $t === 'migrations')->sort()->values()->all();
 
-    expect($tables)->toBe(PHASE1_TABLES);
+    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES])->sort()->values()->all();
+
+    expect($tables)->toBe($expected);
 });
 
 it('todas as tabelas possuem PRIMARY KEY (compatível com sql_require_primary_key=1)', function () {
@@ -77,8 +85,16 @@ it('os CHECK constraints estão ativos (e aplicados) e as colunas geradas existe
         expect($row)->not->toBeNull("CHECK {$chk} ausente")->and($row->e)->toBe('YES');
     }
 
-    $generated = DB::select("SELECT column_name AS c FROM information_schema.columns WHERE table_schema = ? AND generation_expression <> ''", [dbName()]);
-    expect(collect($generated)->pluck('c')->sort()->values()->all())->toBe(['pending_email', 'primary_marker']);
+    $generated = collect(DB::select(
+        "SELECT CONCAT(table_name, '.', column_name) AS c FROM information_schema.columns WHERE table_schema = ? AND generation_expression <> ''",
+        [dbName()],
+    ))->pluck('c')->sort()->values()->all();
+
+    expect($generated)->toBe([
+        'companies.active_marker', 'company_addresses.main_marker', 'company_branch_addresses.main_marker',
+        'company_branch_contacts.primary_marker', 'company_branches.active_marker', 'company_contacts.primary_marker',
+        'tenant_domains.primary_marker', 'user_invitations.pending_email',
+    ]);
 });
 
 it('audit_logs não possui updated_at e guarda microssegundos', function () {

@@ -54,4 +54,6 @@ Regras: ninguém concede o que não possui (`403 privilege_escalation`); o **úl
 
 ## Pendência: dados cadastrais do tenant HighTech
 
-Razão social (`tenants.legal_name`) e CNPJ (`tenants.document_number`) do tenant `hightech` estão **vazios de propósito**: o comando `obraflow:provision` não os recebe e **não foram inventados**. Para preenchê-los é preciso (1) os valores reais, fornecidos pelo responsável, e (2) autorização expressa para alterar o tenant inicial (via novas opções do comando ou rotina de atualização cadastral). Nada foi alterado no banco.
+**Atualização 2026-11-13:** CNPJ gravado (`61693043000194`, autorizado, evento `tenant.updated`). Razão social gravada em 2026-11-13 (`HIGHTECH TECNOLOGIA CONSULTORIA E DESENVOLVIMENTO LTDA`, autorizada, evento `tenant.updated`). **Pendência encerrada.**
+
+Originalmente, razão social (`tenants.legal_name`) e CNPJ (`tenants.document_number`) do tenant `hightech` estavam **vazios de propósito**: o comando `obraflow:provision` não os recebe e **não foram inventados**. Para preenchê-los é preciso (1) os valores reais, fornecidos pelo responsável, e (2) autorização expressa para alterar o tenant inicial (via novas opções do comando ou rotina de atualização cadastral). Nada foi alterado no banco.

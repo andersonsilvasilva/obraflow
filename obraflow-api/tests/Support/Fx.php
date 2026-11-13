@@ -63,6 +63,38 @@ final class Fx
         ]);
     }
 
+    // ------------------------------------------------------------------ Fase 2 (cadastros)
+
+    public static function company(int $tenant, string $cnpj = '11222333000181', array $extra = []): int
+    {
+        return (int) DB::table('companies')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'legal_name' => 'DEMO Empresa '.Str::random(5),
+            'document_number' => $cnpj, 'status' => 'active', ...$extra,
+        ]);
+    }
+
+    public static function branch(int $tenant, int $company, ?string $cnpj = null): int
+    {
+        return (int) DB::table('company_branches')->insertGetId([
+            'tenant_id' => $tenant, 'company_id' => $company, 'name' => 'DEMO Filial', 'document_number' => $cnpj,
+        ]);
+    }
+
+    public static function address(string $table, string $ownerColumn, int $tenant, int $owner, array $extra = []): int
+    {
+        return (int) DB::table($table)->insertGetId([
+            'tenant_id' => $tenant, $ownerColumn => $owner, 'kind' => 'main', 'street' => 'Rua DEMO',
+            'city' => 'Cidade DEMO', 'state' => 'MT', 'postal_code' => '78000000', ...$extra,
+        ]);
+    }
+
+    public static function contact(string $table, string $ownerColumn, int $tenant, int $owner, bool $primary = false): int
+    {
+        return (int) DB::table($table)->insertGetId([
+            'tenant_id' => $tenant, $ownerColumn => $owner, 'name' => 'Contato DEMO', 'is_primary' => $primary,
+        ]);
+    }
+
     /** Executa e devolve o código de erro do MySQL, ou null se NÃO houve erro (operação aceita). */
     public static function errno(callable $fn): ?int
     {
