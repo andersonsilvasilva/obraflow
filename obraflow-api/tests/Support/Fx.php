@@ -96,6 +96,23 @@ final class Fx
         ]);
     }
 
+    public static function document(int $tenant, int $creator, ?int $category = null): int
+    {
+        return (int) DB::table('documents')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'category_id' => $category,
+            'title' => 'DEMO Documento', 'created_by' => $creator,
+        ]);
+    }
+
+    public static function version(int $tenant, int $document, int $uploader, int $number = 1, array $extra = []): int
+    {
+        return (int) DB::table('document_versions')->insertGetId([
+            'tenant_id' => $tenant, 'document_id' => $document, 'version_number' => $number, 'storage_disk' => 'documents',
+            'storage_key' => 'k/'.Str::random(20), 'original_name' => 'demo.pdf', 'mime_type' => 'application/pdf',
+            'size_bytes' => 10, 'sha256' => hash('sha256', Str::random()), 'uploaded_by' => $uploader, ...$extra,
+        ]);
+    }
+
     public static function address(string $table, string $ownerColumn, int $tenant, int $owner, array $extra = []): int
     {
         return (int) DB::table($table)->insertGetId([

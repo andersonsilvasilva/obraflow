@@ -14,4 +14,5 @@ pest()->use(RefreshDatabase::class)->in(
     'Feature/Access',
     'Feature/Audit',
     'Feature/Provisioning',
+    'Feature/Registry',
 );

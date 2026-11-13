@@ -185,7 +185,8 @@ it('exclusão física de empresa/filial com dependentes é recusada (RESTRICT)',
 it('tenant_id das tabelas da Fase 2 é NOT NULL e toda FK de dono é composta com tenant_id', function () {
     $tables = ['units_of_measure', 'companies', 'company_branches', 'company_addresses', 'company_contacts',
         'company_branch_addresses', 'company_branch_contacts', 'customers', 'suppliers', 'customer_addresses',
-        'customer_contacts', 'supplier_addresses', 'supplier_contacts'];
+        'customer_contacts', 'supplier_addresses', 'supplier_contacts', 'document_categories', 'documents',
+        'document_versions', 'document_links', 'document_permissions'];
 
     foreach ($tables as $t) {
         $nullable = DB::selectOne(
@@ -204,7 +205,7 @@ it('tenant_id das tabelas da Fase 2 é NOT NULL e toda FK de dono é composta co
          GROUP BY constraint_name, table_name",
     );
 
-    expect($fks)->toHaveCount(11);
+    expect($fks)->toHaveCount(19);
     foreach ($fks as $fk) {
         expect(str_starts_with($fk->cols, 'tenant_id,'))->toBeTrue("{$fk->t}.{$fk->c} não é composta: {$fk->cols}");
     }

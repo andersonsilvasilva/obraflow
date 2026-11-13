@@ -65,9 +65,17 @@ CNPJ duplicado entre tenants é **permitido** (cada tenant tem seu cadastro); va
 | Etapa | Estado | Testes |
 |---|---|---|
 | 1 — Unidades, empresas, filiais (+ endereços/contatos) | ✅ commit `3201b5a` | 212 |
-| 2 — Clientes, fornecedores (+ endereços/contatos) | ✅ local | 226 (1.251 asserções) |
-| 3 — Documentos | ⏳ | |
+| 2 — Clientes, fornecedores (+ endereços/contatos) | ✅ commit `0e9542a` | 226 |
+| 3 — Documentos + modelos Eloquent de toda a Fase 2 | ✅ local | 258 (1.363 asserções) |
 | 4 — Permissões, Policies, API, auditoria | ⏳ | |
 | 5 — Isolamento cruzado, CI, documentação | ⏳ | |
 
 CHECK de cliente/fornecedor: `type = person` exige CPF de 11 dígitos; `company`, CNPJ de 14; documento opcional só no cliente. Dígitos verificadores são validados na aplicação (etapa 4).
+
+### Etapa 3 — detalhes de implementação
+
+- **Modelos** (`app/Models`): os 18 da Fase 2, todos com `BelongsToTenant` (fail-closed), uuid público nas entidades expostas, CPF/CNPJ/CEP normalizados para dígitos e UF em maiúsculas. Aliases no morph map: `company`, `company_branch`, `customer`, `supplier` (os únicos aceitos em `document_links`), `unit_of_measure`, `document`, `document_version`. *(Os modelos estavam previstos para a etapa 1 e foram entregues aqui.)*
+- **`DocumentStorage`** (único ponto de escrita): tipo detectado pelo **conteúdo** (`finfo`), limite de tamanho, chave `{tenant_uuid}/{document_uuid}/{aleatório}` sem o nome original, arquivo gravado antes da transação e **removido se o banco falhar**, número de versão sob *lock*, versão corrente atualizada na mesma transação; `link()` confere tipo, existência, exclusão lógica e tenant do dono (a tabela é polimórfica).
+- **Disco `documents`**: raiz `storage/app/documents` (fora da raiz do disco `local`, também servido; fora do Git). Arquivos servidos em `/files/documents/...` **somente com assinatura válida** (`ServeFile` do Laravel, visibilidade privada), validade padrão 5 min, cabeçalhos `no-store` e CSP `sandbox`. Em produção, `DOCUMENTS_DISK` aponta para S3.
+- **`document_versions` append-only** pela aplicação (modelo e builder). O `ImmutableBuilder` da Fase 1 passou a citar a tabela correta na mensagem (antes, fixo em `audit_logs`).
+- **Limitação:** a URL assinada não revalida o vínculo do usuário no momento do download; a proteção é a validade curta. A emissão da URL (etapa 4) exigirá permissão e tenant ativo. Auditoria de documentos entra na etapa 4.

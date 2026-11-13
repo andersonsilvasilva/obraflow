@@ -11,7 +11,8 @@ const PHASE1_TABLES = [
 /** Fase 2 (FASE2_MODELO.md), acrescentadas por etapa. */
 const PHASE2_TABLES = [
     'companies', 'company_addresses', 'company_branch_addresses', 'company_branch_contacts', 'company_branches',
-    'company_contacts', 'customer_addresses', 'customer_contacts', 'customers', 'supplier_addresses',
+    'company_contacts', 'customer_addresses', 'customer_contacts', 'customers', 'document_categories',
+    'document_links', 'document_permissions', 'document_versions', 'documents', 'supplier_addresses',
     'supplier_contacts', 'suppliers', 'units_of_measure',
 ];
 

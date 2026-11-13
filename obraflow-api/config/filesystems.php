@@ -38,6 +38,19 @@ return [
             'report' => false,
         ],
 
+        // Documentos privados (D-P15): nunca públicos; servidos só por URL assinada temporária
+        // (ServeFile exige assinatura válida para visibilidade private). Raiz FORA da raiz do disco 'local'
+        // (que também é servido), para que nenhuma URL daquele disco alcance estes arquivos.
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/files/documents',
+            'visibility' => 'private',
+            'serve' => true,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

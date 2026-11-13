@@ -3,12 +3,19 @@
 namespace App\Providers;
 
 use App\Models\AuditLog;
+use App\Models\Company;
+use App\Models\CompanyBranch;
+use App\Models\Customer;
+use App\Models\Document;
+use App\Models\DocumentVersion;
 use App\Models\PersonalAccessToken;
 use App\Models\Role;
+use App\Models\Supplier;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
 use App\Models\TenantSetting;
 use App\Models\TenantUser;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Models\UserInvitation;
 use App\Modules\Access\Console\BlockUserCommand;
@@ -65,6 +72,14 @@ class AppServiceProvider extends ServiceProvider
             'invitation' => UserInvitation::class,
             'token' => PersonalAccessToken::class,
             'audit_log' => AuditLog::class,
+            // Fase 2 — os 4 primeiros são os únicos aceitos em document_links.linkable_type (CHECK)
+            'company' => Company::class,
+            'company_branch' => CompanyBranch::class,
+            'customer' => Customer::class,
+            'supplier' => Supplier::class,
+            'unit_of_measure' => UnitOfMeasure::class,
+            'document' => Document::class,
+            'document_version' => DocumentVersion::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
