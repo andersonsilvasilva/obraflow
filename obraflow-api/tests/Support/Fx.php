@@ -80,6 +80,22 @@ final class Fx
         ]);
     }
 
+    public static function customer(int $tenant, int $company, ?string $doc = null, string $type = 'person', array $extra = []): int
+    {
+        return (int) DB::table('customers')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'company_id' => $company, 'type' => $type,
+            'document_number' => $doc, 'name' => 'DEMO Cliente', ...$extra,
+        ]);
+    }
+
+    public static function supplier(int $tenant, int $company, string $doc = '11222333000181', string $type = 'company', array $extra = []): int
+    {
+        return (int) DB::table('suppliers')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'company_id' => $company, 'type' => $type,
+            'document_number' => $doc, 'legal_name' => 'DEMO Fornecedor', ...$extra,
+        ]);
+    }
+
     public static function address(string $table, string $ownerColumn, int $tenant, int $owner, array $extra = []): int
     {
         return (int) DB::table($table)->insertGetId([

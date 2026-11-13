@@ -179,3 +179,7 @@ Cada decisão: contexto → decisão → alternativas avaliadas → consequênci
 4. **Complexidade de migrations** com FKs compostas e circularidades → plano em [DB_MIGRATION_PLAN.md](DB_MIGRATION_PLAN.md).
 5. **Divergência 8.0.30 × 8.4** entre dev e containers (D-P09).
 6. **Regras de negócio ainda indefinidas** (BDI/indiretos/encargos) podem exigir ajuste de `budget_*` (D-P02/P03) — por isso essas migrations vêm só depois da definição.
+
+## D-30 — Fornecedor pessoa física (2026-11-13)
+
+`suppliers` ganhou `type` (`person`/`company`), como `customers`: na construção civil é comum fornecedor autônomo com CPF, e o modelo original (DATABASE.md §2.3) só previa CNPJ. CHECK: `person` ⇒ 11 dígitos, `company` ⇒ 14. **Aceita pelo responsável em 2026-11-13.**

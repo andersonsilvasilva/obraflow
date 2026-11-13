@@ -11,7 +11,8 @@ const PHASE1_TABLES = [
 /** Fase 2 (FASE2_MODELO.md), acrescentadas por etapa. */
 const PHASE2_TABLES = [
     'companies', 'company_addresses', 'company_branch_addresses', 'company_branch_contacts', 'company_branches',
-    'company_contacts', 'units_of_measure',
+    'company_contacts', 'customer_addresses', 'customer_contacts', 'customers', 'supplier_addresses',
+    'supplier_contacts', 'suppliers', 'units_of_measure',
 ];
 
 function dbName(): string
@@ -93,6 +94,8 @@ it('os CHECK constraints estão ativos (e aplicados) e as colunas geradas existe
     expect($generated)->toBe([
         'companies.active_marker', 'company_addresses.main_marker', 'company_branch_addresses.main_marker',
         'company_branch_contacts.primary_marker', 'company_branches.active_marker', 'company_contacts.primary_marker',
+        'customer_addresses.main_marker', 'customer_contacts.primary_marker', 'customers.active_marker',
+        'supplier_addresses.main_marker', 'supplier_contacts.primary_marker', 'suppliers.active_marker',
         'tenant_domains.primary_marker', 'user_invitations.pending_email',
     ]);
 });

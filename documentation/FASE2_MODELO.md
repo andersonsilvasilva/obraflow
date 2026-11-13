@@ -18,7 +18,7 @@ Todas operacionais: `id`, `tenant_id`, `created_at`, `updated_at`, `UNIQUE (tena
 | 2 | `companies` (SD) | `uuid`, `legal_name`, `trade_name`, `document_number` (CNPJ, só dígitos), `state_registration`, `municipal_registration`, `email`, `phone`, `status` | `(tenant_id, document_number)` ativo |
 | 3 | `company_branches` (SD) | `company_id`, `name`, `document_number` NULL, `status` | CNPJ da filial ativo, quando houver |
 | 4 | `customers` (SD) | `uuid`, `company_id`, `type` (person/company), `document_number` NULL (CPF/CNPJ), `name`, `email`, `phone`, `status` | `(tenant_id, company_id, document_number)` ativo |
-| 5 | `suppliers` (SD) | `uuid`, `company_id`, `document_number`, `legal_name`, `trade_name`, `email`, `phone`, `status` | `(tenant_id, company_id, document_number)` ativo |
+| 5 | `suppliers` (SD) | `uuid`, `company_id`, `type` (person/company, **D-30**), `document_number` (CPF ou CNPJ conforme `type`), `legal_name`, `trade_name`, `email`, `phone`, `status` | `(tenant_id, company_id, document_number)` ativo |
 | 6 | `contacts` | dono, `name`, `role`, `email`, `phone`, `is_primary` | 1 principal por dono |
 | 7 | `addresses` | dono, `kind` (main/billing/delivery/site), `street`, `number`, `complement`, `district`, `city`, `state`, `postal_code`, `latitude`, `longitude` | — |
 | 8 | `document_categories` | `parent_id`, `code`, `name` | `(tenant_id, code)` |
@@ -59,3 +59,15 @@ Cada etapa valida e relata antes da seguinte; migrations só rodam em `obraflow_
 ## 6. Riscos
 
 CNPJ duplicado entre tenants é **permitido** (cada tenant tem seu cadastro); validar dígitos não prova existência na Receita; dados pessoais de clientes/contatos entram na LGPD (D-P07); anexos exigem política de tamanho/tipo/antivírus antes de produção.
+
+## 7. Andamento
+
+| Etapa | Estado | Testes |
+|---|---|---|
+| 1 — Unidades, empresas, filiais (+ endereços/contatos) | ✅ commit `3201b5a` | 212 |
+| 2 — Clientes, fornecedores (+ endereços/contatos) | ✅ local | 226 (1.251 asserções) |
+| 3 — Documentos | ⏳ | |
+| 4 — Permissões, Policies, API, auditoria | ⏳ | |
+| 5 — Isolamento cruzado, CI, documentação | ⏳ | |
+
+CHECK de cliente/fornecedor: `type = person` exige CPF de 11 dígitos; `company`, CNPJ de 14; documento opcional só no cliente. Dígitos verificadores são validados na aplicação (etapa 4).

@@ -49,6 +49,15 @@ final class RegistrySchema
         DB::statement("ALTER TABLE {$table} ADD CONSTRAINT chk_{$table}_status CHECK (status IN ('active','inactive'))");
     }
 
+    /** Cliente/fornecedor: `type` person exige CPF (11 dígitos), company exige CNPJ (14); documento NULL é aceito. */
+    public static function partyDocumentCheck(string $table, string $prefix): void
+    {
+        DB::statement("ALTER TABLE {$table} ADD CONSTRAINT chk_{$prefix}_type CHECK (type IN ('person','company'))");
+        DB::statement("ALTER TABLE {$table} ADD CONSTRAINT chk_{$prefix}_doc CHECK (document_number IS NULL
+            OR (type = 'person' AND REGEXP_LIKE(document_number, '^[0-9]{11}$'))
+            OR (type = 'company' AND REGEXP_LIKE(document_number, '^[0-9]{14}$')))");
+    }
+
     /** Endereços dedicados a um dono (D-P12): FK composta real; no máximo um endereço `main` por dono. */
     public static function createAddresses(string $table, string $ownerColumn, string $parent, string $prefix): void
     {

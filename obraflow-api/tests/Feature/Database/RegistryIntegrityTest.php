@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Support\Fx;
 
 /*
@@ -64,11 +65,18 @@ it('CNPJ de filial: opcional, único entre as ativas do tenant, só dígitos', f
 dataset('owners', [
     'empresa' => ['company_addresses', 'company_contacts', 'company_id', 'company'],
     'filial' => ['company_branch_addresses', 'company_branch_contacts', 'company_branch_id', 'branch'],
+    'cliente' => ['customer_addresses', 'customer_contacts', 'customer_id', 'customer'],
+    'fornecedor' => ['supplier_addresses', 'supplier_contacts', 'supplier_id', 'supplier'],
 ]);
 
 function ownerOf(string $kind, int $tenant, int $company): int
 {
-    return $kind === 'company' ? $company : Fx::branch($tenant, $company);
+    return match ($kind) {
+        'company' => $company,
+        'branch' => Fx::branch($tenant, $company),
+        'customer' => Fx::customer($tenant, $company),
+        'supplier' => Fx::supplier($tenant, $company),
+    };
 }
 
 it('endereço e contato só se ligam a dono do mesmo tenant (FK composta)', function (string $addr, string $cont, string $col, string $kind) {
@@ -105,6 +113,65 @@ it('endereço recusa tipo, UF e CEP fora do domínio (CHECK)', function (string 
         ->and(Fx::errno(fn () => Fx::address($addr, $col, $this->A, $owner, ['postal_code' => null])))->toBeNull();
 })->with('owners');
 
+// ---------------------------------------------------------------- clientes e fornecedores (etapa 2)
+dataset('parties', [
+    'cliente' => ['customers', 'customer'],
+    'fornecedor' => ['suppliers', 'supplier'],
+]);
+
+function party(string $kind, int $tenant, int $company, ?string $doc, string $type = 'company', array $extra = []): int
+{
+    return $kind === 'customer'
+        ? Fx::customer($tenant, $company, $doc, $type, $extra)
+        : Fx::supplier($tenant, $company, $doc, $type, $extra);
+}
+
+it('cliente/fornecedor só pertence a empresa do mesmo tenant (FK composta)', function (string $table, string $kind) {
+    expect(Fx::errno(fn () => party($kind, $this->A, $this->coA, '11222333000181')))->toBeNull()
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coB, '99888777000155')))->toBe(1452)
+        ->and(Fx::errno(fn () => party($kind, $this->B, $this->coA, '99888777000155')))->toBe(1452);
+})->with('parties');
+
+it('documento único entre os ativos da empresa; outra empresa ou cadastro excluído não conflitam', function (string $table, string $kind) {
+    $coA2 = Fx::company($this->A, '55666777000199');
+    $id = party($kind, $this->A, $this->coA, '11222333000181');
+
+    expect(Fx::errno(fn () => party($kind, $this->A, $this->coA, '11222333000181')))->toBe(1062)
+        ->and(Fx::errno(fn () => party($kind, $this->A, $coA2, '11222333000181')))->toBeNull();
+
+    DB::table($table)->where('id', $id)->update(['deleted_at' => now()]);
+    expect(Fx::errno(fn () => party($kind, $this->A, $this->coA, '11222333000181')))->toBeNull();
+})->with('parties');
+
+it('tipo exige documento compatível: pessoa = CPF (11), empresa = CNPJ (14) (CHECK)', function (string $table, string $kind) {
+    expect(Fx::errno(fn () => party($kind, $this->A, $this->coA, '52998224725', 'person')))->toBeNull()
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coA, '11222333000181', 'person')))->toBe(3819)
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coA, '52998224725', 'company')))->toBe(3819)
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coA, '5299822472X', 'person')))->toBe(3819)
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coA, '99888777000155', 'other')))->toBe(3819)
+        ->and(Fx::errno(fn () => party($kind, $this->A, $this->coA, '99888777000155', 'company', ['status' => 'x'])))->toBe(3819);
+})->with('parties');
+
+it('documento é opcional no cliente e obrigatório no fornecedor', function () {
+    expect(Fx::errno(fn () => Fx::customer($this->A, $this->coA, null)))->toBeNull()
+        ->and(Fx::errno(fn () => Fx::customer($this->A, $this->coA, null)))->toBeNull() // dois NULL não conflitam
+        ->and(Fx::errno(fn () => DB::table('suppliers')->insert([
+            'tenant_id' => $this->A, 'uuid' => (string) Str::uuid(), 'company_id' => $this->coA, 'type' => 'company',
+            'document_number' => null, 'legal_name' => 'DEMO',
+        ])))->toBe(1048);
+});
+
+it('cliente/fornecedor com endereço ou contato não pode ser apagado fisicamente, nem a empresa (RESTRICT)', function () {
+    $c = Fx::customer($this->A, $this->coA);
+    Fx::address('customer_addresses', 'customer_id', $this->A, $c);
+    $s = Fx::supplier($this->A, $this->coA);
+    Fx::contact('supplier_contacts', 'supplier_id', $this->A, $s);
+
+    expect(Fx::errno(fn () => DB::table('customers')->where('id', $c)->delete()))->toBe(1451)
+        ->and(Fx::errno(fn () => DB::table('suppliers')->where('id', $s)->delete()))->toBe(1451)
+        ->and(Fx::errno(fn () => DB::table('companies')->where('id', $this->coA)->delete()))->toBe(1451);
+});
+
 // ---------------------------------------------------------------- exclusão física
 it('exclusão física de empresa/filial com dependentes é recusada (RESTRICT)', function () {
     $branch = Fx::branch($this->A, $this->coA);
@@ -115,9 +182,10 @@ it('exclusão física de empresa/filial com dependentes é recusada (RESTRICT)',
         ->and(Fx::errno(fn () => DB::table('tenants')->where('id', $this->A)->delete()))->toBe(1451);
 });
 
-it('tenant_id das tabelas da etapa 1 é NOT NULL e toda FK de dono é composta com tenant_id', function () {
+it('tenant_id das tabelas da Fase 2 é NOT NULL e toda FK de dono é composta com tenant_id', function () {
     $tables = ['units_of_measure', 'companies', 'company_branches', 'company_addresses', 'company_contacts',
-        'company_branch_addresses', 'company_branch_contacts'];
+        'company_branch_addresses', 'company_branch_contacts', 'customers', 'suppliers', 'customer_addresses',
+        'customer_contacts', 'supplier_addresses', 'supplier_contacts'];
 
     foreach ($tables as $t) {
         $nullable = DB::selectOne(
@@ -136,7 +204,7 @@ it('tenant_id das tabelas da etapa 1 é NOT NULL e toda FK de dono é composta c
          GROUP BY constraint_name, table_name",
     );
 
-    expect($fks)->toHaveCount(5);
+    expect($fks)->toHaveCount(11);
     foreach ($fks as $fk) {
         expect(str_starts_with($fk->cols, 'tenant_id,'))->toBeTrue("{$fk->t}.{$fk->c} não é composta: {$fk->cols}");
     }
