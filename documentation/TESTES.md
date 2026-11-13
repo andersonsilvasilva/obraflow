@@ -33,7 +33,10 @@ npm test && npm run lint && npm run build
 | Auditoria (catálogo, atomicidade, escopo, imutabilidade) | `Feature/Audit` | 11 |
 | Sanitizador de auditoria | `Unit/Audit` | 5 |
 | API: erros padronizados e health | `Feature/Core` | 9 |
-| **Backend** | | **198 (1.101 asserções)** |
+| **Fase 2 — integridade** (FK compostas, CHECK, unicidade com soft delete, documentos) | `Feature/Database/RegistryIntegrityTest`, `DocumentIntegrityTest` | 36 |
+| **Fase 2 — modelos e documentos** (escopo fail-closed, normalização, disco privado, URL assinada, append-only) | `Feature/Registry/RegistryModelsTest`, `DocumentStorageTest` | 24 |
+| **Fase 2 — API** (CRUD, isolamento 404, permissões, tokens, validação CPF/CNPJ, acesso por documento, cobertura dos eventos) | `Feature/Registry/RegistryApiTest`, `DocumentApiTest` | 25 |
+| **Backend** | | **283 (1.631 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

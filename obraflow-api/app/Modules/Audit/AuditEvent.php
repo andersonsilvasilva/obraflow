@@ -79,9 +79,37 @@ final class AuditEvent
 
     public const TOKEN_EXPIRED_USE_DENIED = 'token.expired_use_denied';
 
+    // Fase 2 — cadastros (entity_type = alias do morph map: company, customer, company_address…)
+    public const REGISTRY_CREATED = 'registry.created';
+
+    public const REGISTRY_UPDATED = 'registry.updated';
+
+    public const REGISTRY_DELETED = 'registry.deleted';
+
+    // Fase 2 — documentos
+    public const DOCUMENT_CREATED = 'document.created';
+
+    public const DOCUMENT_UPDATED = 'document.updated';
+
+    public const DOCUMENT_VERSION_ADDED = 'document.version_added';
+
+    public const DOCUMENT_LINKED = 'document.linked';
+
+    public const DOCUMENT_UNLINKED = 'document.unlinked';
+
+    public const DOCUMENT_PERMISSIONS_CHANGED = 'document.permissions_changed';
+
+    public const DOCUMENT_URL_ISSUED = 'document.url_issued';
+
     /** @return list<string> */
     public static function all(): array
     {
         return array_values((new \ReflectionClass(self::class))->getConstants());
+    }
+
+    /** Eventos da Fase 2 (cobertura verificada pelos testes do módulo de cadastros). @return list<string> */
+    public static function phase2(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'registry.') || str_starts_with($e, 'document.')));
     }
 }

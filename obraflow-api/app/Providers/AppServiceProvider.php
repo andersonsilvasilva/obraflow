@@ -4,13 +4,22 @@ namespace App\Providers;
 
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\CompanyAddress;
 use App\Models\CompanyBranch;
+use App\Models\CompanyBranchAddress;
+use App\Models\CompanyBranchContact;
+use App\Models\CompanyContact;
 use App\Models\Customer;
+use App\Models\CustomerAddress;
+use App\Models\CustomerContact;
 use App\Models\Document;
+use App\Models\DocumentCategory;
 use App\Models\DocumentVersion;
 use App\Models\PersonalAccessToken;
 use App\Models\Role;
 use App\Models\Supplier;
+use App\Models\SupplierAddress;
+use App\Models\SupplierContact;
 use App\Models\Tenant;
 use App\Models\TenantDomain;
 use App\Models\TenantSetting;
@@ -80,6 +89,15 @@ class AppServiceProvider extends ServiceProvider
             'unit_of_measure' => UnitOfMeasure::class,
             'document' => Document::class,
             'document_version' => DocumentVersion::class,
+            'document_category' => DocumentCategory::class,
+            'company_address' => CompanyAddress::class,
+            'company_contact' => CompanyContact::class,
+            'company_branch_address' => CompanyBranchAddress::class,
+            'company_branch_contact' => CompanyBranchContact::class,
+            'customer_address' => CustomerAddress::class,
+            'customer_contact' => CustomerContact::class,
+            'supplier_address' => SupplierAddress::class,
+            'supplier_contact' => SupplierContact::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

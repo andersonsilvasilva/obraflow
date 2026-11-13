@@ -25,6 +25,17 @@ final class PermissionCatalog
         'settings.manage' => 'settings',
         'tokens.manage' => 'tokens',
         'audit.view' => 'audit',
+        // Fase 2 — cadastros
+        'units.view' => 'units',
+        'units.manage' => 'units',
+        'companies.view' => 'companies',
+        'companies.manage' => 'companies',
+        'customers.view' => 'customers',
+        'customers.manage' => 'customers',
+        'suppliers.view' => 'suppliers',
+        'suppliers.manage' => 'suppliers',
+        'documents.view' => 'documents',
+        'documents.manage' => 'documents',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -41,12 +52,16 @@ final class PermissionCatalog
         return array_values(array_diff(array_keys(self::PERMISSIONS), self::RESTRICTED_FOR_TOKENS));
     }
 
-    /** Papéis de sistema criados em cada tenant no provisionamento (não podem ser excluídos nem editados). */
+    /**
+     * Papéis de sistema criados em cada tenant no provisionamento (não podem ser excluídos nem editados).
+     * Mudanças aqui valem para tenants NOVOS; papéis de tenants existentes só mudam com autorização expressa.
+     */
     public static function systemRoles(): array
     {
         return [
             self::ADMIN_ROLE => array_keys(self::PERMISSIONS),
-            'member' => ['tenant.view', 'members.view', 'roles.view', 'settings.view'],
+            'member' => ['tenant.view', 'members.view', 'roles.view', 'settings.view',
+                'units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view'],
             'viewer' => ['tenant.view'],
         ];
     }

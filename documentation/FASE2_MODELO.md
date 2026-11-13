@@ -66,8 +66,8 @@ CNPJ duplicado entre tenants é **permitido** (cada tenant tem seu cadastro); va
 |---|---|---|
 | 1 — Unidades, empresas, filiais (+ endereços/contatos) | ✅ commit `3201b5a` | 212 |
 | 2 — Clientes, fornecedores (+ endereços/contatos) | ✅ commit `0e9542a` | 226 |
-| 3 — Documentos + modelos Eloquent de toda a Fase 2 | ✅ local | 258 (1.363 asserções) |
-| 4 — Permissões, Policies, API, auditoria | ⏳ | |
+| 3 — Documentos + modelos Eloquent de toda a Fase 2 | ✅ commit `136d782` (CI verde 8.0/8.4) | 258 |
+| 4 — Permissões, acesso por documento, API, auditoria | ✅ local | 283 (1.631 asserções) |
 | 5 — Isolamento cruzado, CI, documentação | ⏳ | |
 
 CHECK de cliente/fornecedor: `type = person` exige CPF de 11 dígitos; `company`, CNPJ de 14; documento opcional só no cliente. Dígitos verificadores são validados na aplicação (etapa 4).
@@ -79,3 +79,15 @@ CHECK de cliente/fornecedor: `type = person` exige CPF de 11 dígitos; `company`
 - **Disco `documents`**: raiz `storage/app/documents` (fora da raiz do disco `local`, também servido; fora do Git). Arquivos servidos em `/files/documents/...` **somente com assinatura válida** (`ServeFile` do Laravel, visibilidade privada), validade padrão 5 min, cabeçalhos `no-store` e CSP `sandbox`. Em produção, `DOCUMENTS_DISK` aponta para S3.
 - **`document_versions` append-only** pela aplicação (modelo e builder). O `ImmutableBuilder` da Fase 1 passou a citar a tabela correta na mensagem (antes, fixo em `audit_logs`).
 - **Limitação:** a URL assinada não revalida o vínculo do usuário no momento do download; a proteção é a validade curta. A emissão da URL (etapa 4) exigirá permissão e tenant ativo. Auditoria de documentos entra na etapa 4.
+
+### Etapa 4 — API, permissões e auditoria
+
+**Permissões novas** (catálogo global, `modulo.acao`): `units.*`, `companies.*` (inclui filiais), `customers.*`, `suppliers.*`, `documents.*` — cada uma com `view` e `manage`. Papel de sistema `admin` recebe todas; `member` recebe as cinco `*.view`; `viewer` não muda. **Vale para tenants novos:** os papéis do tenant HighTech só recebem as novas permissões com autorização expressa (e depois do `migrate` no banco `obraflow`). Tokens podem receber essas abilities (não são de gestão de acesso, D-29).
+
+**Rotas** (`routes/api/v1/registry.php`, todas em `tenant.required`): `units`; `companies` (+ `/{uuid}/branches`); `branches/{id}`; `customers`; `suppliers`; `{companies|branches|customers|suppliers}/{owner}/{addresses|contacts}`; `document-categories`; `documents` (+ `/versions`, `/versions/{n}/url`, `/links`, `/permissions`). Entidades expostas por uuid; filiais, endereços, contatos, unidades e categorias por id, sempre no escopo do tenant. Registro de outro tenant → 404.
+
+**Regras:** CPF/CNPJ com dígitos verificadores (`TaxDocument`); unicidade validada (422) com o índice do banco como última defesa (409); empresa com filial/cliente/fornecedor ativo não é excluída (409); segundo endereço principal → 409; marcar contato principal rebaixa o anterior na mesma transação (o rebaixamento não gera evento próprio — fica implícito no evento do novo principal); trocar o tipo de cliente/fornecedor exige reenviar documento compatível; empresa do cliente/fornecedor não muda.
+
+**Documentos — acesso** (`DocumentAccess`): `documents.manage` faz tudo; `private` → quem tem `documents.view` vê e baixa; `restricted` → exige permissão no documento (usuário ou papel do tenant) com ability ≥ a pedida (view < download < edit < manage). Documento invisível → 404; visível sem a ability → 403. Mudar visibilidade exige `manage`. Sujeito de permissão de outro tenant/sem vínculo ativo → 422.
+
+**Auditoria:** `registry.created|updated|deleted` (entity_type = alias do morph map; sem campos técnicos; `updated` grava só o que mudou) e `document.created|updated|version_added|linked|unlinked|permissions_changed|url_issued`, todos na mesma transação da mudança. A emissão de URL é **falha fechada** (sem auditoria, sem URL). Cobertura do catálogo da Fase 2 testada à parte (`AuditEvent::phase2()`).

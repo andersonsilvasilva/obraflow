@@ -43,9 +43,9 @@ function inTenant($tenant, callable $fn): mixed
 
 it('grava a versão no disco privado com sha256, chave sem o nome original e versão corrente', function () {
     [$doc, $v] = inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'Contrato DEMO'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'Contrato DEMO'], $this->uA);
 
-        return [$doc, $this->svc->storeVersion($doc, pdf(), $this->uA->id)];
+        return [$doc, $this->svc->storeVersion($doc, pdf(), $this->uA)];
     });
 
     expect($v->version_number)->toBe(1)
@@ -60,10 +60,10 @@ it('grava a versão no disco privado com sha256, chave sem o nome original e ver
 
 it('versões são numeradas em sequência e a corrente acompanha a última', function () {
     $v2 = inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'Planta'], $this->uA->id);
-        $this->svc->storeVersion($doc, pdf(body: 'v1'), $this->uA->id);
+        $doc = $this->svc->create(['title' => 'Planta'], $this->uA);
+        $this->svc->storeVersion($doc, pdf(body: 'v1'), $this->uA);
 
-        return $this->svc->storeVersion($doc, pdf(body: 'v2'), $this->uA->id);
+        return $this->svc->storeVersion($doc, pdf(body: 'v2'), $this->uA);
     });
 
     expect($v2->version_number)->toBe(2)
@@ -72,13 +72,13 @@ it('versões são numeradas em sequência e a corrente acompanha a última', fun
 
 it('recusa tipo pelo conteúdo (extensão .pdf com conteúdo de texto/script) e arquivo acima do limite', function () {
     inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'X'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X'], $this->uA);
 
-        expect(fn () => $this->svc->storeVersion($doc, UploadedFile::fake()->createWithContent('falso.pdf', '<?php echo 1;'), $this->uA->id))
+        expect(fn () => $this->svc->storeVersion($doc, UploadedFile::fake()->createWithContent('falso.pdf', '<?php echo 1;'), $this->uA))
             ->toThrow(ApiException::class, 'Tipo de arquivo não permitido.');
 
         config(['obraflow.documents.max_kb' => 1]);
-        expect(fn () => $this->svc->storeVersion($doc, pdf(body: str_repeat('a', 2048)), $this->uA->id))
+        expect(fn () => $this->svc->storeVersion($doc, pdf(body: str_repeat('a', 2048)), $this->uA))
             ->toThrow(ApiException::class, 'Arquivo vazio ou acima do limite permitido.');
     });
 
@@ -88,35 +88,35 @@ it('recusa tipo pelo conteúdo (extensão .pdf com conteúdo de texto/script) e 
 
 it('documento arquivado não recebe nova versão', function () {
     inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'X', 'status' => 'archived'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X', 'status' => 'archived'], $this->uA);
 
-        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uA->id))->toThrow(ApiException::class);
+        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uA))->toThrow(ApiException::class);
     });
 });
 
 it('documento de outro tenant: versão e URL respondem 404 (não revela existência)', function () {
     [$doc, $v] = inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'Sigiloso'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'Sigiloso'], $this->uA);
 
-        return [$doc, $this->svc->storeVersion($doc, pdf(), $this->uA->id)];
+        return [$doc, $this->svc->storeVersion($doc, pdf(), $this->uA)];
     });
 
     inTenant($this->B, function () use ($doc, $v) {
-        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uB->id))->toThrow(ApiException::class, 'Recurso não encontrado.')
-            ->and(fn () => $this->svc->temporaryUrl($v))->toThrow(ApiException::class, 'Recurso não encontrado.');
+        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uB))->toThrow(ApiException::class, 'Recurso não encontrado.')
+            ->and(fn () => $this->svc->temporaryUrl($v, $this->uB))->toThrow(ApiException::class, 'Recurso não encontrado.');
     });
 });
 
 it('falha no banco remove o arquivo já gravado (sem órfão) e não deixa versão', function () {
     inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'X'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X'], $this->uA);
         DB::beforeExecuting(function (string $sql) {
             if (str_starts_with($sql, 'insert into `document_versions`')) {
                 throw new RuntimeException('falha simulada');
             }
         });
 
-        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uA->id))->toThrow(RuntimeException::class, 'falha simulada');
+        expect(fn () => $this->svc->storeVersion($doc, pdf(), $this->uA))->toThrow(RuntimeException::class, 'falha simulada');
     });
 
     expect(Storage::disk('documents')->allFiles())->toBeEmpty()
@@ -125,9 +125,9 @@ it('falha no banco remove o arquivo já gravado (sem órfão) e não deixa vers�
 
 it('URL temporária é assinada, expira e o arquivo não tem URL pública', function () {
     $v = inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'X'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X'], $this->uA);
 
-        return $this->svc->temporaryUrl($this->svc->storeVersion($doc, pdf(), $this->uA->id));
+        return $this->svc->temporaryUrl($this->svc->storeVersion($doc, pdf(), $this->uA), $this->uA);
     });
 
     expect($v)->toContain('signature=')->toContain('expires=');
@@ -141,25 +141,25 @@ it('vincula a cadastro do próprio tenant; recusa dono de outro tenant, excluíd
     $coB = inTenant($this->B, fn () => Company::create(['legal_name' => 'DEMO B', 'document_number' => '99.888.777/0001-55']));
 
     inTenant($this->A, function () use ($coB) {
-        $doc = $this->svc->create(['title' => 'X'], $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X'], $this->uA);
         $co = Company::create(['legal_name' => 'DEMO A', 'document_number' => '11.222.333/0001-81']);
         $cu = Customer::create(['company_id' => $co->id, 'type' => 'person', 'name' => 'Cliente DEMO']);
 
-        $link = $this->svc->link($doc, $cu);
+        $link = $this->svc->link($doc, $cu, $this->uA);
         expect($link->linkable_type)->toBe('customer')
-            ->and($this->svc->link($doc, $cu)->id)->toBe($link->id) // idempotente
-            ->and(fn () => $this->svc->link($doc, $coB))->toThrow(ApiException::class, 'Recurso não encontrado.')
-            ->and(fn () => $this->svc->link($doc, $this->uA))->toThrow(ApiException::class, 'Destino de vínculo inválido.');
+            ->and($this->svc->link($doc, $cu, $this->uA)->id)->toBe($link->id) // idempotente
+            ->and(fn () => $this->svc->link($doc, $coB, $this->uA))->toThrow(ApiException::class, 'Recurso não encontrado.')
+            ->and(fn () => $this->svc->link($doc, $this->uA, $this->uA))->toThrow(ApiException::class, 'Destino de vínculo inválido.');
 
         $cu->delete(); // soft delete
-        expect(fn () => $this->svc->link($doc, $cu))->toThrow(ApiException::class, 'Recurso não encontrado.');
+        expect(fn () => $this->svc->link($doc, $cu, $this->uA))->toThrow(ApiException::class, 'Recurso não encontrado.');
     });
 });
 
 it('versão é append-only pela aplicação', function () {
     inTenant($this->A, function () {
-        $doc = $this->svc->create(['title' => 'X'], $this->uA->id);
-        $v = $this->svc->storeVersion($doc, pdf(), $this->uA->id);
+        $doc = $this->svc->create(['title' => 'X'], $this->uA);
+        $v = $this->svc->storeVersion($doc, pdf(), $this->uA);
 
         expect(fn () => $v->update(['original_name' => 'outro.pdf']))->toThrow(MassAssignmentException::class)
             ->and(fn () => $v->forceFill(['original_name' => 'outro.pdf'])->save())->toThrow(LogicException::class, 'append-only')

@@ -88,3 +88,19 @@ Fornecido pelo Sanctum para o fluxo SPA.
 | `GET /audit-logs` | `audit.view` | Trilha do tenant ativo (somente leitura; filtros `event`, `entity_type`, `user_id`) |
 
 **Fases seguintes:** empresas, clientes, fornecedores, obras, orçamentos (versões, itens, composições, aprovação), contratos, medições, financeiro, compras, estoque, documentos. Cada módulo documenta seus recursos aqui ao ser implementado.
+
+## Fase 2 — Cadastros (implementado)
+
+Todas as rotas exigem sessão/token **com tenant ativo** (`tenant.required`) e a permissão indicada. Detalhes e regras: [FASE2_MODELO.md](FASE2_MODELO.md) §Etapa 4.
+
+| Recurso | Rotas | Permissão |
+|---|---|---|
+| Unidades | `GET/POST /units`, `PUT /units/{id}` | `units.view` / `units.manage` |
+| Empresas | `GET/POST /companies`, `GET/PUT/DELETE /companies/{uuid}` | `companies.view` / `companies.manage` |
+| Filiais | `GET/POST /companies/{uuid}/branches`, `GET/PUT/DELETE /branches/{id}` | `companies.*` |
+| Clientes / Fornecedores | `GET/POST /customers`, `GET/PUT/DELETE /customers/{uuid}` (idem `/suppliers`) | `customers.*` / `suppliers.*` |
+| Endereços / Contatos | `GET/POST /{companies\|branches\|customers\|suppliers}/{owner}/{addresses\|contacts}`, `PUT/DELETE …/{id}` | do módulo do dono |
+| Categorias de documento | `GET/POST /document-categories`, `PUT /document-categories/{id}` | `documents.view` / `documents.manage` |
+| Documentos | `GET/POST /documents`, `GET/PUT /documents/{uuid}`, `POST /documents/{uuid}/versions`, `POST /documents/{uuid}/versions/{n}/url`, `POST/DELETE /documents/{uuid}/links[/{id}]`, `PUT /documents/{uuid}/permissions` | `documents.view` + acesso por documento |
+
+Listagens: `?q=` (busca; números também no documento), `?status=`, `?per_page=` (máx. 100); resposta `{data, meta}`. Documentos: upload multipart (`file`, tipo verificado pelo conteúdo: PDF, PNG, JPEG, WebP, DOCX, XLSX; limite `DOCUMENTS_MAX_KB`). O download é por **URL assinada** (5 min) em `/files/documents/…`; a chave de armazenamento nunca é exposta.

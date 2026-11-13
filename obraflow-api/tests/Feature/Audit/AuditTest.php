@@ -117,7 +117,8 @@ it('TODO evento do catálogo é de fato emitido por alguma operação real', fun
     Artisan::call('obraflow:tenant:status', ['slug' => 'obra-total', 'status' => 'active']);     // tenant.reactivated
 
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
-    $faltando = array_values(array_diff(AuditEvent::all(), $emitidos));
+    // Os eventos da Fase 2 têm cobertura própria (tests/Feature/Registry, "todo evento da Fase 2 é emitido").
+    $faltando = array_values(array_diff(AuditEvent::all(), AuditEvent::phase2(), $emitidos));
 
     expect($faltando)->toBe([], 'eventos do catálogo que NENHUMA operação emite: '.implode(', ', $faltando));
 });
