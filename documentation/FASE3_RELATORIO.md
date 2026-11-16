@@ -62,3 +62,17 @@
 | R7 | Custos (cargo, salário, encargos, equipamento) | Fase 4 |
 
 **Fase 4: não iniciada** — aguarda aprovação expressa.
+
+## 6. Homologação (2026-11-16)
+
+**Fase 3 homologada pelo responsável** após o teste no navegador, que usou as telas de equipes e obras ligadas ao banco `obraflow`.
+
+| Item | Situação na homologação |
+|---|---|
+| Banco `obraflow` | 47 migrations. A HighTech tem `admin` com 27 permissões e `member` com 11 (todas de consulta); concessões auditadas |
+| Último commit | `d4fb5b5`, telas: CI run 43972095774 verde (API MySQL 8.0 e 8.4, Web) |
+| Testes | Backend 364/364 · Frontend 28/28 |
+
+**Pendências que seguem abertas:** LGPD/retenção (R1), `user_companies` sem bloqueio (R3), importação de planilhas (R6) e custos (Fase 4, R7). A etapa das telas ([TELAS_PLANO.md](TELAS_PLANO.md)) tem homologação própria.
+
+**Fase 4 (Orçamentos): não iniciada.** Aguarda autorização expressa.
