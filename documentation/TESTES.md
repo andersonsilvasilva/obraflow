@@ -40,7 +40,8 @@ npm test && npm run lint && npm run build
 | **Fase 3 — integridade e modelos de equipes e obras** (FKs compostas, CHECK, unicidade com soft delete, autoria membro do tenant, mesma empresa/obra, append-only, níveis de grupos/fases) | `Feature/Database/TeamsProjectsIntegrityTest`, `Feature/Teams/TeamsProjectsModelsTest` | 43 |
 | **Fase 3 — acesso por obra** (D-P24: manage vê tudo; sem view nada; nível limita; sem vazamento entre tenants; catálogo do member) | `Feature/Teams/ProjectAccessTest` | 5 |
 | **Fase 3 — API de equipes, equipamentos e obras** (permissões por rota e por obra, 404 entre tenants, D-P21, status com histórico, acesso auditado, documentos, tokens, cobertura `phase3()`) | `Feature/Teams/TeamsApiTest`, `Feature/Teams/ProjectsApiTest` | 22 |
-| **Backend** | | **361 (2.269 asserções)** |
+| **Fase 3 — revisão estrutural de rotas** (toda rota com tenant e `can:` do catálogo; escrita com `*.manage`) | `Feature/Teams/RouteAuthorizationTest` | 3 |
+| **Backend** | | **364 (2.275 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

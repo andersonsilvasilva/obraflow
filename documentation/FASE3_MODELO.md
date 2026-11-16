@@ -109,4 +109,8 @@ Commit `1dc6aa3` — CI run 43957352378 verde (API MySQL 8.0, API MySQL 8.4, Web
 - **Exclusões:** funcionário responsável técnico ou em equipe aberta → 409 `employee_in_use`; cargo/setor/grupo/fase em uso → 409 `in_use`; obras, funcionários e equipamentos com soft delete.
 - **Testes:** `Feature/Teams/TeamsApiTest` (10) e `ProjectsApiTest` (12). Suíte **361/361 (2.269 asserções)**.
 
-**Próxima:** etapa 6 (revisão estrutural do isolamento, CI, relatório da Fase 3).
+Commit `e74f823` — CI run 43960398526 verde.
+
+### Etapa 6 — revisão e encerramento
+
+Ver [FASE3_RELATORIO.md](FASE3_RELATORIO.md): `RouteAuthorizationTest` (46 rotas com tenant e `can:`), isolamento 213/213, suíte 364/364; no banco `obraflow` (autorizado): 6 permissões instaladas e `member` da HighTech com `equipment.view`/`projects.view`. Pendentes de autorização: `migrate` da Fase 3 e alinhamento do `admin` da HighTech.
