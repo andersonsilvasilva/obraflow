@@ -128,6 +128,61 @@ final class Fx
         ]);
     }
 
+    // ------------------------------------------------------------------ Fase 3 (equipes e obras)
+
+    public static function jobTitle(int $tenant, string $name = 'DEMO Cargo'): int
+    {
+        return (int) DB::table('job_titles')->insertGetId(['tenant_id' => $tenant, 'name' => $name]);
+    }
+
+    public static function department(int $tenant, string $name = 'DEMO Setor'): int
+    {
+        return (int) DB::table('departments')->insertGetId(['tenant_id' => $tenant, 'name' => $name]);
+    }
+
+    public static function group(int $tenant, string $kind = 'equipment', ?int $parent = null, string $name = 'DEMO Grupo'): int
+    {
+        return (int) DB::table('resource_groups')->insertGetId([
+            'tenant_id' => $tenant, 'kind' => $kind, 'parent_id' => $parent, 'name' => $name,
+        ]);
+    }
+
+    public static function employee(int $tenant, int $company, array $extra = []): int
+    {
+        return (int) DB::table('employees')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'company_id' => $company, 'name' => 'DEMO Funcionário', ...$extra,
+        ]);
+    }
+
+    public static function equipment(int $tenant, int $company, array $extra = []): int
+    {
+        return (int) DB::table('equipment')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'company_id' => $company, 'name' => 'DEMO Equipamento', ...$extra,
+        ]);
+    }
+
+    public static function project(int $tenant, int $company, int $creator, string $code = 'DEMO-OBRA-1', array $extra = []): int
+    {
+        return (int) DB::table('projects')->insertGetId([
+            'tenant_id' => $tenant, 'uuid' => (string) Str::uuid(), 'company_id' => $company, 'code' => $code,
+            'name' => 'DEMO Obra', 'created_by' => $creator, ...$extra,
+        ]);
+    }
+
+    public static function phase(int $tenant, int $project, ?int $parent = null, array $extra = []): int
+    {
+        return (int) DB::table('project_phases')->insertGetId([
+            'tenant_id' => $tenant, 'project_id' => $project, 'parent_id' => $parent, 'name' => 'DEMO Fase', ...$extra,
+        ]);
+    }
+
+    public static function projectMember(int $tenant, int $project, int $employee, array $extra = []): int
+    {
+        return (int) DB::table('project_members')->insertGetId([
+            'tenant_id' => $tenant, 'project_id' => $project, 'employee_id' => $employee, 'started_on' => '2026-01-01', ...$extra,
+        ]);
+    }
+
     /** Executa e devolve o código de erro do MySQL, ou null se NÃO houve erro (operação aceita). */
     public static function errno(callable $fn): ?int
     {

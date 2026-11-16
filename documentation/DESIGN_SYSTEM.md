@@ -65,6 +65,10 @@ Escala Tailwind (4 px). Painéis `p-4`; barras de filtro `p-3`; raio `0.5rem`; s
 ### Pendentes do PROMPT 002 §5
 `DatePicker` (usa `<input type="date">` nativo), `DropdownMenu` e `Pagination` como componente isolado (paginação existe em `TablePagination`), `TableFilters`/`TableActions` dedicados (filtros via `TableToolbar`+`FormField`), `BudgetSummary`/`BudgetGroup`/`BudgetActivity`/`ResourceTable`/`ABCCurve`/`BudgetCharts` como componentes isolados (hoje compostos dentro das páginas). Foram adiados para não criar abstrações sem uso repetido.
 
+### Padrão de layout das telas
+
+O **padrão de layout e apresentação** (moldura, sidebar, listagens, formulários, modais e configurações) definido pelo responsável em 2026-11-16 está em [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md) §"Padrão de layout e apresentação" e é normativo. Cores e tokens continuam os deste documento.
+
 ## 6. Estados
 
 Toda tela de dados trata **carregando** (`LoadingState`), **vazio** (`EmptyState`), **erro** (`ErrorState` com retry) e **sucesso** (toast). Módulos não desenvolvidos mostram `ModuleInPreparation`, sem simular funcionalidade. Dados fictícios são sinalizados por `DemoBanner`.

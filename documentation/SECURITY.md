@@ -41,7 +41,7 @@
 
 - Disco privado; acesso só por **URL assinada de até 5 min**, emitida após verificar usuário, tenant e permissão no documento; emissão auditada (falha fechada). Uma URL emitida vale até expirar, mesmo se a permissão mudar nesse intervalo.
 - Tipo verificado pelo conteúdo, lista fechada e limite de tamanho; resposta com CSP `sandbox` e `no-store`.
-- ⚠️ **Sem inspeção antimalware: uploads não são seguros para produção.** Integrar inspeção antes de liberar amplamente ([FASE2_RELATORIO.md](FASE2_RELATORIO.md) §7).
+- **Sem inspeção antimalware — decisão do responsável (2026-11-16): não é necessária.** A proteção fica nos controles acima (tipo pelo conteúdo, lista fechada, tamanho, disco privado, URL curta, CSP `sandbox`) ([FASE2_RELATORIO.md](FASE2_RELATORIO.md) §5, R2).
 
 ## 4. Autorização
 

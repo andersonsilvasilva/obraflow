@@ -50,8 +50,8 @@
 
 | # | Risco | Estado |
 |---|---|---|
-| R1 | URL assinada já emitida continua utilizável até expirar (máx. 5 min), **mesmo se as permissões do usuário mudarem nesse intervalo** | Aceito pelo responsável (§7) |
-| R2 | **Sem inspeção antimalware** nos anexos | Aceito só para desenvolvimento; **uploads não são seguros para produção** (§7) |
+| R1 | URL assinada já emitida continua utilizável até expirar (máx. 5 min), **mesmo se as permissões do usuário mudarem nesse intervalo** | **Aceito pelo responsável** (§7; reconfirmado em 2026-11-16) |
+| R2 | **Sem inspeção antimalware** nos anexos | **Decisão do responsável (2026-11-16): inspeção antimalware não é necessária** e não será implementada. Mantidos os controles do §7 (tipo pelo conteúdo, lista fechada, tamanho, disco privado, URL curta, CSP `sandbox`) |
 | R3 | S3 não configurado (disco local privado) | Configurar `DOCUMENTS_DISK` quando houver bucket |
 | R4 | `document_links` é polimórfica: o dono é garantido pela aplicação, não por FK | Aceito (D-P12); coberto por testes |
 | R5 | Rebaixamento automático do contato principal não gera evento próprio | Aceito; documentado |
@@ -63,8 +63,7 @@
 
 - Telas (login, cadastros) — etapa própria (D-P18).
 - ~~Analisar `Cadastro de Produtos.png`~~ — feito ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md)); tela **não** implementada.
-- Integração com inspeção antimalware antes de liberar uploads amplamente (R2).
-- Novas referências adicionadas depois (`cadastro_recursos_cargo_funcao.png`, pasta `planilha para importar recursos/`): **não analisadas nem versionadas** (fora do pedido).
+- ~~Novas referências de tela~~ — analisadas; padrão de layout registrado em [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md). Planilhas de importação (`planilha para importar recursos/`) não analisadas.
 - Fase 3 (Equipes e Obras): somente após aprovação expressa da homologação da Fase 2.
 
 ## 7. Homologação e encerramento (2026-11-16)
@@ -80,9 +79,11 @@
 
 **Condições sobre anexos (decisão do responsável):**
 - **URLs assinadas:** validade máxima de **5 minutos** (`DOCUMENTS_SIGNED_URL_MINUTES`); autorização do usuário **e** do tenant verificadas **na emissão** (rota em `tenant.required` + `DocumentAccess` + permissão); nenhuma URL permanente (a chave de armazenamento nunca é exposta; sem assinatura o servidor recusa). Uma URL já emitida pode ser usada até expirar, mesmo após mudança de permissões.
-- **Antivírus:** **não há inspeção antimalware.** Uploads **não** são considerados seguros para produção. Controles atuais: tipo verificado pelo conteúdo (lista fechada: PDF, PNG, JPEG, WebP, DOCX, XLSX), limite de tamanho, disco privado fora da área pública, acesso somente com permissão e URL assinada curta, resposta com `Content-Security-Policy: sandbox` e `no-store`. **Antes de liberar o fluxo amplamente:** integrar inspeção (ex.: estado de verificação por versão e bloqueio de download enquanto não verificado) — exige proposta e aprovação.
+- **Antivírus:** **não há inspeção antimalware** — e, por decisão posterior do responsável (2026-11-16), ela **não é necessária**. Controles atuais: tipo verificado pelo conteúdo (lista fechada: PDF, PNG, JPEG, WebP, DOCX, XLSX), limite de tamanho, disco privado fora da área pública, acesso somente com permissão e URL assinada curta, resposta com `Content-Security-Policy: sandbox` e `no-store`.
 - **S3:** arquitetura pronta (disco configurável por `DOCUMENTS_DISK`; `temporaryUrl` nativa do S3); **nenhuma migração de infraestrutura** foi feita.
 
 **Telas (D-P18):** mantidas para etapa própria. A API segue compatível com o frontend React: sessão SPA (Sanctum), JSON padronizado (`data`/`meta`, `error.code`/`error.details`), uuid público, paginação e filtros por query string.
 
-**Fase 3 (Equipes e Obras): NÃO autorizada.**
+**Decisões posteriores (2026-11-16):** inspeção antimalware dispensada pelo responsável (R2); risco da URL assinada reconfirmado (R1); padrão de layout definido (A-33).
+
+**Fase 3 (Equipes e Obras): autorizada em 2026-11-16** — começa pela proposta de modelo.

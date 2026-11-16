@@ -1,6 +1,6 @@
 # SCREEN_REFERENCES.md — ANÁLISE DAS TELAS DE REFERÊNCIA
 
-Pasta analisada: `documentation/telas/` — **14 imagens analisadas** (a 14ª, `Cadastro de Produtos.png`, em 2026-11-16 — ver §"Cadastro de Produtos"). Ainda **não analisadas**: as 9 listadas a seguir e `cadastro_recursos_cargo_funcao.png` (adicionada depois, fora do pedido). Situação original: A pasta tem hoje **22**: as 9 adicionadas depois (*Cadastro de Recursos* e *Cadastro de Recursos_balanco*; *Perfil_Automaçao*, *Perfil_Empresa*, *Perfil_Regras_de_Negocio* e suas variantes *integraçoes*/*aprovaçao*/*preferencias*, *Perfil_usuarios*) **ainda NÃO foram analisadas** (relevantes para recursos, perfis/regras de aprovação e usuários/permissões). O `telas_modelos.zip` foi removido pelo usuário.
+Pasta analisada: `documentation/telas/` — **todas as 24 imagens analisadas** (1–13 na fase de protótipo; 14 em 2026-11-16; 15–24 em 2026-11-16). O **padrão de layout e apresentação desejado pelo responsável** está em §"Padrão de layout e apresentação" e é **normativo** para todas as telas do ObraFlow. A pasta `planilha para importar recursos/` (planilhas `employee`, `equipment`, `fornecedores`, `product`) **não** contém telas e não foi analisada aqui.
 
 > **As referências são capturas de um produto de terceiros** (identidade laranja, nome e logo próprios, conta de usuário visível). Foram usadas **somente** para entender organização, hierarquia, funcionalidades e fluxo. **Não** foram copiados identidade, nome, logo, cores, textos de marca nem códigos/atividades de exemplo. Os dados do ObraFlow são fictícios (`DEMO-*`).
 
@@ -22,6 +22,16 @@ Pasta analisada: `documentation/telas/` — **14 imagens analisadas** (a 14ª, `
 | 12 | `Finalização do orçamento_visualizar recursos.png` | Toggle "Visualizar recursos" | KPIs extras por tipo (material, equipamentos, mão de obra, serviços) | Aba **Recursos** (consolidação por insumo) e gráfico por tipo de recurso |
 | 13 | `suprimentos_solicaitação.png` | Lista de solicitações de suprimentos | Filtros (descrição, ID, obra, status, período), colunas ID/descrição/obra/itens/criado por/status, ações por linha, paginação e total | `ProcurementPage`: busca, filtro de situação, tabela (número, obra, solicitante, data, itens, prioridade, situação), formulário de solicitação com itens dinâmicos |
 | 14 | `Cadastro de Produtos.png` | Listagem "Materiais" dentro de Cadastros → Recursos | Busca por nome; filtros por grupo e subgrupo; tabela com seleção, nome (ordenável), unidade de medida, grupo, subgrupo e preço; ações por linha; "Adicionar"; paginação | **Não implementada** (ver §"Cadastro de Produtos"). Relaciona-se a `units_of_measure` (Fase 2) e a um catálogo de recursos/insumos ainda **não modelado** |
+| 15 | `cadastro_recursos_cargo_funcao.png` | Listagem "Cargo/Função" em Cadastros → Recursos | Busca por nome; "+ Adicionar"; tabela Nome (ordenável) e Preço (R$); ações por linha (pasta, editar, excluir); paginação com "10 / Página" | Padrão de **listagem** (§Padrão, L1). Insumo para a **Fase 3** (cargos/funções de equipes) |
+| 16 | `Cadastro de Recursos.png` | Formulário "Nova mão de obra" com **modal de cadastro rápido** de Cargo/Função | Campo obrigatório (asterisco), seleção de cargo; bloco recolhível "Mais informações"; modal com campo + "Adicionar" na mesma linha e lista com editar/excluir | Padrão de **cadastro rápido de entidade auxiliar** sem sair do formulário (§Padrão, F4). Insumo para a Fase 3 |
+| 17 | `Cadastro de Recursos_balanco.png` | Modal "Balanço" (sobre a lista de mão de obra, sobre outro modal) | Salário base (R$), hora adicional (R$), encargos (%), administração (%), carga horária mensal (com ajuda), mão de obra Indireta/Direta (rádio), tipo de contrato (Mensalista/Horista/Empreitada/Diarista), data; lista com "Exportar" e "250 / Página" | Padrão de **formulário com rótulos à esquerda** e **rádio para escolha binária** (§Padrão). Campos são insumo para a Fase 3 (custo de mão de obra, a decidir no modelo). Modal sobre modal **não** adotado (§Padrão, F6) |
+| 18 | `Perfil_Empresa.png` | Configurações → Empresa | Menu secundário vertical; formulário em grupos com título e linha divisória (Endereço, Informações básicas, Contatos); máscaras como exemplo no campo (CEP, CPF/CNPJ, telefone); painel de logo à direita com enviar/remover e orientação; "Atualizar" no fim | Padrão de **página de configurações** (§Padrão, C1–C2). Relaciona-se a `tenants`/`companies` (Fase 1/2) |
+| 19 | `Perfil_usuarios.png` | Configurações → Usuários, com modal "Editar usuário" | Contador "N usuários contratados"; "Adicionar usuário" bloqueado (cadeado); tabela Nome, Cargo/Função, Setores, Status (ordenar/filtrar), editar; modal em 2 colunas com rótulo acima: primeiro/último nome, e-mail (desabilitado), telefone, "Usuário externo" (ajuda), cargo/função, setor, grupos (multisseleção); Cancelar/Atualizar | Padrão de **modal de edição** (§Padrão, F1–F3). Cargo/função e setor do usuário são insumo da Fase 3; "grupos" ≈ papéis (Fase 1) |
+| 20 | `Perfil_Regras_de_Negocio.png` | Regras de negócio → aba "Permissões de edição" | Abas horizontais; **painéis recolhíveis** com título em que a palavra-chave vem em negrito; frase explicativa; seletores de grupo por status; **aviso amarelo** explicando o comportamento quando nada é selecionado | Padrão **abas + painéis recolhíveis + aviso de padrão** (§Padrão, C3–C4). Regras por status pertencem a fases futuras (suprimentos) |
+| 21 | `Perfil_Regras_de_Negocio_aprovaçao.png` | Aba "Aprovações" | Faixas de valor ("De R$0,00 até … não precisa de aprovação", "+" para nova faixa; "Maior que … poderá ser aprovada pelos usuários"); 1ª e 2ª aprovação por grupo; "Salvar" no bloco | Padrão de **regra escrita como frase com campos embutidos** (§Padrão, C5). Alçadas de aprovação: fase futura |
+| 22 | `Perfil_Regras_de_Negocio_preferencias.png` | Aba "Preferências" | Casas decimais de quantidade com "Salvar" ao lado; fornecedores padrão por imposto (INSS, ISS, Unificado PIS/COFINS/CSLL, IRRF, Retenção técnica) em grade de 3 colunas | Padrão de **grade de seletores em 3 colunas** (§Padrão). Preferências fiscais: fase futura |
+| 23 | `Perfil_Regras_de_Negocio_Integraçoes.png` | Configurações → Integrações | Grade de cartões com logo, descrição e "Saiba mais" | Padrão de **cartões em grade** (§Padrão, C6). **Nenhuma integração** será criada sem decisão (AGENTS.md §8) |
+| 24 | `Perfil_Automaçao.png` | Configurações → Automação | Lista de regras de notificação por e-mail: descrição, destinatários por papel (caixas), seleção de usuários, **interruptor** à direita; cadeado em regras indisponíveis | Padrão de **lista de regras com interruptor** (§Padrão, C7). Automação: fase futura |
 
 ## Cadastro de Produtos (`Cadastro de Produtos.png`) — análise de 2026-11-16
 
@@ -62,6 +72,52 @@ Somente o que está **visível** na captura; nada foi implementado (decisão do 
 - Grupo/subgrupo, preço e o próprio catálogo de materiais **não existem** no modelo atual; dependem da fase de recursos/insumos (orçamentos, Fase 4) e de aprovação.
 - "Fornecedores" aparece como subitem de Recursos na referência; no ObraFlow, fornecedores já são cadastro da Fase 2 (vínculo com materiais **não** está modelado).
 - Adaptação segue as decisões gerais deste documento (identidade azul-safira, dados `DEMO-*`, sem valores oficiais).
+
+## Padrão de layout e apresentação (definido pelo responsável, 2026-11-16)
+
+**Normativo.** O responsável definiu que o layout e a apresentação das telas de referência são o padrão desejado para o ObraFlow. Toda tela nova segue as regras abaixo. **Cores, marca e logo continuam sendo os do ObraFlow** ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md): azul-safira no lugar do laranja das capturas; sidebar grafite). O que se adota é a **estrutura, a hierarquia e o comportamento**, não a identidade do produto de terceiros.
+
+### Estrutura geral (G)
+- **G1 — Moldura:** sidebar fixa à esquerda + área de conteúdo com fundo cinza-claro; o conteúdo vive em **um cartão branco** de cantos suaves e borda fina.
+- **G2 — Sidebar:** topo com **seletor da organização (tenant) ativa** e botão de recolher; itens por módulo com ícone + rótulo; grupos expansíveis em até 3 níveis (ex.: Cadastros → Recursos → Materiais); item ativo com fundo tingido e texto na cor de destaque; selos numéricos/alerta no ícone quando houver pendências; rodapé com **cartão do usuário** (iniciais, nome, e-mail abreviado) que abre o menu da conta.
+- **G3 — Sidebar recolhida:** só ícones (com selos), avatar do usuário no rodapé; usada em páginas largas como Configurações.
+- **G4 — Cabeçalho da página:** título grande à esquerda (ex.: "Cargo/Função"), linha separadora fina abaixo; ações da página dentro do cartão, não no cabeçalho.
+- **G5 — Densidade e tipografia:** muito espaço em branco, textos de tabela pequenos, uma única cor de destaque para ação principal e estado ativo; botões secundários com contorno; ícones finos de linha.
+
+### Listagens (L) — padrão dos cadastros
+- **L1 — Barra de ferramentas:** à esquerda **busca "Buscar por nome"** com ícone de lupa, seguida dos **filtros em lista suspensa** ("Selecione um grupo") e de botões só-ícone (importar/exportar); à direita o botão principal **"+ Adicionar"**.
+- **L2 — Ação em massa:** quando houver seleção por linha, botão "Excluir tudo" à esquerda da barra, **desabilitado** sem seleção (exclusão em massa exige confirmação e respeita bloqueio por uso — erro `in_use`).
+- **L3 — Tabela:** cabeçalho cinza-claro em negrito; caixa de seleção opcional na 1ª coluna; colunas ordenáveis com indicador ▲▼; filtro por coluna (funil) quando útil; linhas de altura uniforme separadas por linha fina; valores monetários como `R$ 0,00`; campos vazios em branco.
+- **L4 — Ações por linha:** coluna final com botões só-ícone, nesta ordem: **documentos/anexos** (ícone de pasta — no ObraFlow, abre os documentos vinculados, Fase 2), **editar** (lápis), **excluir** (lixeira, com confirmação). Cada ícone com rótulo acessível e dica.
+- **L5 — Paginação:** abaixo da tabela, à direita: anterior/próxima, números de página com a atual destacada e seletor "**10 / Página**" (opções maiores para listas longas).
+- **L6 — Rolagem:** a tabela rola dentro do cartão quando excede a altura; cabeçalho fixo.
+
+### Formulários (F)
+- **F1 — Modal de edição:** título à esquerda ("Editar usuário"), **X** à direita; campos em **2 colunas** com **rótulo acima**; obrigatórios com **asterisco vermelho** antes do rótulo; rodapé à direita com **Cancelar** (secundário) e ação principal (**Atualizar**/**Salvar**/**Criar**).
+- **F2 — Campos:** texto de exemplo no próprio campo indicando a máscara (CEP `11111-111`, CPF/CNPJ, telefone); campo não editável aparece **desabilitado** (cinza) em vez de oculto; ícone **(?)** ao lado do rótulo com explicação; listas suspensas com "Selecione…"; multisseleção para grupos/usuários.
+- **F3 — Escolhas:** **rádio** para escolha exclusiva curta (ex.: Indireta/Direta), **lista suspensa** para enumerações maiores (tipo de contrato), **caixa de seleção** para opções independentes, **interruptor** para ativar/desativar regra.
+- **F4 — Cadastro rápido:** entidade auxiliar (ex.: Cargo/Função) é criada/editada num **modal sobre o formulário**, com campo + "Adicionar" na mesma linha e a lista existente com editar/excluir — sem perder o que já foi digitado.
+- **F5 — Página de criação:** formulários longos em página própria ("Nova mão de obra"), campos essenciais primeiro e bloco recolhível **"Mais informações"** para os opcionais.
+- **F6 — Profundidade:** no máximo **um modal sobre outro** (cadastro rápido). Modal sobre modal sobre lista (como no `Balanço`) **não** é adotado: o segundo nível vira página ou painel lateral.
+- **F7 — Rótulos à esquerda:** permitidos só em formulários de configuração largos (rótulo alinhado à direita com dois-pontos, campo ocupando o resto); em telas estreitas os rótulos voltam para cima.
+
+### Configurações (C)
+- **C1 — Menu secundário vertical** dentro do conteúdo (Empresa, Usuários, Automação, Regras de negócio, Integrações), item ativo preenchido com a cor de destaque; conteúdo em cartão à direita.
+- **C2 — Grupos de campos** com título e linha divisória (Endereço, Informações básicas, Contatos); painel lateral à direita para mídia (logo: pré-visualização, enviar, remover e orientação de formato); botão de gravar no fim, à direita.
+- **C3 — Abas horizontais** sublinhadas para subdividir uma seção (Permissões de edição / Aprovações / Preferências).
+- **C4 — Painéis recolhíveis** (acordeão) com seta e título em que a palavra-chave vem em **negrito**; dentro, uma frase explicativa em negrito, os campos e um **aviso amarelo** com ícone explicando o comportamento padrão ("Se nenhuma opção for selecionada…").
+- **C5 — Regra como frase:** campos embutidos no texto ("De R$0,00 até [ ] não precisa de aprovação", "+" para nova faixa); botão **Salvar por bloco**.
+- **C6 — Cartões em grade** (3 por linha) com logo/ícone, descrição curta e botão.
+- **C7 — Lista de regras com interruptor** à direita de cada regra; regra indisponível exibe **cadeado** e fica desabilitada.
+- **C8 — Contadores de contexto** acima da tabela ("1 usuário contratado"); ação indisponível aparece desabilitada com cadeado, não some.
+
+### Ajustes obrigatórios do ObraFlow sobre o padrão
+1. **Identidade:** azul-safira/grafite, logo e nome do ObraFlow; nada de laranja, nome ou logo do produto de referência.
+2. **Acessibilidade:** botões só-ícone com `aria-label` e dica; modais com foco preso e Esc; tabela com `caption`/`scope`; aviso amarelo com texto (não só cor); contraste AA.
+3. **Responsividade:** em telas estreitas, sidebar vira gaveta, barra de ferramentas quebra em linhas, tabela permite rolagem horizontal e modais de 2 colunas viram 1.
+4. **Estados:** toda listagem tem carregando, vazio (com chamada para "Adicionar") e erro ([DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) §6).
+5. **Escopo:** o padrão define **como** as telas se apresentam; **não** autoriza as funcionalidades vistas nas capturas (aprovações por faixa, automações por e-mail, integrações, impostos, elementos comerciais como "Central de Aprendizado"/"Fazer Upgrade"), que continuam dependendo de fase e aprovação.
+6. **Permissões:** ações sem permissão aparecem **desabilitadas** (ou ocultas quando a própria existência for sensível); a API continua sendo a autoridade (403/404).
 
 ## Padrões transversais extraídos
 

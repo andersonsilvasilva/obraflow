@@ -15,4 +15,5 @@ pest()->use(RefreshDatabase::class)->in(
     'Feature/Audit',
     'Feature/Provisioning',
     'Feature/Registry',
+    'Feature/Teams',
 );

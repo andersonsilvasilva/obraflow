@@ -12,10 +12,21 @@ use App\Models\CompanyContact;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
 use App\Models\CustomerContact;
+use App\Models\Department;
 use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\DocumentVersion;
+use App\Models\Employee;
+use App\Models\EmployeeCertification;
+use App\Models\Equipment;
+use App\Models\JobTitle;
 use App\Models\PersonalAccessToken;
+use App\Models\Project;
+use App\Models\ProjectAddress;
+use App\Models\ProjectMember;
+use App\Models\ProjectPhase;
+use App\Models\ProjectStatusHistory;
+use App\Models\ResourceGroup;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\SupplierAddress;
@@ -99,6 +110,18 @@ class AppServiceProvider extends ServiceProvider
             'customer_contact' => CustomerContact::class,
             'supplier_address' => SupplierAddress::class,
             'supplier_contact' => SupplierContact::class,
+            // Fase 3 — equipes e obras
+            'job_title' => JobTitle::class,
+            'department' => Department::class,
+            'resource_group' => ResourceGroup::class,
+            'employee' => Employee::class,
+            'employee_certification' => EmployeeCertification::class,
+            'equipment' => Equipment::class,
+            'project' => Project::class,
+            'project_address' => ProjectAddress::class,
+            'project_phase' => ProjectPhase::class,
+            'project_status_history' => ProjectStatusHistory::class,
+            'project_member' => ProjectMember::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

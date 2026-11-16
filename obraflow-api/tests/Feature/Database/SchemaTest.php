@@ -16,16 +16,22 @@ const PHASE2_TABLES = [
     'supplier_contacts', 'suppliers', 'units_of_measure',
 ];
 
+/** Fase 3 (FASE3_MODELO.md), etapas 1 a 3. */
+const PHASE3_TABLES = [
+    'departments', 'employee_certifications', 'employees', 'equipment', 'job_titles', 'project_addresses',
+    'project_members', 'project_phases', 'project_status_history', 'projects', 'resource_groups',
+];
+
 function dbName(): string
 {
     return DB::connection()->getDatabaseName();
 }
 
-it('cria exatamente as tabelas das Fases 1 e 2 (mais a tabela migrations)', function () {
+it('cria exatamente as tabelas das Fases 1, 2 e 3 (mais a tabela migrations)', function () {
     $tables = collect(DB::select('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?', [dbName()]))
         ->pluck('t')->map(fn ($t) => strtolower($t))->reject(fn ($t) => $t === 'migrations')->sort()->values()->all();
 
-    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES])->sort()->values()->all();
+    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES, ...PHASE3_TABLES])->sort()->values()->all();
 
     expect($tables)->toBe($expected);
 });
@@ -96,6 +102,8 @@ it('os CHECK constraints estão ativos (e aplicados) e as colunas geradas existe
         'companies.active_marker', 'company_addresses.main_marker', 'company_branch_addresses.main_marker',
         'company_branch_contacts.primary_marker', 'company_branches.active_marker', 'company_contacts.primary_marker',
         'customer_addresses.main_marker', 'customer_contacts.primary_marker', 'customers.active_marker',
+        'employees.active_marker', 'equipment.active_marker', 'project_addresses.main_marker', 'project_members.open_marker',
+        'projects.active_marker', 'resource_groups.parent_key',
         'supplier_addresses.main_marker', 'supplier_contacts.primary_marker', 'suppliers.active_marker',
         'tenant_domains.primary_marker', 'user_invitations.pending_email',
     ]);
