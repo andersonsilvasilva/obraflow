@@ -37,7 +37,9 @@ use App\Models\TenantSetting;
 use App\Models\TenantUser;
 use App\Models\UnitOfMeasure;
 use App\Models\User;
+use App\Models\UserCompany;
 use App\Models\UserInvitation;
+use App\Models\UserProjectAccess;
 use App\Modules\Access\Console\BlockUserCommand;
 use App\Modules\Access\Console\ExpireInvitationsCommand;
 use App\Modules\Access\Console\ProvisionTenantCommand;
@@ -122,6 +124,8 @@ class AppServiceProvider extends ServiceProvider
             'project_phase' => ProjectPhase::class,
             'project_status_history' => ProjectStatusHistory::class,
             'project_member' => ProjectMember::class,
+            'user_project_access' => UserProjectAccess::class,
+            'user_company' => UserCompany::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

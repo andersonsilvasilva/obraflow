@@ -16,7 +16,8 @@ use Tests\Support\Scenario;
  */
 
 const MEMBER_FASE1 = ['tenant.view', 'members.view', 'roles.view', 'settings.view'];
-const LEITURA_CADASTROS = ['units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view'];
+/** O que falta a um member anterior à Fase 2, na ordem do catálogo: leitura de cadastros (Fase 2) + equipamentos e obras (Fase 3, D-P28). */
+const LEITURA_CADASTROS = ['units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view', 'equipment.view', 'projects.view'];
 
 function permsOf(Tenant $tenant, string $role): array
 {
@@ -34,7 +35,7 @@ beforeEach(function () {
     }
 });
 
-it('--dry-run lista exatamente as 5 permissões de leitura e não grava nada', function () {
+it('--dry-run lista exatamente as permissões de leitura que faltam e não grava nada', function () {
     $antes = AuditLog::query()->count();
 
     Artisan::call('obraflow:system-roles:sync', ['slug' => $this->A->slug, '--role' => ['member'], '--dry-run' => true]);
@@ -44,7 +45,7 @@ it('--dry-run lista exatamente as 5 permissões de leitura e não grava nada', f
         ->and(AuditLog::query()->count())->toBe($antes);
 });
 
-it('concede só leitura de cadastros ao member, audita, e é idempotente', function () {
+it('concede só leitura (cadastros, equipamentos, obras) ao member, audita, e é idempotente', function () {
     Artisan::call('obraflow:system-roles:sync', ['slug' => $this->A->slug, '--role' => ['member'], '--yes' => true, '--no-interaction' => true]);
 
     $esperado = collect([...MEMBER_FASE1, ...LEITURA_CADASTROS])->sort()->values()->all();

@@ -16,10 +16,11 @@ const PHASE2_TABLES = [
     'supplier_contacts', 'suppliers', 'units_of_measure',
 ];
 
-/** Fase 3 (FASE3_MODELO.md), etapas 1 a 3. */
+/** Fase 3 (FASE3_MODELO.md), etapas 1 a 4. */
 const PHASE3_TABLES = [
     'departments', 'employee_certifications', 'employees', 'equipment', 'job_titles', 'project_addresses',
     'project_members', 'project_phases', 'project_status_history', 'projects', 'resource_groups',
+    'user_companies', 'user_project_access',
 ];
 
 function dbName(): string

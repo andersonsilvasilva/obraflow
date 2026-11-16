@@ -218,3 +218,40 @@ it('equipe da obra: funcionário e obra do mesmo tenant; um vínculo em aberto p
         ->and(Fx::errno(fn () => Fx::projectMember($this->A, $obra, $empB)))->toBe(1452)
         ->and(Fx::errno(fn () => DB::table('employees')->where('id', $emp)->delete()))->toBe(1451);
 });
+
+// ---------------------------------------------------------------- etapa 4: acesso por obra, por empresa, documentos
+it('acesso por obra: usuário e quem concedeu são membros do tenant; obra do mesmo tenant; um nível por usuário e obra', function () {
+    $obra = Fx::project($this->A, $this->coA, $this->user);
+    $obraB = Fx::project($this->B, $this->coB, $this->user);
+    $estranho = Fx::user();
+    $ins = fn (int $t, int $u, int $p, array $x = []) => DB::table('user_project_access')->insert(['tenant_id' => $t, 'user_id' => $u, 'project_id' => $p, 'access_level' => 'view', ...$x]);
+
+    expect(Fx::errno(fn () => $ins($this->A, $this->user, $obra, ['granted_by' => $this->user])))->toBeNull()
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, $obra)))->toBe(1062)
+        ->and(Fx::errno(fn () => $ins($this->A, $estranho, $obra)))->toBe(1452)
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, $obraB)))->toBe(1452)
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, Fx::project($this->A, $this->coA, $this->user, 'U-2'), ['granted_by' => $estranho])))->toBe(1452)
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, Fx::project($this->A, $this->coA, $this->user, 'U-3'), ['access_level' => 'owner'])))->toBe(3819)
+        ->and(Fx::errno(fn () => DB::table('projects')->where('id', $obra)->delete()))->toBe(1451);
+});
+
+it('usuário × empresa: membro do tenant, empresa do mesmo tenant, sem duplicidade', function () {
+    $ins = fn (int $t, int $u, int $c, array $x = []) => DB::table('user_companies')->insert(['tenant_id' => $t, 'user_id' => $u, 'company_id' => $c, ...$x]);
+
+    expect(Fx::errno(fn () => $ins($this->A, $this->user, $this->coA)))->toBeNull()
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, $this->coA)))->toBe(1062)
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, $this->coB)))->toBe(1452)
+        ->and(Fx::errno(fn () => $ins($this->A, Fx::user(), $this->coA2)))->toBe(1452)
+        ->and(Fx::errno(fn () => $ins($this->A, $this->user, $this->coA2, ['status' => 'blocked'])))->toBe(3819);
+});
+
+it('document_links aceita funcionário, equipamento e obra (D-P19) e continua recusando tipos fora da lista', function () {
+    $doc = Fx::document($this->A, $this->user);
+    $ins = fn (string $type) => DB::table('document_links')->insert(['tenant_id' => $this->A, 'document_id' => $doc, 'linkable_type' => $type, 'linkable_id' => 1]);
+
+    expect(Fx::errno(fn () => $ins('employee')))->toBeNull()
+        ->and(Fx::errno(fn () => $ins('equipment')))->toBeNull()
+        ->and(Fx::errno(fn () => $ins('project')))->toBeNull()
+        ->and(Fx::errno(fn () => $ins('company')))->toBeNull()
+        ->and(Fx::errno(fn () => $ins('user')))->toBe(3819);
+});

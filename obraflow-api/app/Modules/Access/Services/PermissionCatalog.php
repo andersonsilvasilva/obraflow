@@ -36,6 +36,13 @@ final class PermissionCatalog
         'suppliers.manage' => 'suppliers',
         'documents.view' => 'documents',
         'documents.manage' => 'documents',
+        // Fase 3 — equipes e obras (D-P28). Cargos e setores sob employees.*; grupos de recursos sob equipment.*
+        'employees.view' => 'employees',
+        'employees.manage' => 'employees',
+        'equipment.view' => 'equipment',
+        'equipment.manage' => 'equipment',
+        'projects.view' => 'projects',
+        'projects.manage' => 'projects',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -61,7 +68,9 @@ final class PermissionCatalog
         return [
             self::ADMIN_ROLE => array_keys(self::PERMISSIONS),
             'member' => ['tenant.view', 'members.view', 'roles.view', 'settings.view',
-                'units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view'],
+                'units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view',
+                // D-P28: sem employees.view (dados pessoais); obras visíveis só com acesso por obra (D-P24)
+                'equipment.view', 'projects.view'],
             'viewer' => ['tenant.view'],
         ];
     }

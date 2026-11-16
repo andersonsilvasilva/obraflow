@@ -37,8 +37,9 @@ npm test && npm run lint && npm run build
 | **Fase 2 — modelos e documentos** (escopo fail-closed, normalização, disco privado, URL assinada, append-only) | `Feature/Registry/RegistryModelsTest`, `DocumentStorageTest` | 24 |
 | **Fase 2 — API** (CRUD, isolamento 404, permissões, tokens, validação CPF/CNPJ, acesso por documento, cobertura dos eventos) | `Feature/Registry/RegistryApiTest`, `DocumentApiTest` | 25 |
 | **Fase 2 — isolamento estrutural e papéis de sistema** (escopo em toda tabela com `tenant_id`, FKs compostas; `obraflow:system-roles:sync`) | `Feature/Registry/IsolationStructureTest`, `Feature/Provisioning/SyncSystemRolesTest` | 8 |
-| **Fase 3 — integridade e modelos de equipes e obras** (FKs compostas, CHECK, unicidade com soft delete, autoria membro do tenant, mesma empresa/obra, append-only, níveis de grupos/fases) | `Feature/Database/TeamsProjectsIntegrityTest`, `Feature/Teams/TeamsProjectsModelsTest` | 40 |
-| **Backend** | | **331 (1.862 asserções)** |
+| **Fase 3 — integridade e modelos de equipes e obras** (FKs compostas, CHECK, unicidade com soft delete, autoria membro do tenant, mesma empresa/obra, append-only, níveis de grupos/fases) | `Feature/Database/TeamsProjectsIntegrityTest`, `Feature/Teams/TeamsProjectsModelsTest` | 43 |
+| **Fase 3 — acesso por obra** (D-P24: manage vê tudo; sem view nada; nível limita; sem vazamento entre tenants; catálogo do member) | `Feature/Teams/ProjectAccessTest` | 5 |
+| **Backend** | | **339 (1.893 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

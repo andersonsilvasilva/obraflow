@@ -85,4 +85,14 @@ Cada etapa: testes de integridade (erros do próprio banco), isolamento cruzado,
 
 **Testes:** `Feature/Database/TeamsProjectsIntegrityTest` (18 — erros 1452/3819/1062/1451 do próprio banco) e `Feature/Teams/TeamsProjectsModelsTest` (22). Suíte: **331/331 (1.862 asserções)**; revisão estrutural do isolamento (`IsolationStructureTest`) cobre as 11 tabelas novas automaticamente.
 
-**Próximas:** etapa 4 (acesso por obra, `user_companies`, ajuste de `document_links`), etapa 5 (API, permissões, auditoria, serviço de status), etapa 6 (revisão, CI, relatório).
+Commit `b026bd8` — CI run 43955864771 verde (API MySQL 8.0, API MySQL 8.4, Web).
+
+### Etapa 4 — acesso por obra, por empresa e documentos (2 tabelas + 1 ajuste)
+
+- `user_project_access` (usuário e quem concedeu → `tenant_users`; obra do tenant; um nível por usuário e obra; CHECK view/edit/manage) e `user_companies` (registrada **sem efeito de bloqueio**, D-P25).
+- Migration de **ajuste** `2026_11_16_100014_extend_document_links_linkable_types`: o CHECK de `document_links.linkable_type` passa a aceitar `employee`, `equipment`, `project` (D-P19); a migration da Fase 2 não foi alterada; o `down()` volta ao CHECK original e falha se já houver vínculos novos. O teste de migrations passou a contar só as `*_create_*` como criadoras de tabela (47 migrations, 46 tabelas). A API de vínculo com esses donos entra na etapa 5 (junto com a checagem de acesso à obra).
+- `ProjectAccess` (D-P24): `projects.manage` vê e administra todas; sem `projects.view` nenhuma (mesmo com linha de acesso); os demais só as obras liberadas, com o nível limitando a ação (view < edit < manage); checagens por `$user->can()` (respeita token, D-29).
+- **Catálogo** (D-P28): `employees.*`, `equipment.*`, `projects.*` (27 permissões). Papel `member` de **tenants novos**: + `equipment.view`, `projects.view` (sem `employees.view`). **No banco `obraflow` nada mudou**: instalar as 6 permissões (`obraflow:sync-permissions`) e alinhar os papéis da HighTech (`obraflow:system-roles:sync`) exigem autorização.
+- **Testes:** +3 de integridade, +5 de acesso por obra (`Feature/Teams/ProjectAccessTest`); `SyncSystemRolesTest` atualizado (o member anterior à Fase 2 recebe 7 leituras). Suíte **339/339 (1.893 asserções)**.
+
+**Próximas:** etapa 5 (API, Policies, auditoria, serviço de status, vínculo de documentos), etapa 6 (revisão, CI, relatório).
