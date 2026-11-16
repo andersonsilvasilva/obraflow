@@ -18,7 +18,7 @@
 | Tokens (D-29) | ✅ | testes de token em `TeamsApiTest` e `ProjectsApiTest` (sem `projects.manage` no token vale o acesso por obra) |
 | CI em MySQL 8.0 e 8.4 | ✅ | etapas 1–5 verdes (§3) |
 | Testes | ✅ | **Backend 364/364 (2.275 asserções)** · isolamento (`Registry`, `Teams`, `Tenancy`, `Database`) 213/213 · Pint e `composer audit` limpos |
-| Banco `obraflow` (autorizado) | ✅ parcial | 6 permissões instaladas (27 no catálogo); `member` da HighTech + `equipment.view`, `projects.view` (11, todas de consulta), `permission.granted` auditado (14º evento); 2ª execução "nada a fazer". **Migrations da Fase 3 não aplicadas** (§5) |
+| Banco `obraflow` (autorizado) | ✅ | 6 permissões instaladas (27 no catálogo); `member` da HighTech + `equipment.view`, `projects.view` (11, todas de consulta; 14º evento); **14 migrations da Fase 3 aplicadas** (47 no total; 13 tabelas vazias; CHECK de `document_links` com 7 tipos); `admin` da HighTech + 6 permissões (27; `permission.granted`, 15º evento). Segundas execuções: "nada a fazer". Nenhum dado de cadastro criado |
 
 ## 2. Etapas
 
@@ -51,8 +51,8 @@
 
 | # | Item | Estado |
 |---|---|---|
-| P1 | **Migrations da Fase 3 não aplicadas no `obraflow`** (14: 13 tabelas + ajuste do CHECK de `document_links`). As permissões já existem, mas as rotas de equipes/obras falhariam no banco real até o `migrate` | **Aguarda autorização** (necessário antes de testar no navegador) |
-| P2 | Papel **`admin` da HighTech** sem as 6 novas permissões (tenants novos já recebem). Sem isso, o admin real não administra equipes/obras | **Aguarda autorização** (`obraflow:system-roles:sync hightech --role=admin`) |
+| P1 | ~~Migrations da Fase 3 no `obraflow`~~ | ✅ Aplicadas com autorização (2026-11-16) |
+| P2 | ~~`admin` da HighTech sem as 6 novas permissões~~ | ✅ Concedidas com autorização (2026-11-16), auditado |
 | R1 | Dados pessoais de funcionários (LGPD, D-P07): minimização aplicada; política de retenção pendente | Aberto |
 | R2 | `document_links` polimórfica (agora com 7 donos): dono garantido pela aplicação + CHECK de tipos | Aceito (D-P12/D-P19) |
 | R3 | `user_companies` sem efeito de bloqueio (D-P25) | Decisão futura |
