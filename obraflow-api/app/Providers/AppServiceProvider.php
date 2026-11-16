@@ -31,6 +31,7 @@ use App\Modules\Access\Console\BlockUserCommand;
 use App\Modules\Access\Console\ExpireInvitationsCommand;
 use App\Modules\Access\Console\ProvisionTenantCommand;
 use App\Modules\Access\Console\SyncPermissionsCommand;
+use App\Modules\Access\Console\SyncSystemRolesCommand;
 use App\Modules\Access\Console\TenantStatusCommand;
 use App\Modules\Access\Console\UnblockUserCommand;
 use App\Modules\Audit\AuditEvent;
@@ -109,6 +110,7 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncPermissionsCommand::class,
+                SyncSystemRolesCommand::class,
                 ProvisionTenantCommand::class,
                 BlockUserCommand::class,
                 UnblockUserCommand::class,
