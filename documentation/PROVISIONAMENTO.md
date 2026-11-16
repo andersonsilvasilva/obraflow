@@ -52,6 +52,15 @@ Regras: ninguém concede o que não possui (`403 privilege_escalation`); o **úl
 
 É exibida **uma vez** no terminal e nunca gravada em log nem em auditoria. Guarde em local seguro e peça a troca no primeiro acesso (fluxo `forgot-password`/`reset-password`).
 
+## Alinhar papéis de sistema de tenants existentes
+
+```bash
+php artisan obraflow:system-roles:sync <slug> --role=member --dry-run   # mostra a lista exata
+php artisan obraflow:system-roles:sync <slug> --role=member             # pede confirmação; --yes para não pedir
+```
+
+Só **acrescenta** as permissões que faltam conforme `PermissionCatalog::systemRoles()`; nunca remove, nunca toca papéis personalizados; idempotente; cada papel alterado gera `permission.granted`. Novas permissões do catálogo valem para tenants **novos** automaticamente — para os existentes, use este comando com autorização.
+
 ## Pendência: dados cadastrais do tenant HighTech
 
 **Atualização 2026-11-13:** CNPJ gravado (`61693043000194`, autorizado, evento `tenant.updated`). Razão social gravada em 2026-11-13 (`HIGHTECH TECNOLOGIA CONSULTORIA E DESENVOLVIMENTO LTDA`, autorizada, evento `tenant.updated`). **Pendência encerrada.**

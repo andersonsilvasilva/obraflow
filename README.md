@@ -67,7 +67,7 @@ docker compose ps               # todos devem ficar "healthy"
 cd obraflow-api
 php artisan migrate                                    # 33 tabelas (Fases 1 e 2) (banco 'obraflow', usuário exclusivo — ver documentation/AMBIENTE_LOCAL.md)
 php artisan obraflow:provision --name="Minha Construtora" --admin-email=admin@empresa.com --admin-name="Fulano"
-vendor/bin/pest                                        # 286 testes (usa o banco 'obraflow_testing')
+vendor/bin/pest                                        # 291 testes (usa o banco 'obraflow_testing')
 ```
 
 ## Estado
@@ -77,4 +77,4 @@ vendor/bin/pest                                        # 286 testes (usa o banco
 - O frontend usa dados **demonstrativos** (`VITE_USE_MOCKS=true`) e ainda **não** tem tela de login.
 - **Homologação técnica da Fase 1 aprovada.** CI (GitHub Actions) verde em MySQL 8.0 e 8.4. Tenant inicial HighTech provisionado; razão social/CNPJ pendentes.
 - Redis adiado: drivers locais (`file`/`sync`).
-- **Fase 2 implementada** (cadastros: empresas, filiais, clientes, fornecedores, endereços, contatos, unidades e documentos — API, permissões e auditoria; sem telas) — aguarda homologação: [FASE2_RELATORIO.md](documentation/FASE2_RELATORIO.md).
+- **Fase 2 implementada** (cadastros: empresas, filiais, clientes, fornecedores, endereços, contatos, unidades e documentos — API, permissões e auditoria; sem telas) — **homologada**: [FASE2_RELATORIO.md](documentation/FASE2_RELATORIO.md). Fase 3 não autorizada.

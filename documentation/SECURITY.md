@@ -37,6 +37,12 @@
 - **Tokens (D-29):** menor privilégio — abilities obrigatórias e explícitas, sem curinga, nunca de gestão de acesso; autorização = abilities ∩ permissões vivas do usuário; nenhuma rota de negócio escapa do `SetTenantContext` (teste estrutural).
 - ⚠️ Pendências: MFA; TLS/HSTS/CSP; política de retenção da auditoria.
 
+### 3.2 Documentos e anexos (Fase 2)
+
+- Disco privado; acesso só por **URL assinada de até 5 min**, emitida após verificar usuário, tenant e permissão no documento; emissão auditada (falha fechada). Uma URL emitida vale até expirar, mesmo se a permissão mudar nesse intervalo.
+- Tipo verificado pelo conteúdo, lista fechada e limite de tamanho; resposta com CSP `sandbox` e `no-store`.
+- ⚠️ **Sem inspeção antimalware: uploads não são seguros para produção.** Integrar inspeção antes de liberar amplamente ([FASE2_RELATORIO.md](FASE2_RELATORIO.md) §7).
+
 ## 4. Autorização
 
 - Policies em operações protegidas; Spatie Teams por tenant.

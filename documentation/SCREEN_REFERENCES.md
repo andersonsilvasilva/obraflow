@@ -1,6 +1,6 @@
 # SCREEN_REFERENCES.md — ANÁLISE DAS TELAS DE REFERÊNCIA
 
-Pasta analisada: `documentation/telas/` — **13 imagens analisadas**. A pasta tem hoje **22**: as 9 adicionadas depois (*Cadastro de Recursos* e *Cadastro de Recursos_balanco*; *Perfil_Automaçao*, *Perfil_Empresa*, *Perfil_Regras_de_Negocio* e suas variantes *integraçoes*/*aprovaçao*/*preferencias*, *Perfil_usuarios*) **ainda NÃO foram analisadas** (relevantes para recursos, perfis/regras de aprovação e usuários/permissões). O `telas_modelos.zip` foi removido pelo usuário.
+Pasta analisada: `documentation/telas/` — **14 imagens analisadas** (a 14ª, `Cadastro de Produtos.png`, em 2026-11-16 — ver §"Cadastro de Produtos"). Ainda **não analisadas**: as 9 listadas a seguir e `cadastro_recursos_cargo_funcao.png` (adicionada depois, fora do pedido). Situação original: A pasta tem hoje **22**: as 9 adicionadas depois (*Cadastro de Recursos* e *Cadastro de Recursos_balanco*; *Perfil_Automaçao*, *Perfil_Empresa*, *Perfil_Regras_de_Negocio* e suas variantes *integraçoes*/*aprovaçao*/*preferencias*, *Perfil_usuarios*) **ainda NÃO foram analisadas** (relevantes para recursos, perfis/regras de aprovação e usuários/permissões). O `telas_modelos.zip` foi removido pelo usuário.
 
 > **As referências são capturas de um produto de terceiros** (identidade laranja, nome e logo próprios, conta de usuário visível). Foram usadas **somente** para entender organização, hierarquia, funcionalidades e fluxo. **Não** foram copiados identidade, nome, logo, cores, textos de marca nem códigos/atividades de exemplo. Os dados do ObraFlow são fictícios (`DEMO-*`).
 
@@ -21,6 +21,47 @@ Pasta analisada: `documentation/telas/` — **13 imagens analisadas**. A pasta t
 | 11 | `Finalização do orçamento_curvaABC_diagramas.png` | Curva de Pareto e **Curva S** | Pareto (barras + % acumulado) e curva S temporal | Pareto implementado; **Curva S** depende do cronograma (pendência) |
 | 12 | `Finalização do orçamento_visualizar recursos.png` | Toggle "Visualizar recursos" | KPIs extras por tipo (material, equipamentos, mão de obra, serviços) | Aba **Recursos** (consolidação por insumo) e gráfico por tipo de recurso |
 | 13 | `suprimentos_solicaitação.png` | Lista de solicitações de suprimentos | Filtros (descrição, ID, obra, status, período), colunas ID/descrição/obra/itens/criado por/status, ações por linha, paginação e total | `ProcurementPage`: busca, filtro de situação, tabela (número, obra, solicitante, data, itens, prioridade, situação), formulário de solicitação com itens dinâmicos |
+| 14 | `Cadastro de Produtos.png` | Listagem "Materiais" dentro de Cadastros → Recursos | Busca por nome; filtros por grupo e subgrupo; tabela com seleção, nome (ordenável), unidade de medida, grupo, subgrupo e preço; ações por linha; "Adicionar"; paginação | **Não implementada** (ver §"Cadastro de Produtos"). Relaciona-se a `units_of_measure` (Fase 2) e a um catálogo de recursos/insumos ainda **não modelado** |
+
+## Cadastro de Produtos (`Cadastro de Produtos.png`) — análise de 2026-11-16
+
+Somente o que está **visível** na captura; nada foi implementado (decisão do responsável, 2026-11-16).
+
+**Contexto de navegação**
+- Página intitulada **"Materiais"** (o arquivo se chama "Cadastro de Produtos"; a URL da captura termina em `/products`).
+- Menu lateral: grupo **Cadastros → Recursos**, com os subitens **Materiais** (selecionado), Mão de obra, Cargo/Função, Fornecedores, Equipamentos e Serviços. Outros itens de menu visíveis: Tarefas, Apropriação, Orçamentos, Financeiro, Requisições, Dashboard, RH.
+- Topo do menu: seletor da organização ativa; rodapé: cartão do usuário logado.
+
+**Barra de ações (acima da tabela)**
+| Elemento | Tipo | Observação |
+|---|---|---|
+| "Excluir tudo" | botão (aparência desabilitada) | presumivelmente atua sobre a seleção — **não confirmado** pela imagem |
+| "Buscar por nome" | campo de busca com ícone de lupa | |
+| "Selecione um grupo" | lista suspensa | filtro |
+| "Selecione um subgrupo" | lista suspensa | filtro |
+| ícone de seta para cima | botão só com ícone | função **não identificável** pela imagem (pode ser importar ou exportar) |
+| "+ Adicionar" | botão primário | abre criação (o formulário não aparece na captura) |
+
+**Tabela**
+| Coluna | Observação |
+|---|---|
+| (caixa de seleção) | seleção por linha e no cabeçalho |
+| Nome | com indicador de ordenação |
+| Unidade de medida | exemplos: m³, sc, und; **vazia** em vários itens |
+| Grupo | exemplo: "Outros"; vazia em vários itens |
+| Subgrupo | vazia em todos os itens visíveis |
+| Preço (R$) | valor único por item, formato `R$ 0,00` (itens com R$ 0,00) |
+| Ações | três ícones por linha: pasta, lápis (editar), lixeira (excluir). O significado do ícone de **pasta não é identificável** |
+
+**Rodapé:** paginação (páginas 1 e 2, anterior/próxima) e seletor "10 / Página".
+
+**Organização visual:** página em cartão branco único; barra de ações à esquerda e "Adicionar" à direita; tabela densa com linhas de altura uniforme; nomes de itens às vezes em caixa alta (dados importados).
+
+**Relação com o ObraFlow (sem implementar)**
+- Unidade de medida já existe por tenant (`units_of_measure`, D-P14); um futuro cadastro de materiais a referenciaria.
+- Grupo/subgrupo, preço e o próprio catálogo de materiais **não existem** no modelo atual; dependem da fase de recursos/insumos (orçamentos, Fase 4) e de aprovação.
+- "Fornecedores" aparece como subitem de Recursos na referência; no ObraFlow, fornecedores já são cadastro da Fase 2 (vínculo com materiais **não** está modelado).
+- Adaptação segue as decisões gerais deste documento (identidade azul-safira, dados `DEMO-*`, sem valores oficiais).
 
 ## Padrões transversais extraídos
 

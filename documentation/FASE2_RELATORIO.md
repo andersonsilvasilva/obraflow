@@ -15,7 +15,7 @@
 | Auditoria de todas as mutações | ✅ | Cobertura do catálogo da Fase 2 (`AuditEvent::phase2()`) — todo evento é emitido por operação real |
 | Tokens respeitam as novas permissões (D-29) | ✅ | testes de token em `RegistryApiTest` e `DocumentApiTest`; teste estrutural `SetTenantContext` cobre as 56 rotas novas |
 | CI em MySQL 8.0 e 8.4 | ✅ | etapas 1–4 verdes (tabela §3) |
-| Testes | ✅ | **Backend 286/286 (1.670 asserções)** · Frontend 14/14 · Pint e `composer audit` limpos |
+| Testes | ✅ | **Backend 291/291 (1.700 asserções)** no fechamento (286/1.670 na homologação) · Frontend 14/14 · Pint e `composer audit` limpos |
 | Banco `obraflow` atualizado (autorizado) | ✅ | 33 migrations; 21 permissões; papel `admin` da HighTech com as 10 novas (`permission.granted` auditado) |
 
 ## 2. Etapas
@@ -50,18 +50,39 @@
 
 | # | Risco | Estado |
 |---|---|---|
-| R1 | URL assinada válida por 5 min não revalida o vínculo no download | Aceito (validade curta; emissão exige permissão e é auditada) |
-| R2 | Sem antivírus nos anexos; limite de 20 MB e lista fechada de tipos | Antes de produção |
+| R1 | URL assinada já emitida continua utilizável até expirar (máx. 5 min), **mesmo se as permissões do usuário mudarem nesse intervalo** | Aceito pelo responsável (§7) |
+| R2 | **Sem inspeção antimalware** nos anexos | Aceito só para desenvolvimento; **uploads não são seguros para produção** (§7) |
 | R3 | S3 não configurado (disco local privado) | Configurar `DOCUMENTS_DISK` quando houver bucket |
 | R4 | `document_links` é polimórfica: o dono é garantido pela aplicação, não por FK | Aceito (D-P12); coberto por testes |
 | R5 | Rebaixamento automático do contato principal não gera evento próprio | Aceito; documentado |
 | R6 | Validar dígitos não prova que o CPF/CNPJ existe na Receita | Aceito |
 | R7 | Dados pessoais de clientes/contatos (LGPD, D-P07) | Política de retenção pendente |
-| R8 | `member` da HighTech **não** recebeu as permissões de leitura de cadastros | Aguarda decisão |
+| R8 | ~~`member` da HighTech sem leitura de cadastros~~ | ✅ Resolvido (§7) |
 
 ## 6. Pendências
 
-- Decidir se o papel `member` da HighTech recebe `*.view` dos cadastros (R8).
 - Telas (login, cadastros) — etapa própria (D-P18).
-- Analisar a nova referência `documentation/telas/Cadastro de Produtos.png` (não versionada).
+- ~~Analisar `Cadastro de Produtos.png`~~ — feito ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md)); tela **não** implementada.
+- Integração com inspeção antimalware antes de liberar uploads amplamente (R2).
+- Novas referências adicionadas depois (`cadastro_recursos_cargo_funcao.png`, pasta `planilha para importar recursos/`): **não analisadas nem versionadas** (fora do pedido).
 - Fase 3 (Equipes e Obras): somente após aprovação expressa da homologação da Fase 2.
+
+## 7. Homologação e encerramento (2026-11-16)
+
+**Homologação técnica aprovada pelo responsável**, condicionada às atividades abaixo — todas concluídas.
+
+| Atividade | Resultado |
+|---|---|
+| Leitura de cadastros ao papel `member` da HighTech | ✅ `obraflow:system-roles:sync hightech --role=member` (comando idempotente, só acrescenta). Lista apresentada antes (simulação): `units.view`, `companies.view`, `customers.view`, `suppliers.view`, `documents.view`. Nenhuma permissão de escrita, administrativa ou de outros módulos. `member` = 9 permissões, todas de consulta. Evento `permission.granted` (13º da auditoria). Segunda execução: "nada a fazer" |
+| Testes da alteração | ✅ `Feature/Provisioning/SyncSystemRolesTest` (5): simulação não grava; concede só leitura; audita; idempotente; não remove permissões; não toca outros papéis nem outro tenant; efeito na API (lê, não escreve; `audit-logs` continua 403) |
+| Referência `Cadastro de Produtos.png` | ✅ Analisada em [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md) (só o visível; sem implementação) |
+| Isolamento após as mudanças | ✅ 140/140 em `Registry`, `Tenancy` e `Database` (inclui a revisão estrutural); suíte completa 291/291 |
+
+**Condições sobre anexos (decisão do responsável):**
+- **URLs assinadas:** validade máxima de **5 minutos** (`DOCUMENTS_SIGNED_URL_MINUTES`); autorização do usuário **e** do tenant verificadas **na emissão** (rota em `tenant.required` + `DocumentAccess` + permissão); nenhuma URL permanente (a chave de armazenamento nunca é exposta; sem assinatura o servidor recusa). Uma URL já emitida pode ser usada até expirar, mesmo após mudança de permissões.
+- **Antivírus:** **não há inspeção antimalware.** Uploads **não** são considerados seguros para produção. Controles atuais: tipo verificado pelo conteúdo (lista fechada: PDF, PNG, JPEG, WebP, DOCX, XLSX), limite de tamanho, disco privado fora da área pública, acesso somente com permissão e URL assinada curta, resposta com `Content-Security-Policy: sandbox` e `no-store`. **Antes de liberar o fluxo amplamente:** integrar inspeção (ex.: estado de verificação por versão e bloqueio de download enquanto não verificado) — exige proposta e aprovação.
+- **S3:** arquitetura pronta (disco configurável por `DOCUMENTS_DISK`; `temporaryUrl` nativa do S3); **nenhuma migração de infraestrutura** foi feita.
+
+**Telas (D-P18):** mantidas para etapa própria. A API segue compatível com o frontend React: sessão SPA (Sanctum), JSON padronizado (`data`/`meta`, `error.code`/`error.details`), uuid público, paginação e filtros por query string.
+
+**Fase 3 (Equipes e Obras): NÃO autorizada.**
