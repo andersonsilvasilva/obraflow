@@ -10,7 +10,11 @@ use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\DocumentLink;
 use App\Models\DocumentVersion;
+use App\Models\Employee;
+use App\Models\Equipment;
+use App\Models\Project;
 use App\Models\Supplier;
+use App\Modules\Projects\Services\ProjectAccess;
 use App\Modules\Registry\Http\Controllers\Concerns\ListsRecords;
 use App\Modules\Registry\Http\Requests\DocumentCategoryRequest;
 use App\Modules\Registry\Http\Requests\DocumentLinkRequest;
@@ -42,12 +46,17 @@ class DocumentController extends Controller
         'company_branch' => [CompanyBranch::class, 'id'],
         'customer' => [Customer::class, 'uuid'],
         'supplier' => [Supplier::class, 'uuid'],
+        // Fase 3 (D-P19): além do documento, o usuário precisa enxergar o dono (permissão do módulo; obra pelo nível)
+        'employee' => [Employee::class, 'uuid'],
+        'equipment' => [Equipment::class, 'uuid'],
+        'project' => [Project::class, 'uuid'],
     ];
 
     public function __construct(
         private readonly DocumentStorage $storage,
         private readonly DocumentAccess $access,
         private readonly RegistryService $registry,
+        private readonly ProjectAccess $projects,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -61,7 +70,7 @@ class DocumentController extends Controller
             }
         }
         if ($request->filled('linkable_type') && $request->filled('linkable_key')) {
-            $owner = $this->linkTarget((string) $request->query('linkable_type'), (string) $request->query('linkable_key'), notFound: false);
+            $owner = $this->linkTarget((string) $request->query('linkable_type'), (string) $request->query('linkable_key'), notFound: false, ability: 'view');
             $query->whereIn('id', DocumentLink::query()->select('document_id')
                 ->where('linkable_type', $request->query('linkable_type'))->where('linkable_id', $owner?->getKey() ?? 0));
         }
@@ -129,7 +138,7 @@ class DocumentController extends Controller
     public function link(DocumentLinkRequest $request, string $uuid): JsonResponse
     {
         $document = $this->find($request, $uuid, 'edit');
-        $owner = $this->linkTarget($request->validated('linkable_type'), $request->validated('linkable_key'));
+        $owner = $this->linkTarget($request->validated('linkable_type'), $request->validated('linkable_key'), ability: 'edit');
         $link = $this->storage->link($document, $owner, $request->user());
 
         return response()->json(['data' => ['id' => $link->id, 'linkable_type' => $link->linkable_type, 'linkable_id' => $link->linkable_id]], 201);
@@ -199,7 +208,8 @@ class DocumentController extends Controller
         return $document;
     }
 
-    private function linkTarget(string $type, string $key, bool $notFound = true): ?Model
+    /** $ability: nível exigido na obra quando o dono é uma obra (view para filtrar, edit para vincular). */
+    private function linkTarget(string $type, string $key, bool $notFound = true, string $ability = 'view'): ?Model
     {
         [$model, $column] = self::LINK_TARGETS[$type] ?? [null, null];
         if ($model === null || ($column === 'id' && ! ctype_digit($key))) {
@@ -207,10 +217,25 @@ class DocumentController extends Controller
         }
 
         $owner = $model::query()->where($column, $key)->first();
+        if ($owner !== null && ! $this->canReachOwner($owner, $ability)) {
+            $owner = null; // dono que o usuário não enxerga é tratado como inexistente
+        }
         if ($owner === null && $notFound) {
             throw ApiException::notFound();
         }
 
         return $owner;
+    }
+
+    private function canReachOwner(Model $owner, string $ability): bool
+    {
+        $user = request()->user();
+
+        return match (true) {
+            $owner instanceof Employee => $user->can('employees.view'),
+            $owner instanceof Equipment => $user->can('equipment.view'),
+            $owner instanceof Project => $this->projects->allows($user, $owner, $ability),
+            default => true, // donos da Fase 2: regra original (permissão de documento)
+        };
     }
 }

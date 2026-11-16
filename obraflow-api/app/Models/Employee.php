@@ -4,13 +4,13 @@ namespace App\Models;
 
 use App\Modules\Registry\Concerns\HasPublicUuid;
 use App\Modules\Registry\Concerns\NormalizesDigits;
+use App\Modules\Shared\Exceptions\DomainRuleException;
 use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use LogicException;
 
 /**
  * Funcionário (empregado ≠ usuário, D-11). Dados pessoais mínimos (D-P21).
@@ -44,11 +44,11 @@ class Employee extends Model
                 return;
             }
             if ($employee->exists && (int) $employee->supervisor_id === (int) $employee->id) {
-                throw new LogicException('O funcionário não pode ser responsável por si mesmo.');
+                throw new DomainRuleException('O funcionário não pode ser responsável por si mesmo.');
             }
             $supervisor = self::query()->find($employee->supervisor_id);
             if ($supervisor !== null && (int) $supervisor->company_id !== (int) $employee->company_id) {
-                throw new LogicException('O responsável deve ser da mesma empresa.');
+                throw new DomainRuleException('O responsável deve ser da mesma empresa.');
             }
         });
     }

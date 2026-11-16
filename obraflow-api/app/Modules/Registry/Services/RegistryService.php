@@ -19,7 +19,8 @@ use Illuminate\Support\Facades\DB;
 final class RegistryService
 {
     /** Campos nunca copiados para a auditoria (gerados/técnicos). */
-    private const NOT_AUDITED = ['id', 'tenant_id', 'uuid', 'created_at', 'updated_at', 'deleted_at', 'active_marker', 'main_marker', 'primary_marker'];
+    private const NOT_AUDITED = ['id', 'tenant_id', 'uuid', 'created_at', 'updated_at', 'deleted_at', 'active_marker', 'main_marker', 'primary_marker',
+        'parent_key', 'open_marker', 'group_kind']; // gerados/fixos (Fase 3)
 
     public function __construct(private readonly AuditLogger $audit, private readonly TenantContext $context) {}
 
@@ -89,6 +90,9 @@ final class RegistryService
             $code = (int) ($e->errorInfo[1] ?? 0);
             if ($code === 1062) {
                 throw ApiException::conflict('duplicate', 'Já existe um cadastro ativo com estes dados.');
+            }
+            if ($code === 3819) {
+                throw ApiException::unprocessable('constraint_violation', 'Os dados violam uma regra de integridade (ex.: datas ou valores fora do permitido).');
             }
             if ($code === 1451) {
                 throw ApiException::conflict('in_use', 'O registro está em uso e não pode ser excluído.');

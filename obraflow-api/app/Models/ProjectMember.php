@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Modules\Shared\Exceptions\DomainRuleException;
 use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use LogicException;
 
 /**
  * Funcionário na equipe da obra. Um vínculo em aberto por funcionário e obra (`open_marker`, coluna gerada).
@@ -31,7 +31,7 @@ class ProjectMember extends Model
             $project = Project::query()->find($member->project_id);
             $employee = Employee::query()->find($member->employee_id);
             if ($project !== null && $employee !== null && (int) $project->company_id !== (int) $employee->company_id) {
-                throw new LogicException('O funcionário deve ser da mesma empresa da obra.');
+                throw new DomainRuleException('O funcionário deve ser da mesma empresa da obra.');
             }
         });
     }

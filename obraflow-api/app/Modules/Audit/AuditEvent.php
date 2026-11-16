@@ -101,6 +101,13 @@ final class AuditEvent
 
     public const DOCUMENT_URL_ISSUED = 'document.url_issued';
 
+    // Fase 3 — obras (o CRUD de equipes e obras usa registry.*, com entity_type employee, equipment, project…)
+    public const PROJECT_STATUS_CHANGED = 'project.status_changed';
+
+    public const PROJECT_ACCESS_GRANTED = 'project.access_granted';
+
+    public const PROJECT_ACCESS_REVOKED = 'project.access_revoked';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -111,5 +118,11 @@ final class AuditEvent
     public static function phase2(): array
     {
         return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'registry.') || str_starts_with($e, 'document.')));
+    }
+
+    /** Eventos próprios da Fase 3 (cobertura verificada pelos testes de obras). @return list<string> */
+    public static function phase3(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'project.')));
     }
 }

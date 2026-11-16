@@ -44,6 +44,8 @@ final class ApiExceptionRenderer
         if ($e instanceof ApiException) {
             [$status, $code, $message] = [$e->status, $e->errorCode, $e->getMessage()];
             $details = $e->details ?: null;
+        } elseif ($e instanceof DomainRuleException) {
+            [$status, $code, $message] = [422, 'domain_rule', $e->getMessage()];
         } elseif ($e instanceof ValidationException) {
             [$status, $code, $message] = [422, 'validation_failed', 'Os dados informados são inválidos.'];
             $details = $e->errors();

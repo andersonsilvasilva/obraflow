@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Modules\Shared\Exceptions\DomainRuleException;
 use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use LogicException;
 
 /** Fase da obra (árvore). Pai da mesma obra pela FK; profundidade máxima e ciclo verificados aqui. */
 class ProjectPhase extends Model
@@ -32,13 +32,13 @@ class ProjectPhase extends Model
             $cursor = self::query()->find($phase->parent_id);
             while ($cursor !== null) {
                 if ($phase->exists && (int) $cursor->id === (int) $phase->id) {
-                    throw new LogicException('A fase não pode estar abaixo de si mesma.');
+                    throw new DomainRuleException('A fase não pode estar abaixo de si mesma.');
                 }
                 $depth++;
                 $cursor = $cursor->parent_id === null ? null : self::query()->find($cursor->parent_id);
             }
             if ($depth > self::MAX_DEPTH) {
-                throw new LogicException('Fases da obra têm no máximo '.self::MAX_DEPTH.' níveis.');
+                throw new DomainRuleException('Fases da obra têm no máximo '.self::MAX_DEPTH.' níveis.');
             }
         });
     }

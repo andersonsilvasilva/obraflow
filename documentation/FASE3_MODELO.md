@@ -95,4 +95,18 @@ Commit `b026bd8` — CI run 43955864771 verde (API MySQL 8.0, API MySQL 8.4, Web
 - **Catálogo** (D-P28): `employees.*`, `equipment.*`, `projects.*` (27 permissões). Papel `member` de **tenants novos**: + `equipment.view`, `projects.view` (sem `employees.view`). **No banco `obraflow` nada mudou**: instalar as 6 permissões (`obraflow:sync-permissions`) e alinhar os papéis da HighTech (`obraflow:system-roles:sync`) exigem autorização.
 - **Testes:** +3 de integridade, +5 de acesso por obra (`Feature/Teams/ProjectAccessTest`); `SyncSystemRolesTest` atualizado (o member anterior à Fase 2 recebe 7 leituras). Suíte **339/339 (1.893 asserções)**.
 
-**Próximas:** etapa 5 (API, Policies, auditoria, serviço de status, vínculo de documentos), etapa 6 (revisão, CI, relatório).
+Commit `1dc6aa3` — CI run 43957352378 verde (API MySQL 8.0, API MySQL 8.4, Web).
+
+### Etapa 5 — API, permissões, auditoria, status e documentos
+
+- **46 rotas** novas (`routes/api/v1/teams.php`, `projects.php`), todas em `tenant.required` (o teste estrutural da D-29 cobre). Detalhe em [API.md](API.md) §Fase 3.
+- **Módulos:** `app/Modules/Teams` (requests com base `TenantRequest` — referências por uuid conferidas no tenant ativo e convertidas para id; resources; controllers de catálogos, grupos, funcionários/certificações, equipamentos) e `app/Modules/Projects` (`ProjectController`, `ProjectStatusService`, `ProjectAccessManager`, `ProjectAccess`).
+- **Autorização em duas camadas:** permissão na rota + nível na obra (`ProjectAccess`); obra sem acesso → 404; resposta traz `access_level` de quem consulta.
+- **Erros:** regra de negócio do modelo lança `DomainRuleException` → **422 `domain_rule`** (outra empresa, ciclo, profundidade); CHECK do banco que escape da validação → **422 `constraint_violation`** (antes seria 500); datas "fim ≥ início" validadas também em edição parcial (compara com o valor gravado).
+- **Auditoria:** CRUD por `registry.*` (entity_type `employee`, `equipment`, `project`, `project_phase`…); eventos próprios `project.status_changed` (com motivo), `project.access_granted` (inclui alteração de nível, com valor anterior) e `project.access_revoked`; `AuditEvent::phase3()` com cobertura testada.
+- **D-P21:** CPF mascarado sem `employees.manage`; busca por CPF só para quem administra; equipe da obra expõe só nome/função/período.
+- **D-P19:** vínculo de documento a funcionário/equipamento/obra exige, além do acesso ao documento, enxergar o dono (`employees.view`, `equipment.view`, nível `edit` na obra); o filtro por dono não revela nada sem esse acesso.
+- **Exclusões:** funcionário responsável técnico ou em equipe aberta → 409 `employee_in_use`; cargo/setor/grupo/fase em uso → 409 `in_use`; obras, funcionários e equipamentos com soft delete.
+- **Testes:** `Feature/Teams/TeamsApiTest` (10) e `ProjectsApiTest` (12). Suíte **361/361 (2.269 asserções)**.
+
+**Próxima:** etapa 6 (revisão estrutural do isolamento, CI, relatório da Fase 3).

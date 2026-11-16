@@ -8,14 +8,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
- * Vínculo polimórfico documento ↔ cadastro (única tabela polimórfica da Fase 2).
+ * Vínculo polimórfico documento ↔ cadastro (única tabela polimórfica; donos da Fase 3 incluídos por D-P19).
  * Crie SEMPRE pelo DocumentStorage::link(), que confere o dono no tenant ativo.
  */
 class DocumentLink extends Model
 {
     use BelongsToTenant;
 
-    public const LINKABLE_TYPES = ['company', 'company_branch', 'customer', 'supplier'];
+    public const LINKABLE_TYPES = ['company', 'company_branch', 'customer', 'supplier', 'employee', 'equipment', 'project'];
 
     protected $guarded = ['*'];
 

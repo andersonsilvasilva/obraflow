@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use App\Modules\Registry\Concerns\HasPublicUuid;
+use App\Modules\Shared\Exceptions\DomainRuleException;
 use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use LogicException;
 
 /**
  * Obra. Responsável técnico = funcionário da mesma empresa (FK no banco); cliente da mesma empresa (regra aqui).
@@ -51,7 +51,7 @@ class Project extends Model
             if ($project->customer_id !== null && $project->isDirty(['customer_id', 'company_id'])) {
                 $customer = Customer::query()->find($project->customer_id);
                 if ($customer !== null && (int) $customer->company_id !== (int) $project->company_id) {
-                    throw new LogicException('O cliente da obra deve ser da mesma empresa.');
+                    throw new DomainRuleException('O cliente da obra deve ser da mesma empresa.');
                 }
             }
         });

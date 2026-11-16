@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use App\Modules\Shared\Exceptions\DomainRuleException;
 use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use LogicException;
 
 /**
  * Grupo/subgrupo de recursos (D-P22). Dois níveis: um subgrupo não pode ter filhos.
@@ -27,14 +27,14 @@ class ResourceGroup extends Model
                 return;
             }
             if ($group->exists && (int) $group->parent_id === (int) $group->id) {
-                throw new LogicException('Um grupo não pode ser pai de si mesmo.');
+                throw new DomainRuleException('Um grupo não pode ser pai de si mesmo.');
             }
             $parent = self::query()->find($group->parent_id);
             if ($parent?->parent_id !== null) {
-                throw new LogicException('Grupos de recursos têm no máximo dois níveis (grupo e subgrupo).');
+                throw new DomainRuleException('Grupos de recursos têm no máximo dois níveis (grupo e subgrupo).');
             }
             if ($group->exists && $group->children()->exists()) {
-                throw new LogicException('Um grupo com subgrupos não pode virar subgrupo.');
+                throw new DomainRuleException('Um grupo com subgrupos não pode virar subgrupo.');
             }
         });
     }

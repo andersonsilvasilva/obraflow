@@ -104,3 +104,27 @@ Todas as rotas exigem sessão/token **com tenant ativo** (`tenant.required`) e a
 | Documentos | `GET/POST /documents`, `GET/PUT /documents/{uuid}`, `POST /documents/{uuid}/versions`, `POST /documents/{uuid}/versions/{n}/url`, `POST/DELETE /documents/{uuid}/links[/{id}]`, `PUT /documents/{uuid}/permissions` | `documents.view` + acesso por documento |
 
 Listagens: `?q=` (busca; números também no documento), `?status=`, `?per_page=` (máx. 100); resposta `{data, meta}`. Documentos: upload multipart (`file`, tipo verificado pelo conteúdo: PDF, PNG, JPEG, WebP, DOCX, XLSX; limite `DOCUMENTS_MAX_KB`). O download é por **URL assinada** (5 min) em `/files/documents/…`; a chave de armazenamento nunca é exposta.
+
+## Fase 3 — Equipes e Obras (implementado)
+
+Todas as rotas em `tenant.required`; entidades por uuid (funcionários, equipamentos, obras), catálogos e detalhes por id. Mesmo formato de lista (`{data, meta}`, `?q=`, `?per_page=`) e de erro. Regra de negócio violada → **422 `domain_rule`**; CHECK violado que escape da validação → **422 `constraint_violation`**; duplicidade → 409 `duplicate`; em uso → 409 `in_use`.
+
+| Recurso | Rotas | Permissão |
+|---|---|---|
+| Cargos / Setores | `GET/POST /job-titles`, `PUT/DELETE /job-titles/{id}`; idem `/departments` | `employees.view` / `employees.manage` |
+| Funcionários | `GET/POST /employees`, `GET/PUT/DELETE /employees/{uuid}` (filtros `company_uuid`, `job_title_id`, `department_id`, `labor_type`, `contract_type`, `status`) | `employees.view` / `employees.manage` |
+| Certificações | `GET/POST /employees/{uuid}/certifications`, `PUT/DELETE …/{id}` (`document_uuid` opcional) | idem |
+| Grupos de recursos | `GET/POST /resource-groups`, `PUT/DELETE /resource-groups/{id}` (só `equipment` nesta fase; 2 níveis) | `equipment.view` / `equipment.manage` |
+| Equipamentos | `GET/POST /equipment`, `GET/PUT/DELETE /equipment/{uuid}` (filtros `company_uuid`, `group_id`, `unit_id`, `ownership`, `status`) | `equipment.view` / `equipment.manage` |
+| Obras | `GET/POST /projects`, `GET/PUT/DELETE /projects/{uuid}` (filtros `status`, `company_uuid`, `customer_uuid`) | `projects.view` + nível na obra; criar/excluir `projects.manage` |
+| Status da obra | `POST /projects/{uuid}/status` `{status, reason?}`, `GET …/status-history` | nível `edit` / `view` |
+| Endereço, fases, equipe | `GET/POST /projects/{uuid}/addresses`, `PUT/DELETE …/{id}`; `POST /projects/{uuid}/phases`, `PUT/DELETE …/{id}`; `POST /projects/{uuid}/members`, `PUT/DELETE …/{id}` | leitura `view`, escrita `edit` |
+| Acesso por obra | `GET/POST /projects/{uuid}/access` `{user_uuid, access_level}`, `DELETE …/access/{userUuid}` | nível `manage` |
+| Documentos | `POST /documents/{uuid}/links` aceita `linkable_type` `employee`, `equipment`, `project` (chave = uuid) | além do documento: `employees.view` / `equipment.view` / nível `edit` na obra |
+
+**Regras de visibilidade:**
+- **Obras (D-P24):** quem tem `projects.manage` vê todas. Os demais veem só as obras liberadas, e o nível (`view` < `edit` < `manage`) limita a ação. Obra sem acesso → **404**.
+- **Tokens (D-29):** sem `projects.manage` no token, vale o acesso por obra até para o admin.
+- **Nível na resposta:** cada obra traz `access_level`, o nível de quem consulta, para o frontend habilitar ações.
+- **CPF (D-P21):** CPF do funcionário completo só com `employees.manage`; os demais recebem `***.982.247-**`.
+- **Status da obra (D-P27):** não é aceito no `PUT`. As transições permitidas estão em `Project::TRANSITIONS`.
