@@ -21,7 +21,7 @@ class ResourceController extends Controller
 {
     use ListsRecords;
 
-    private const RELATIONS = ['unit:id,code,name', 'group:id,name,parent_id', 'mainSupplier:id,uuid,legal_name,trade_name', 'jobTitle:id,name', 'equipment:id,uuid,name,code'];
+    private const RELATIONS = ['unit:id,code,name', 'group:id,name,parent_id', 'group.parent:id,name', 'mainSupplier:id,uuid,legal_name,trade_name', 'jobTitle:id,name', 'equipment:id,uuid,name,code'];
 
     public function __construct(private readonly ResourceCatalogService $catalog) {}
 

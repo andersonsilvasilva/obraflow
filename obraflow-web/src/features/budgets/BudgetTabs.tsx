@@ -55,7 +55,7 @@ export function SheetTab({
           <Plus className="size-4" /> Item manual
         </Button>
         <Button onClick={() => onAddReference()} disabled={!editable || tree.length === 0} title={lockHint}>
-          <Plus className="size-4" /> Da base de referência
+          <Plus className="size-4" /> Da base / catálogo
         </Button>
       </div>
       {tree.length === 0 ? (
@@ -110,7 +110,7 @@ export function SheetTab({
                         <span className="line-clamp-2">{it.description}</span>
                         {it.source !== 'manual' && (
                           <span className="text-muted-foreground text-xs">
-                            {it.source === 'official' ? 'Oficial' : 'Ajustado'}
+                            {it.source === 'official' ? 'Oficial' : it.source === 'catalog' ? 'Catálogo' : 'Ajustado'}
                             {it.source_ref && ` · ${it.source_ref.source} ${it.source_ref.code} · ${it.source_ref.state} ${it.source_ref.competency}`}
                           </span>
                         )}

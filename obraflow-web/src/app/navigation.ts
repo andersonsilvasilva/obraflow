@@ -55,8 +55,18 @@ export const navigation: NavNode[] = [
       {
         label: 'Recursos',
         children: [
+          { label: 'Materiais', path: '/cadastros/materiais', permission: 'resources.view' },
+          { label: 'Mão de obra', path: '/cadastros/mao-de-obra', permission: 'resources.view' },
+          { label: 'Equipamentos (custo)', path: '/cadastros/equipamentos-custo', permission: 'resources.view' },
+          { label: 'Serviços', path: '/cadastros/servicos', permission: 'resources.view' },
+          { label: 'Grupos de insumos', path: '/cadastros/grupos-insumos', permission: 'resources.view' },
+        ],
+      },
+      {
+        label: 'Patrimônio',
+        children: [
           { label: 'Equipamentos', path: '/cadastros/equipamentos', permission: 'equipment.view' },
-          { label: 'Grupos de recursos', path: '/cadastros/grupos', permission: 'equipment.view' },
+          { label: 'Grupos de equipamentos', path: '/cadastros/grupos', permission: 'equipment.view' },
         ],
       },
     ],
@@ -108,7 +118,12 @@ export const routeLabels: Record<string, string> = {
   cargos: 'Cargo/Função',
   setores: 'Setores',
   equipamentos: 'Equipamentos',
-  grupos: 'Grupos de recursos',
+  grupos: 'Grupos de equipamentos',
+  materiais: 'Materiais',
+  'mao-de-obra': 'Mão de obra',
+  'equipamentos-custo': 'Equipamentos (custo)',
+  servicos: 'Serviços',
+  'grupos-insumos': 'Grupos de insumos',
   obras: 'Obras',
   contratos: 'Contratos',
   orcamentos: 'Orçamentos',

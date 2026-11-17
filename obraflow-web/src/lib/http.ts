@@ -62,15 +62,17 @@ export async function http<T>(path: string, options: RequestOptions = {}): Promi
     const hint = getActiveTenant()
     const xsrf = readCookie(XSRF_COOKIE)
 
+    const multipart = typeof FormData !== 'undefined' && options.body instanceof FormData
     return fetch(url, {
       method,
       headers: {
         Accept: 'application/json',
-        ...(options.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        // FormData (envio de arquivo): o navegador define o Content-Type com o boundary
+        ...(options.body !== undefined && !multipart ? { 'Content-Type': 'application/json' } : {}),
         ...(hint ? { [TENANT_HINT_HEADER]: hint } : {}),
         ...(mutating && xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
       },
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body: options.body === undefined ? undefined : multipart ? (options.body as FormData) : JSON.stringify(options.body),
       credentials: 'include',
       signal: options.signal,
     })

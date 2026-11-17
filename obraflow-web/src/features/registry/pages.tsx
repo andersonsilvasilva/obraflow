@@ -174,8 +174,8 @@ const quick = (kind: 'jobTitles' | 'departments'): QuickAddConfig => {
 
 // ================================================================== Grupos de recursos
 const groups: ResourceConfig<ResourceGroup> = {
-  title: 'Grupos de recursos',
-  description: 'Grupos e subgrupos de equipamentos (dois níveis).',
+  title: 'Grupos de equipamentos',
+  description: 'Grupos e subgrupos de equipamentos do patrimônio (dois níveis).',
   singular: 'grupo',
   queryKey: 'resource-groups',
   managePermission: 'equipment.manage',

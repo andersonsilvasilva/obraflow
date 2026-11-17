@@ -73,4 +73,14 @@ No banco: FK `(tenant_id, kind, group_id)` (grupo do mesmo tipo) e CHECK de carg
 
 **Permissões:** `resources.view` e `resources.manage` (33 no catálogo). O `member` de tenants novos recebe `resources.view`.
 
-**Testes:** `Feature/Catalog/ResourceCatalogTest` (9). Suíte **425/425 (2.997 asserções)**.
+**Testes:** `Feature/Catalog/ResourceCatalogTest` (8). Suíte **425/425 (2.997 asserções)**.
+
+### Telas (etapas 2, 3 e 4)
+
+- **Cadastros → Recursos**: Materiais, Mão de obra, Equipamentos (custo), Serviços e Grupos de insumos, no padrão de listagem (L1–L6). O grupo mostra o grupo-pai quando há subgrupo.
+- **Patrimônio**: Equipamentos e Grupos de equipamentos (antigo "Grupos de recursos"), sem mudança de comportamento.
+- **Balanço da mão de obra**: modal com o histórico e a prévia do preço/hora. A prévia é só uma estimativa: o valor oficial é calculado pela API.
+- **Importação**: escolher a planilha → pré-visualização (válidas, ignoradas e motivos) → confirmar. Usa envio multipart.
+- **Orçamento**: o botão "Da base / catálogo" abre o seletor com 3 origens (Composições SINAPI, Insumos SINAPI, Catálogo da empresa). O catálogo só aparece com `resources.view`.
+
+**Testes frontend:** 37/37 (+2: prévia do balanço, multipart).

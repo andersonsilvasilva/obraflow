@@ -62,7 +62,7 @@ export interface Item {
   discount_percent: string
   total_cost: string
   total_sale: string
-  source: 'official' | 'custom' | 'manual'
+  source: 'official' | 'custom' | 'manual' | 'catalog'
   source_ref: { source: string; competency: string; state: string; regime: string; type: string; code: string } | null
   sort_order: number
 }
@@ -130,6 +130,8 @@ export interface Dataset {
 
 export interface RefResult {
   code: string
+  /** Código exibido (no catálogo, `code` guarda o uuid). */
+  label?: string
   description: string
   unit: string
   total_cost?: string
@@ -162,6 +164,7 @@ export const budgetsApi = {
   items: {
     create: (uuid: string, n: number, body: Body) => http(`${v(uuid, n)}/items`, { method: 'POST', body }),
     fromReference: (uuid: string, n: number, body: Body) => http(`${v(uuid, n)}/items/reference`, { method: 'POST', body }),
+    fromCatalog: (uuid: string, n: number, body: Body) => http(`${v(uuid, n)}/items/catalog`, { method: 'POST', body }),
     update: (uuid: string, n: number, id: number, body: Body) => http(`${v(uuid, n)}/items/${id}`, { method: 'PUT', body }),
     remove: (uuid: string, n: number, id: number) => http<void>(`${v(uuid, n)}/items/${id}`, { method: 'DELETE' }),
     composition: (uuid: string, n: number, id: number) =>

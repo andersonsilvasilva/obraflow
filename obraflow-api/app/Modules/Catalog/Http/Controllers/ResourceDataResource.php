@@ -23,7 +23,8 @@ class ResourceDataResource extends JsonResource
             'notes' => $this->notes,
             'status' => $this->status,
             'unit' => $this->whenLoaded('unit', fn () => $this->unit?->only(['id', 'code', 'name'])),
-            'group' => $this->whenLoaded('group', fn () => $this->group?->only(['id', 'name', 'parent_id'])),
+            // grupo e subgrupo separados (como na listagem de referência): com pai, o vínculo é um subgrupo
+            'group' => $this->whenLoaded('group', fn () => $this->group ? $this->group->only(['id', 'name', 'parent_id']) + ['parent_name' => $this->group->parent?->name] : null),
             'main_supplier' => $this->whenLoaded('mainSupplier', fn () => $this->mainSupplier?->only(['uuid', 'legal_name', 'trade_name'])),
             'job_title' => $this->whenLoaded('jobTitle', fn () => $this->jobTitle?->only(['id', 'name'])),
             'equipment' => $this->whenLoaded('equipment', fn () => $this->equipment?->only(['uuid', 'name', 'code'])),

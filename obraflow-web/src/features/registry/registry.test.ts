@@ -20,7 +20,8 @@ describe('menu filtrado por permissão (T-03)', () => {
   it('member (D-P28) vê equipamentos e obras, mas não funcionários', () => {
     const member = new Set(['companies.view', 'customers.view', 'suppliers.view', 'units.view', 'documents.view', 'equipment.view', 'projects.view'])
     const result = labels(filterNavigation(navigation, (p) => member.has(p)))
-    expect(result).toEqual(expect.arrayContaining(['Obras', 'Equipamentos', 'Grupos de recursos']))
+    expect(result).toEqual(expect.arrayContaining(['Obras', 'Equipamentos', 'Grupos de equipamentos']))
+    expect(result).not.toContain('Materiais') // sem resources.view, o catálogo não aparece
     expect(result).not.toContain('Funcionários')
     expect(result).not.toContain('Cargo/Função')
   })

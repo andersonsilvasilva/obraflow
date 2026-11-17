@@ -65,6 +65,8 @@ export interface ResourceConfig<T> {
   formSize?: 'md' | 'lg' | 'xl'
   /** Chaves de cache a invalidar além da própria (ex.: listas usadas em selects). */
   invalidates?: string[]
+  /** Botões extras na barra (L1), antes de "Adicionar" — ex.: importar planilha. */
+  toolbarExtra?: (ctx: { canManage: boolean; refresh: () => void }) => ReactNode
 }
 
 const PAGE_SIZES = [10, 25, 50, 100]
@@ -161,7 +163,8 @@ export function ResourcePage<T>({ config }: { config: ResourceConfig<T> }) {
               ))}
             </SelectInput>
           ))}
-          <div className="ml-auto">
+          <div className="ml-auto flex gap-2">
+            {config.toolbarExtra?.({ canManage, refresh: invalidate })}
             <Button size="lg" onClick={() => setEditing('new')} disabled={!canManage} title={canManage ? undefined : 'Sem permissão para cadastrar'}>
               <Plus className="size-4" /> Adicionar
             </Button>

@@ -48,9 +48,9 @@ npm test && npm run lint && npm run build
 | **Fase 4B.6 — API de orçamentos** (totais, validação, fluxo e aprovação, permissões e aprovador, acesso por obra, isolamento, token, eventos) | `Feature/Budgets/BudgetApiTest` | 7 |
 | **Ajustes pós-homologação da Fase 3** (código automático OB-NNN/AAAA, regressão da busca com dígitos) | `Feature/Teams/ProjectsApiTest` | 2 |
 | **Código automático do orçamento** (ORC-NNN/AAAA por ano da data-base) | `Feature/Budgets/BudgetApiTest` | 1 |
-| **Fase 4C — catálogo de insumos** (CRUD, grupos por tipo, balanço da mão de obra, importação com pré-visualização, item do catálogo no orçamento, permissões, isolamento, CHECKs) | `Feature/Catalog/ResourceCatalogTest` | 9 |
+| **Fase 4C — catálogo de insumos** (CRUD, grupos por tipo, balanço da mão de obra, importação com pré-visualização, item do catálogo no orçamento, permissões, isolamento, CHECKs) | `Feature/Catalog/ResourceCatalogTest` | 8 |
 | **Backend** | | **425 (2.997 asserções)** |
-| **Frontend** (cliente HTTP/CSRF, tenant hint e BroadcastChannel, menu por permissão, paginação local, formatação, obras, fluxo e EAP do orçamento, primeiros passos, máscaras CPF/CNPJ/telefone/CEP) | `src/**/*.test.ts` | **35** |
+| **Frontend** (cliente HTTP/CSRF, tenant hint e BroadcastChannel, menu por permissão, paginação local, formatação, obras, fluxo e EAP do orçamento, primeiros passos, máscaras CPF/CNPJ/telefone/CEP, prévia do balanço, envio multipart) | `src/**/*.test.ts` | **37** |
 
 ## 3. Requisitos obrigatórios × testes
 
