@@ -113,6 +113,19 @@ final class AuditEvent
 
     public const REFERENCE_ACTIVATED = 'reference.activated';
 
+    // Fase 4B — fluxo do orçamento (o CRUD usa registry.*, com entity_type budget, budget_item…)
+    public const BUDGET_SUBMITTED = 'budget.submitted';
+
+    public const BUDGET_WITHDRAWN = 'budget.withdrawn';
+
+    public const BUDGET_APPROVED = 'budget.approved';
+
+    public const BUDGET_REJECTED = 'budget.rejected';
+
+    public const BUDGET_REOPENED = 'budget.reopened';
+
+    public const BUDGET_VERSION_CREATED = 'budget.version_created';
+
     /** @return list<string> */
     public static function all(): array
     {

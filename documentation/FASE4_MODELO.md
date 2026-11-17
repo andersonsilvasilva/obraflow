@@ -219,3 +219,33 @@ Commit `011041f`.
 - **Faixas:** A se o item **começa** antes de 80%; B antes de 95%; C o restante.
 
 **Testes:** `Feature/Budgets/BudgetReferenceTest` (8): cópia, árvore expandida, ABC com valores, regime/UF, preço `custom`, exclusão, nova versão, FKs por versão. Suíte **407/407 (2.620 asserções)**.
+Commit `8c6b862`. CI verde: run 44099384177 (`011041f`) e run 44101062816 (`8c6b862`).
+
+### 4B.6 — Fluxo de aprovação, permissões, auditoria e API
+
+**2 tabelas append-only** (migrations `200010` e `200011`):
+- `budget_approvals`: decisão, autor membro do tenant, comentário e **`totals_hash`** (SHA-256 canônico dos totais);
+- `budget_status_history`: a versão precisa ser do **próprio** orçamento (FK composta).
+
+**`BudgetWorkflow` (D-P34):**
+- **Transições:** rascunho → em revisão → aprovado | rejeitado. Em revisão pode **voltar** a rascunho; rejeitado pode ser **reaberto**.
+- **Aprovar:** recalcula, bloqueia a versão, grava a decisão com o hash e marca a aprovada anterior como `superseded`.
+- **Rejeitar:** exige motivo.
+- **Enviar:** exige ao menos um item.
+- **Registro:** histórico e auditoria na mesma transação, com as linhas travadas.
+- **Edição:** só em **rascunho**; o serviço confere.
+
+**`BudgetAccess`:** combina a permissão do módulo com o **acesso por obra** quando o orçamento tem obra. A listagem mostra orçamentos sem obra e os das obras visíveis.
+
+**Permissões:** `budgets.view`, `budgets.manage` e `budgets.approve` entram no catálogo (31 permissões). Aprovar não exige editar. O `member` de tenants novos recebe `budgets.view`.
+
+**Auditoria:**
+- eventos `budget.submitted`, `withdrawn`, `approved`, `rejected`, `reopened`, `version_created`;
+- o CRUD continua em `registry.*`;
+- cobertura `AuditEvent::phase4()` testada.
+
+**API:** 23 rotas em `routes/api/v1/budgets.php`. Detalhe em [API.md](API.md) §Fase 4B.
+
+**Testes:** `Feature/Budgets/BudgetApiTest` (7): totais pela API (preço final 219,74 com BDI do TCU, indiretos e desconto), validação, fluxo completo com nova versão e substituição, aprovador sem edição, acesso por obra, isolamento e token, eventos. Suíte **414/414 (2.795 asserções)**.
+
+**Banco `obraflow`:** sem alterações. As migrations da 4B (11 tabelas) e as permissões de orçamento serão pedidas no fechamento.

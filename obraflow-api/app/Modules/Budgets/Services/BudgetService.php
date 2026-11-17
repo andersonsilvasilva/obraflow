@@ -13,6 +13,9 @@ use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
 use App\Models\ReferenceDataset;
 use App\Models\User;
+use App\Modules\Audit\AuditEvent;
+use App\Modules\Audit\AuditLogger;
+use App\Modules\Budgets\Exceptions\VersionLockedException;
 use App\Modules\Budgets\Support\Dec;
 use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
@@ -273,6 +276,8 @@ final class BudgetService
 
             $budget->forceFill(['current_version_id' => $version->id, 'status' => 'draft'])->save();
             $this->calculator->recalculate($version);
+            app(AuditLogger::class)->record(AuditEvent::BUDGET_VERSION_CREATED, tenantId: $budget->tenant_id, userId: $actor->getKey(),
+                entityType: 'budget', entityId: $budget->id, metadata: ['from_version' => $current->version_number, 'version' => $number]);
 
             return $version->refresh();
         });
@@ -331,7 +336,13 @@ final class BudgetService
     private function mutate(BudgetVersion $version, callable $change): array
     {
         return DB::transaction(function () use ($version, $change) {
-            BudgetVersion::query()->whereKey($version->id)->lockForUpdate()->first(); // serializa recálculos da versão
+            $locked = BudgetVersion::query()->whereKey($version->id)->lockForUpdate()->firstOrFail(); // serializa recálculos da versão
+            if ($locked->locked_at !== null) {
+                throw new VersionLockedException;
+            }
+            if ($locked->status !== 'draft') {
+                throw new DomainRuleException('A versão está em revisão ou foi rejeitada: devolva/reabra para rascunho antes de editar.');
+            }
             $change();
 
             return $this->calculator->recalculate($version);

@@ -142,3 +142,24 @@ Dados **globais e somente leitura** (D-P29), iguais para todos os tenants. As ro
 | `GET /references/datasets/{id}/compositions/{code}` | Composição com decomposição de custos, classe, tipo, agrupador e itens: insumo **ou** composição filha, coeficiente com 7 casas, preço unitário, custo e origem |
 
 Base em importação ou com falha → 404. Base substituída continua consultável pelo `id`, para manter rastreáveis os orçamentos antigos.
+
+## Fase 4B — Orçamentos (implementado)
+
+As rotas ficam em `tenant.required`, com as permissões `budgets.view`, `budgets.manage` e `budgets.approve`. Num orçamento de obra vale também o **acesso por obra** (D-P24): ver e aprovar exigem nível `view` na obra; editar exige `edit`. Orçamento invisível → 404. Cada orçamento traz `abilities: {edit, approve}`, para o frontend habilitar as ações.
+
+| Rota | Uso |
+|---|---|
+| `GET/POST /budgets`; `GET/PUT/DELETE /budgets/{uuid}` | Orçamento. Na criação: `company_uuid`, `code`, `title`, `mode` (`customer`/`manual`/`reference`), `reference_dataset_id` (UF e regime vêm da base), `project_uuid`, `customer_uuid`. Orçamento com versão aprovada não é excluído (409 `budget_approved`) |
+| `GET /budgets/{uuid}/versions/{n}` | Versão completa: totais, etapas, itens, BDI, indiretos |
+| `PUT /budgets/{uuid}/versions/{n}` | `label`, `discount_percent` (desconto global) |
+| `POST /budgets/{uuid}/versions` | Nova versão, copiada da corrente aprovada ou rejeitada |
+| `POST/PUT/DELETE …/versions/{n}/groups[/{id}]` | Etapas (até 4 níveis) |
+| `POST …/items`; `POST …/items/reference`; `PUT/DELETE …/items/{id}` | Item manual; item de referência (`reference_dataset_id`, `type` composition/resource, `code`, `group_id`, `quantity`); ao alterar o preço, um item oficial passa a `custom` |
+| `GET …/items/{id}/composition` | Composição copiada (itens diretos) e insumos finais |
+| `PUT …/bdi` | `scope` global/group/item, `method` informed (`percent`) ou tcu (`components` ac, s, r, g, df, l, i); `remove: true` remove |
+| `POST/PUT/DELETE …/indirect-costs[/{id}]` | Custos indiretos: `fixed` (`amount`) ou `percent_of_direct` (`percent`) |
+| `GET …/abc?type=services\|resources` | Curva ABC |
+| `POST /budgets/{uuid}/workflow/{submit\|withdraw\|approve\|reject\|reopen}` | Fluxo da versão corrente. `reject` exige `comment`. Aprovar recalcula, bloqueia e grava o `totals_hash` |
+| `GET /budgets/{uuid}/history` | Histórico de status e decisões (com o `totals_hash`) |
+
+Edição só em **rascunho**; versão em revisão, rejeitada ou aprovada → 422 `domain_rule`. Transição inválida → 422 `invalid_transition`. Enviar sem itens → 422 `empty_budget`.

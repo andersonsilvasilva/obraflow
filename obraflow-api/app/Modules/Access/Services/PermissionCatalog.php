@@ -45,6 +45,10 @@ final class PermissionCatalog
         'projects.manage' => 'projects',
         // Fase 4 — referências técnicas (globais, somente leitura; escrita só pelo comando de importação)
         'references.view' => 'references',
+        // Fase 4B — orçamentos (aprovar não exige editar; D-P34)
+        'budgets.view' => 'budgets',
+        'budgets.manage' => 'budgets',
+        'budgets.approve' => 'budgets',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -74,7 +78,7 @@ final class PermissionCatalog
                 // D-P28: sem employees.view (dados pessoais); obras visíveis só com acesso por obra (D-P24)
                 'equipment.view', 'projects.view',
                 // Fase 4: bases técnicas públicas
-                'references.view'],
+                'references.view', 'budgets.view'],
             'viewer' => ['tenant.view'],
         ];
     }
