@@ -172,3 +172,18 @@ As telas de contrato e medição do Brickup estão bloqueadas no plano atual do 
 - **Acesso (D-P56):** `contracts.view` e `contracts.manage` (35 no catálogo), mais o acesso por obra. Sem acesso à obra, a resposta é 404. O `member` de tenants novos recebe `contracts.view`.
 - **Auditoria:** `contract.status_changed`, `contract.items_generated`, `contract.addendum_approved` e `contract.addendum_canceled`. O cadastro em si audita em `registry.*`.
 - **Testes:** `Feature/Contracts/ContractApiTest` (8). Suíte 442/442.
+
+### 5A — etapa 3 (telas)
+
+- **Obra → aba Contratos** (o pedido do responsável: "armazenar os contratos e aditivos da obra nessa tela"):
+  - lista com as colunas Contrato, Descrição, Parte, Valor atual, Término, Status e Arquivos;
+  - "Adicionar contrato": tipo, cliente ou fornecedor da empresa da obra, número automático, início/término, objeto, retenção, assinatura, reajuste e observações.
+- **Página do contrato** (`/obras/{obra}/contratos/{contrato}`):
+  - resumo com valor original, aditivos, valor atual, prazo (original × atual), retenção, orçamento de origem e "medido" (em breve: 5B);
+  - ações conforme o status: Ativar (com data de assinatura), Suspender e Cancelar (com motivo), Retomar, Concluir; Editar (depois de assinado, só observações e reajuste).
+  - **Itens:** tabela com quantidade original × atual quando há aditivos e total do contrato. Em rascunho: incluir, editar e excluir; "Gerar do orçamento aprovado" mostra a diferença de centavos.
+  - **Aditivos:** cada aditivo com tipo, status, valor (+/−), novo término, linhas (alteração de quantidade ou item novo) e o aviso dos 25%. Ações: Aprovar (com data de assinatura) e Cancelar. **Arquivos do aditivo** (o termo assinado).
+  - **Arquivos:** o contrato assinado e outros anexos. Ficam nos Documentos (disco privado) e o download é por link temporário.
+  - **Histórico** de status.
+- O item "Em preparação → Contratos" saiu do menu: o contrato vive dentro da obra (A-45).
+- **Testes frontend:** 44/44 (+3: ações por status, parte do contrato, menu sem "Contratos").

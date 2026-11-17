@@ -165,4 +165,23 @@ Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os 
   - Tipos de coluna: A–E e L são texto; F–I são datas; J, K, M e N são números.
   - Recursos devem ficar sob uma etapa. O item é separado por caracteres não alfanuméricos, em ordem. A descrição tem no máximo 250 caracteres.
   - Equipamento e mão de obra exigem a coluna C; material, indiretos e serviços exigem C e L.
-  - **Planilha-modelo `planning.xlsx`:** Tipo (Etapa/Material/Serviços…), Item (1, 1.1, 1.1.1…), Descrição, Data de início (planejado), Data de entrega (planejado), Início da etapa (executado), Conclusão da etapa (executado), Valor unitário, Quantidade, Unidade, HH prevista, Comentário.
+  - **Planilha-modelo `planning.xlsx`** (colunas abaixo).
+- **Planejamento (versão nova do Brickup):**
+  - totais no topo: Custo, Com BDI, BDI, Desconto, Valor final e venda por tipo (material, equipamentos, cargo/função, serviço, outros);
+  - botões Caminho crítico, Linha de base, **BDI**, **Desconto**, Importar, Exportar, **Exceções** (o calendário da obra) e "Planejamento com IA (1/2)";
+  - colunas editáveis (Atividade, Início, Término, Duração em dias) e Gantt diário;
+  - interruptor "Visualizar recursos".
+  - **Configurações de visualização do cronograma:**
+    - modelos Padrão, Cronograma, Custo detalhado, Venda detalhada e Personalizado;
+    - colunas visíveis no grupo Básico: ID, Atividade, Início, Término, Duração, Predecessoras, Unidade, Qtd. unitária, Qtd. total, Valor de custo unitário, BDI %, Desconto %, Valor de venda unitário, Total de custo, Total de venda e Recursos; há também um grupo Avançado;
+    - **modo de visualização:** Somente tabela, Layout dividido ou Somente Gantt;
+    - botões "Restaurar largura/ordem das colunas" e "Salvar preferências" (por usuário).
+- **RDO — Diário de Obra** (um por dia, navegação por data, "Exportar"):
+  - cabeçalho com obra, endereço, responsável técnico, encarregado, data de início e prazo; Nº do RDO; "Aprovado por" + botão **Aprovar**;
+  - **condição climática** de manhã, tarde e noite (sol, nublado, chuva);
+  - Mão de obra, Equipamento e **Horas produtivas** (vindas do horário da obra, ex.: 06:00–11:00 e 12:00–15:00);
+  - Atividades (por quantidade ou %) e Atividades paralisadas;
+  - Materiais recebidos e utilizados;
+  - Ocorrências, Comentários gerais, Visitas e Fotos, cada bloco com botão "Entrada".
+  - Entra na **Fase 6** (Diário de obras), com os horários e o calendário da obra já feitos.
+- Colunas da planilha-modelo `planning.xlsx`: Tipo (Etapa/Material/Serviços…), Item (1, 1.1, 1.1.1…), Descrição, Data de início (planejado), Data de entrega (planejado), Início da etapa (executado), Conclusão da etapa (executado), Valor unitário, Quantidade, Unidade, HH prevista, Comentário.

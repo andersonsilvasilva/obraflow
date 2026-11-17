@@ -267,7 +267,8 @@ class ContractController extends Controller
         $contract = Contract::query()->find($a->contract_id);
 
         return [
-            'number' => $a->number, 'kind' => $a->kind, 'status' => $a->status, 'description' => $a->description,
+            // id: vínculo de documentos do aditivo (D-P55)
+            'id' => $a->id, 'number' => $a->number, 'kind' => $a->kind, 'status' => $a->status, 'description' => $a->description,
             'value_delta' => (string) $a->value_delta, 'new_end_date' => $a->new_end_date?->toDateString(), 'signed_at' => $a->signed_at?->toDateString(),
             'approved_at' => $a->approved_at?->toIso8601String(), 'approved_by' => $a->approver?->only(['uuid', 'name']),
             'created_by' => $a->creator?->only(['uuid', 'name']),

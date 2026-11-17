@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Compass,
   Clock,
-  FileSignature,
   FileText,
   FolderPlus,
   HardHat,
@@ -78,7 +77,6 @@ export const navigation: NavNode[] = [
     icon: Clock,
     children: [
       { label: 'Orçamento inteligente (IA)', path: '/orcamento-inteligente', icon: Sparkles, demo: true },
-      { label: 'Contratos', path: '/contratos', icon: FileSignature },
       { label: 'Planejamento', path: '/planejamento', icon: CalendarRange },
       { label: 'Diário de Obras', path: '/diario-de-obras', icon: BookOpenCheck },
       { label: 'Medições', path: '/medicoes', icon: Ruler },

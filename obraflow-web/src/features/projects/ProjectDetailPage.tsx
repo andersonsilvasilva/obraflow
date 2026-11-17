@@ -17,6 +17,7 @@ import { useEmployeeOptions } from '@/features/registry/lookups'
 import { getErrorMessage } from '@/lib/api-error'
 import { http } from '@/lib/http'
 import { formatCurrency, formatDateOrDash } from '@/utils/format'
+import { ProjectContractsTab } from '@/features/contracts/ProjectContractsTab'
 import { CalendarTab } from './calendar/CalendarTab'
 import { calendarApi } from './calendar/api'
 import { ScheduleEditor } from './calendar/ScheduleEditor'
@@ -101,6 +102,7 @@ export function ProjectDetailPage() {
     { id: 'endereco', label: 'Endereço' },
     { id: 'calendario', label: 'Calendário' },
     { id: 'horarios', label: 'Horários' },
+    { id: 'contratos', label: 'Contratos' },
     { id: 'fases', label: 'Fases' },
     { id: 'equipe', label: 'Equipe' },
     { id: 'historico', label: 'Histórico de status' },
@@ -218,6 +220,7 @@ export function ProjectDetailPage() {
               canEdit={canEdit}
             />
           )}
+          {tab === 'contratos' && <ProjectContractsTab project={project} canEditProject={canEdit} />}
           {tab === 'historico' && <HistoryTab uuid={uuid} />}
           {tab === 'acesso' && canManage && <AccessTab uuid={uuid} onGrant={() => setDialog({ kind: 'grant' })} onRevoke={(u, name) => setDialog({ kind: 'confirm', title: `Remover o acesso de ${name}?`, run: () => projectsApi.access.revoke(uuid, u) })} />}
         </Tabs>
