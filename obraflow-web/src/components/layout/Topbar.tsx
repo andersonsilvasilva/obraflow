@@ -1,4 +1,4 @@
-import { HardHat, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-context'
 
@@ -13,7 +13,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
       <Button variant="ghost" size="icon" onClick={onOpenMenu} aria-label="Abrir menu">
         <Menu className="size-5" />
       </Button>
-      <HardHat className="text-primary size-5" aria-hidden />
+      <img src="/brand/logo-simbolo.png" alt="ObraFlow" width={217} height={185} className="h-7 w-auto shrink-0" />
       <span className="truncate text-sm font-semibold">{me?.active_tenant?.name ?? 'ObraFlow'}</span>
     </header>
   )
