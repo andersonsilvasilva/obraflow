@@ -7,6 +7,7 @@ import { FormField, SelectInput, TextArea, TextInput } from '@/components/forms/
 import { Button } from '@/components/ui/button'
 import { ApiError, getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
+import { lookupCep } from '@/utils/cep'
 import { applyMask, maskPlaceholder, validateMask, type MaskKind } from '@/utils/masks'
 import type { Option } from '../api'
 import { CatalogQuickModal, type QuickAddConfig } from './CatalogQuickModal'
@@ -63,11 +64,26 @@ export function EntityFormModal({ title, fields, lookups, mode, initial, size = 
       return [f.name, f.mask && raw ? applyMask(f.mask, raw, initial[PERSON_TYPE_FIELD]) : raw]
     }),
   )
-  const { register, handleSubmit, setError, watch, setValue, getValues, formState } = useForm<Record<string, string>>({ defaultValues: defaults })
+  const { register, handleSubmit, setError, watch, setValue, getValues, setFocus, formState } = useForm<Record<string, string>>({ defaultValues: defaults })
   const [topError, setTopError] = useState<string | null>(null)
   const [showMore, setShowMore] = useState(fields.some((f) => f.more && initial[f.name]))
   const [quick, setQuick] = useState<FieldDef | null>(null)
+  const [cep, setCep] = useState<{ status: 'loading' | 'found' | 'missing'; digits: string } | null>(null)
   const values = watch()
+
+  /** CEP completo → preenche logradouro, bairro, cidade e UF (os campos que o formulário tiver) e vai para o número. */
+  const fillFromCep = async (masked: string) => {
+    const digits = masked.replace(/\D/g, '')
+    if (digits.length !== 8 || cep?.digits === digits) return
+    setCep({ status: 'loading', digits })
+    const found = await lookupCep(digits)
+    if (!found) return setCep({ status: 'missing', digits })
+    const has = (n: string) => fields.some((f) => f.name === n)
+    const map: [string, string][] = [['street', found.street], ['district', found.district], ['city', found.city], ['state', found.state]]
+    for (const [name, value] of map) if (has(name) && value) setValue(name, value, { shouldDirty: true, shouldValidate: true })
+    setCep({ status: 'found', digits })
+    if (has('number')) setFocus('number')
+  }
   const personType = values[PERSON_TYPE_FIELD]
 
   // trocar pessoa física/jurídica reaplica a máscara do documento
@@ -166,6 +182,7 @@ export function EntityFormModal({ title, fields, lookups, mode, initial, size = 
           {...reg}
           onChange={(e) => {
             e.target.value = applyMask(f.mask!, e.target.value, getValues(PERSON_TYPE_FIELD))
+            if (f.mask === 'cep') void fillFromCep(e.target.value)
             return reg.onChange(e)
           }}
         />
@@ -176,7 +193,12 @@ export function EntityFormModal({ title, fields, lookups, mode, initial, size = 
 
     return (
       <div key={f.name} className={cn('relative', f.full && 'sm:col-span-2')}>
-        <FormField label={label} required={f.required} error={error}>
+        <FormField
+          label={label}
+          required={f.required}
+          error={error}
+          hint={f.mask === 'cep' && cep ? { loading: 'Buscando o endereço…', found: 'Endereço preenchido pelo CEP (confira).', missing: 'CEP não encontrado: preencha o endereço.' }[cep.status] : undefined}
+        >
           {f.quickAdd ? (
             <div className="flex gap-2">
               {control}
