@@ -101,3 +101,7 @@ Comando `obraflow:catalog:copy-references --tenant= --user= --dataset= --kinds=m
 - migrations `300001`–`300004` (66 → 70);
 - permissões `resources.view` e `resources.manage` (33): `admin` 33, `member` 14;
 - cópia da base SINAPI MT 2024-12 **desonerada** (dataset 1): **4.443 insumos** (4.259 materiais e 184 de mão de obra), 72 com nome abreviado e 17 unidades de medida criadas, com 1 evento `resource.imported`.
+
+## 8. Homologação
+
+**Parte 4C homologada pelo responsável em 2026-11-17** (A-43). As composições próprias (D-P42) ficam para uma etapa futura.

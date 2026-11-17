@@ -282,7 +282,7 @@ Commit `c0f5568`. CI verde: run 44103187515 (`8387d64`) e run 44104212735 (`c0f5
 
 Nenhum orçamento foi criado. Os servidores foram ligados para teste no navegador.
 
-**Parte 4B aguarda homologação.**
+**Parte 4B homologada pelo responsável em 2026-11-17** (A-43).
 
 ### Ajuste — código automático do orçamento (2026-11-17)
 
