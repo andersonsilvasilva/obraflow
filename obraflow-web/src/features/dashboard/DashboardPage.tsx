@@ -4,9 +4,9 @@ import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieCh
 import { DemoBanner, ProgressIndicator, StatCard, StatusBadge } from '@/components/data-display/indicators'
 import { Panel } from '@/components/data-display/DataTable'
 import { QueryBoundary } from '@/components/feedback/QueryBoundary'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { projectStatusMeta } from '@/features/shared'
 import { dashboardService } from '@/services'
+import { DashboardHero } from './DashboardHero'
 import { formatCompactCurrency, formatDate } from '@/utils/format'
 
 const CHART = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)']
@@ -17,7 +17,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Visão geral" description="Indicadores executivos das obras, orçamentos e finanças." />
+      <DashboardHero />
       <DemoBanner />
       <QueryBoundary query={query}>
         {(d) => {
