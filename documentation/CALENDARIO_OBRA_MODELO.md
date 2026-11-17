@@ -1,6 +1,6 @@
-# CALENDÁRIO E HORÁRIOS DA OBRA: PROPOSTA DE MODELO
+# CALENDÁRIO E HORÁRIOS DA OBRA: MODELO APROVADO
 
-> **Aguardando aprovação.** Pedido do responsável em 2026-11-17: "o calendário me permite listar as exceções dos dias que não serão trabalhados na obra", com a biblioteca **FullCalendar**, já usada no projeto Veloterap.
+> **Aprovado em 2026-11-17** (D-P57 a D-P64 conforme a recomendação; executar antes da parte 5A, A-45). Pedido do responsável em 2026-11-17: "o calendário me permite listar as exceções dos dias que não serão trabalhados na obra", com a biblioteca **FullCalendar**, já usada no projeto Veloterap.
 > **Referência:** Brickup, obra → aba **Calendário** (vista em vídeo; os prints não ficam no repositório porque mostram dados de terceiros):
 > - lista de exceções (Descrição, Data, Tipo, Criado por) ao lado do calendário (Mensal, Semanal, Diário);
 > - botões **"Importar sábados e domingos como exceções"** e **"Nova exceção"**;

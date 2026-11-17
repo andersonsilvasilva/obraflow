@@ -1,5 +1,7 @@
 # FASE 5 — CONTRATOS E MEDIÇÕES: MODELO APROVADO
 
+> **Ajuste A-45 (2026-11-17):** o contrato pertence sempre a uma obra e só é acessado pela obra (escolha do responsável após ver o Brickup); o modelo completo (itens, aditivos, medições) foi mantido. O calendário e os horários da obra ([CALENDARIO_OBRA_MODELO.md](CALENDARIO_OBRA_MODELO.md)) vêm antes da 5A.
+>
 > **Aprovado em 2026-11-17.** Fase autorizada pelo responsável ("pode começar a nova fase"); decisões D-P44 a D-P56 aprovadas conforme a recomendação. A parte 5A (Contratos) está autorizada; a 5B (Medições) só começa após a homologação da 5A (D-P44).
 > **Base:**
 > - modelagem original ([DATABASE.md](DATABASE.md) §2.5 e §2.10; [ERD.md](ERD.md) §4);
@@ -29,7 +31,7 @@ Os títulos a receber ou a pagar gerados pelas medições ficam para o Financeir
 
 | # | Tabela | Colunas principais | Regras |
 |---|---|---|---|
-| 1 | `contracts` | `uuid`, `code` (CTR-NNN/AAAA, D-P49), `kind` (`customer` = a empresa é contratada pelo cliente; `supplier` = a empresa contrata um fornecedor ou empreiteiro), `company_id`, `project_id` (opcional), `customer_id` / `supplier_id` (conforme o tipo), `budget_version_id` (opcional: versão aprovada de origem), `object` (texto), `original_value`, `current_value`, `starts_at`, `original_end_date`, `current_end_date`, `signed_at`, `retention_percent` (D-P54), `readjustment_rule` (texto), `status`, `notes`, `created_by` | FKs compostas (tenant); CHECK do tipo × parte (cliente **ou** fornecedor, nunca os dois); obra da mesma empresa; versão de orçamento **aprovada** e da mesma obra |
+| 1 | `contracts` | `uuid`, `code` (CTR-NNN/AAAA, D-P49), `kind` (`customer` = a empresa é contratada pelo cliente; `supplier` = a empresa contrata um fornecedor ou empreiteiro), `company_id`, `project_id` (**obrigatória**, A-45), `customer_id` / `supplier_id` (conforme o tipo), `budget_version_id` (opcional: versão aprovada de origem), `object` (texto), `original_value`, `current_value`, `starts_at`, `original_end_date`, `current_end_date`, `signed_at`, `retention_percent` (D-P54), `readjustment_rule` (texto), `status`, `notes`, `created_by` | FKs compostas (tenant); CHECK do tipo × parte (cliente **ou** fornecedor, nunca os dois); obra da mesma empresa; versão de orçamento **aprovada** e da mesma obra |
 | 2 | `contract_items` | `contract_id`, `code`, `description`, `unit_code`, `quantity`, `unit_price`, `total`, `budget_item_id` (opcional), `addendum_id` (preenchido quando o item veio de aditivo), `sort_order` | quantidade > 0; total = quantidade × preço unitário, arredondado (D-P32) |
 | 3 | `contract_addenda` | `contract_id`, `number` (1, 2, 3…), `kind` (`value`, `term`, `scope`, `mixed`), `value_delta`, `new_end_date`, `description`, `signed_at`, `status` (`draft`, `approved`, `canceled`) | só contrato **ativo** recebe aditivo; aprovado é imutável |
 | 4 | `contract_addendum_items` | `addendum_id`, `contract_item_id` (alteração de quantidade) **ou** item novo (código, descrição, unidade, preço), `quantity_delta` | quantidade final de um item nunca fica abaixo do já medido (5B) |
@@ -102,9 +104,7 @@ Na HighTech, as permissões só entram com autorização, como nas fases anterio
 
 ## 7. Telas (no padrão de layout já homologado)
 
-- **Onde ficam.** O Brickup, sistema usado hoje pelo responsável, põe os contratos **dentro da obra → Execução → Contratos** (junto de Etapas e Efetivos), e o orçamento fica em **Comercial**. Seguimos a mesma organização, com o layout do ObraFlow:
-  - **na obra**, uma aba **"Contratos"** é o caminho principal: os contratos daquela obra e as medições dentro de cada contrato;
-  - **Comercial → Orçamentos · Contratos** no menu: a lista geral de todos os contratos, inclusive os sem obra, com busca e filtros (tipo, status, obra, cliente/fornecedor) e as colunas código, objeto, parte, obra, valor atual, % medido e status.
+- **Onde ficam (A-45).** O contrato **pertence sempre a uma obra**, como no Brickup (obra → Contratos, com as colunas Contrato, Descrição, Valor, Observações e Arquivos). É criado e consultado na **aba "Contratos" da obra**. Não há menu geral de contratos; a lista da aba mostra código, objeto, parte, valor atual, % medido, status e arquivos.
 - **Contrato (detalhe)**, com abas:
   - **Resumo**: original × atual, medido, saldo, prazos;
   - **Itens**: com "Gerar do orçamento aprovado";
@@ -113,7 +113,6 @@ Na HighTech, as permissões só entram com autorização, como nas fases anterio
   - **Documentos**;
   - **Histórico**.
 - **Medição (boletim)**: tabela por item com contratado, acumulado anterior, **este período** (editável), acumulado, % executado e valor. Rodapé com bruto, retenção e líquido. Ações enviar, aprovar e rejeitar, conforme o status e as permissões.
-- Ao criar um contrato pela aba da obra, a obra já vem preenchida.
 
 As telas de contrato e medição do Brickup estão bloqueadas no plano atual do responsável, então não há referência visual dos campos. As telas seguem o padrão de layout já homologado ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md)).
 
