@@ -135,3 +135,21 @@ Commit `4961b76`.
 - **Visibilidade:** só bases ativas ou substituídas.
 - **Permissão:** `references.view` entra no catálogo (28 permissões). O `member` de **tenants novos** recebe a permissão. Na HighTech, a permissão só é instalada e concedida com autorização.
 - **Testes:** `Feature/References/ReferenceApiTest` (8): listagem, busca, detalhe com itens, 404 de base indisponível, base substituída, permissão e tenant, ausência de escrita, token. O recorte foi para `Tests\Support\SinapiFixture`. Suíte **381/381 (2.424 asserções)**.
+
+Commit `bb224f4`. CI verde nos dois commits da 4A: run 44092650459 (`4961b76`) e run 44093330126 (`bb224f4`), em MySQL 8.0, MySQL 8.4 e Web.
+
+### 4A.3 — Banco `obraflow` (autorizado, 2026-11-17)
+
+| Passo | Resultado |
+|---|---|
+| Permissão `references.view` | Instalada; catálogo com **28** permissões |
+| Papéis da HighTech | `admin` com 28 e `member` com 12 permissões (todas de consulta). Dois eventos `permission.granted`; a segunda execução respondeu "nada a fazer" |
+| Migrations da 4A | 8 aplicadas; **55** no total |
+| SINAPI MT 12/2024 **desonerado** (`with_relief`) | Base 1 ativa: 4.839 insumos, 7.829 composições, 40.538 itens. Composição 97141: total 3,84, mão de obra 1,49 |
+| SINAPI MT 12/2024 **não desonerado** (`without_relief`) | Base 2 ativa: mesmas contagens. Composição 97141: total 4,07, mão de obra 1,74 (diferença dos encargos) |
+| Rastreio | 6 arquivos com SHA-256 em `reference_imports`; 8 eventos `reference.*`. Total de 27 registros de auditoria |
+
+- **Tipos de insumo:** 3 insumos por base ficam sem tipo (Macro-Classe "ESPECIAIS", como publicada).
+- **Dados dos tenants:** nenhum cadastro de tenant foi criado.
+
+**Parte 4A aguarda homologação.** A parte 4B (Orçamentos) começa depois dela.
