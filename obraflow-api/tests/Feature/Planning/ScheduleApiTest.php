@@ -3,10 +3,12 @@
 use App\Models\AuditLog;
 use App\Modules\Audit\AuditEvent;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\Support\Browser;
 use Tests\Support\Scenario;
+use Tests\Support\XlsxFixture;
 
 /* Fase 6A — planejamento da obra (FASE6_MODELO.md, D-P65…D-P71). Datas conferidas à mão. Dados "DEMO". */
 
@@ -222,4 +224,53 @@ it('desempenho: 500 atividades encadeadas com horário seg–sex são recalculad
     $elapsed = microtime(true) - $t0;
     // 500 × 2 dias úteis = 1.000 dias úteis = 200 semanas: de 02/03/2026 a 28/12/2029 (sexta)
     expect($data['summary']['end'])->toBe('2029-12-28')->and($data['summary']['critical'])->toBe(500)->and($elapsed)->toBeLessThan(10.0);
+});
+
+function planilhaPlanejamento(array $rows): UploadedFile
+{
+    $head = ['A' => 'Tipo*', 'B' => 'Item*', 'C' => 'Descrição*', 'D' => 'Data de início (Planejado)', 'E' => 'Data de entrega (Planejado)',
+        'F' => 'Início da Etapa (Executado)', 'G' => 'Conclusão da Etapa (Executado)', 'H' => 'Valor unit.', 'I' => 'Quantidade', 'J' => 'Und.'];
+    $path = XlsxFixture::write([$head, ...$rows]);
+
+    return new UploadedFile($path, 'planning.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+}
+
+it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela numeração; recursos ficam para a 6B; datas DD/MM e MM/DD', function () {
+    $rows = [
+        ['A' => 'Etapa', 'B' => '1', 'C' => 'DEMO Estrutura', 'D' => '02/03/2026', 'E' => '13/03/2026'],
+        ['A' => 'Etapa', 'B' => '1.1', 'C' => 'DEMO Formas', 'D' => '02/03/2026', 'E' => '04/03/2026', 'I' => '50', 'J' => 'm²'],
+        ['A' => 'Material', 'B' => '1.1.1', 'C' => 'DEMO Madeira', 'H' => '30,00', 'I' => '10', 'J' => 'm²'],
+        ['A' => 'Etapa', 'B' => '1-2', 'C' => 'DEMO Concreto', 'D' => '03/25/2026', 'E' => '2026-03-27', 'F' => '25/03/2026'],
+        ['A' => 'Etapa', 'B' => '2', 'C' => 'DEMO Acabamento'],
+    ];
+    $prev = $this->b->request('POST', "{$this->url}/import/preview", ['file' => planilhaPlanejamento($rows)])->assertOk()->json('data');
+    expect($prev['summary'])->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0])
+        ->and(collect($prev['rows'])->pluck('task.kind')->all())->toBe(['summary', 'task', null, 'task', 'task'])
+        ->and($prev['rows'][3]['task'])->toMatchArray(['wbs' => '1.2', 'start' => '2026-03-25', 'duration_days' => 3, 'actual_start' => '2026-03-25']) // 03/25 = MM/DD
+        ->and($prev['rows'][4]['warnings'])->toContain('Sem data de início: usa a data inicial da obra.')
+        ->and(DB::table('schedules')->count())->toBe(0); // nada gravado
+
+    $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertCreated()->assertJsonPath('data.import.created', 4);
+    $t = collect(cronograma($this)['tasks']);
+    expect($t->pluck('wbs')->all())->toBe(['1', '1.1', '1.2', '2'])
+        ->and($t->firstWhere('name', 'DEMO Formas'))->toMatchArray(['quantity' => '50.0000', 'unit_code' => 'm²', 'end' => '2026-03-04'])
+        ->and($t->firstWhere('name', 'DEMO Estrutura'))->toMatchArray(['kind' => 'summary', 'start' => '2026-03-02', 'end' => '2026-03-27'])
+        ->and(cronograma($this)['schedule']['origin'])->toBe('spreadsheet');
+    $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertUnprocessable(); // já tem planejamento
+
+    // erros: item sem a mãe antes, data inválida, descrição vazia → nada é importado
+    $obra2 = $this->b->post('/api/v1/projects', ['company_uuid' => $this->co, 'name' => 'DEMO Obra 2'])->json('data.uuid');
+    $ruim = [['A' => 'Etapa', 'B' => '3.1', 'C' => 'x'], ['A' => 'Etapa', 'B' => 'A.B', 'C' => 'y'], ['A' => 'Etapa', 'B' => '4', 'C' => '', 'D' => '31/02/2026']];
+    $p2 = $this->b->request('POST', "/api/v1/projects/{$obra2}/schedule/import/preview", ['file' => planilhaPlanejamento($ruim)])->assertOk()->json('data');
+    expect($p2['summary']['error'])->toBe(3)
+        ->and($p2['rows'][0]['errors'][0])->toContain('etapa-mãe (3)')
+        ->and($p2['rows'][2]['errors'])->toContain('Descrição obrigatória.');
+    $this->b->request('POST', "/api/v1/projects/{$obra2}/schedule/import", ['file' => planilhaPlanejamento($ruim)])->assertUnprocessable();
+    $this->b->get("/api/v1/projects/{$obra2}/schedule")->assertJsonPath('data.schedule', null);
+
+    // modelo para baixar (xlsx gerado pelo OpenSpout) é lido pelo próprio importador
+    $resp = $this->b->get("{$this->url}/import/template")->assertOk();
+    $file = $resp->baseResponse->getFile()->getPathname();
+    $tpl = $this->b->request('POST', "/api/v1/projects/{$obra2}/schedule/import/preview", ['file' => new UploadedFile($file, 'modelo.xlsx', null, null, true)])->assertOk()->json('data.summary');
+    expect($tpl)->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0]);
 });

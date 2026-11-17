@@ -22,4 +22,9 @@ Route::middleware('tenant.required')->prefix('projects/{uuid}/schedule')->whereU
     Route::delete('dependencies/{id}', [ScheduleController::class, 'destroyDependency'])->whereNumber('id')->middleware('can:schedules.manage')->name('schedules.dependencies.destroy');
 
     Route::post('baselines', [ScheduleController::class, 'storeBaseline'])->middleware('can:schedules.manage')->name('schedules.baselines.store');
+
+    // importação por planilha (D-P68b): modelo, pré-visualização (nada gravado) e importação
+    Route::get('import/template', [ScheduleController::class, 'importTemplate'])->middleware('can:schedules.view')->name('schedules.import.template');
+    Route::post('import/preview', [ScheduleController::class, 'importPreview'])->middleware('can:schedules.manage')->name('schedules.import.preview');
+    Route::post('import', [ScheduleController::class, 'import'])->middleware('can:schedules.manage')->name('schedules.import');
 });

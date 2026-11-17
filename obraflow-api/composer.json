@@ -10,6 +10,7 @@
         "laravel/framework": "^13.17",
         "laravel/sanctum": "^4.4",
         "laravel/tinker": "^3.0",
+        "openspout/openspout": "5.13.0",
         "predis/predis": "^3.7",
         "spatie/laravel-permission": "^8.5"
     },

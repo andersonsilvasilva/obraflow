@@ -150,3 +150,14 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Permissões:** `schedules.view` e `schedules.manage` (37 no catálogo), mais o acesso por obra; o `member` de tenants novos recebe `schedules.view`.
 - **Auditoria:** `schedule.created`, `schedule.deleted` e `schedule.baseline_created`. Atividades e dependências auditam em `registry.*`.
 - **Testes:** `Feature/Planning/ScheduleApiTest` (8). Suíte 452/452.
+
+### 6A — etapa 2 (importação por planilha)
+
+- **Modelo para baixar** (`GET …/schedule/import/template`): .xlsx gerado com **OpenSpout 5.13.0** (MIT, publicada em 27/10/2026). Tem as colunas da `planning.xlsx` do Brickup e um exemplo.
+- **Pré-visualização** (nada é gravado) e **importação** (transação única + `schedule.created` com origem `spreadsheet`):
+  - linhas "Etapa" viram etapas (se têm filhas) ou atividades, pela numeração (1, 1.1, 1-2…);
+  - linhas de recurso (Material, Serviços…) aparecem como **ignoradas**: entram na 6B;
+  - erros recusam a importação inteira: item inválido, etapa-mãe ausente ou depois da filha, item repetido, descrição vazia ou com mais de 250 caracteres, data inválida, entrega antes do início.
+  - **Datas:** número de série do Excel, AAAA-MM-DD ou DD/MM/AAAA. MM/DD (formato do Brickup) só é aceito quando o segundo número passa de 12; caso contrário vale DD/MM.
+  - **Duração:** dias úteis entre início e entrega. Sem data de início, a atividade usa a data inicial da obra (com aviso).
+- **Testes:** +1 (importação). Suíte 453/453.

@@ -12,6 +12,7 @@ use App\Models\ScheduleDependency;
 use App\Models\ScheduleTask;
 use App\Modules\Budgets\Services\BudgetAccess;
 use App\Modules\Planning\Http\Requests\ScheduleRequest;
+use App\Modules\Planning\Import\ScheduleSheetImporter;
 use App\Modules\Planning\Services\Scheduler;
 use App\Modules\Planning\Services\ScheduleService;
 use App\Modules\Projects\Services\ProjectAccess;
@@ -20,6 +21,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Planejamento da obra (Fase 6A). Acesso: permissão `schedules.*` na rota E o acesso por obra (D-P24): ver exige ver a
@@ -124,6 +126,33 @@ class ScheduleController extends Controller
         $baseline = $this->schedules->createBaseline($this->schedule($project), $request->validated('name'), $request->user());
 
         return $this->respond($request, $project, $baseline->number, 201);
+    }
+
+    // ------------------------------------------------------------ importação por planilha
+
+    public function importTemplate(Request $request, string $uuid, ScheduleSheetImporter $importer): BinaryFileResponse
+    {
+        $this->project($request, $uuid, 'view');
+        $path = tempnam(sys_get_temp_dir(), 'plan').'.xlsx';
+        $importer->template($path);
+
+        return response()->download($path, 'modelo-planejamento-obraflow.xlsx')->deleteFileAfterSend();
+    }
+
+    public function importPreview(ScheduleRequest $request, string $uuid, ScheduleSheetImporter $importer): JsonResponse
+    {
+        $project = $this->project($request, $uuid, 'edit');
+
+        return response()->json(['data' => $importer->preview($request->file('file')->getRealPath(), $project)]);
+    }
+
+    public function import(ScheduleRequest $request, string $uuid, ScheduleSheetImporter $importer): JsonResponse
+    {
+        $project = $this->project($request, $uuid, 'edit');
+        $file = $request->file('file');
+        $summary = $importer->import($file->getRealPath(), $file->getClientOriginalName(), $project, $request->user());
+
+        return response()->json(['data' => ['import' => $summary]], 201);
     }
 
     // ------------------------------------------------------------ apoio
