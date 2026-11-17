@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Projects\Http\Controllers\ProjectCalendarController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,10 @@ Route::middleware('tenant.required')->group(function (): void {
     Route::get('projects', [ProjectController::class, 'index'])->middleware('can:projects.view')->name('projects.index');
     Route::post('projects', [ProjectController::class, 'store'])->middleware('can:projects.manage')->name('projects.store');
     Route::get('projects/next-code', [ProjectController::class, 'nextCode'])->middleware('can:projects.manage')->name('projects.next-code');
+
+    // Horário-padrão da empresa (D-P63), herdado pelas obras dela
+    Route::get('companies/{uuid}/work-schedule', [ProjectCalendarController::class, 'companySchedule'])->whereUuid('uuid')->middleware('can:companies.view')->name('companies.schedule.show');
+    Route::put('companies/{uuid}/work-schedule', [ProjectCalendarController::class, 'updateCompanySchedule'])->whereUuid('uuid')->middleware('can:companies.manage')->name('companies.schedule.update');
 
     Route::prefix('projects/{uuid}')->whereUuid('uuid')->middleware('can:projects.view')->group(function (): void {
         Route::get('/', [ProjectController::class, 'show'])->name('projects.show');
@@ -37,5 +42,17 @@ Route::middleware('tenant.required')->group(function (): void {
         Route::get('access', [ProjectController::class, 'accessList'])->name('projects.access.index');
         Route::post('access', [ProjectController::class, 'grantAccess'])->name('projects.access.store');
         Route::delete('access/{userUuid}', [ProjectController::class, 'revokeAccess'])->whereUuid('userUuid')->name('projects.access.destroy');
+
+        // Calendário (exceções) e horários da obra — CALENDARIO_OBRA_MODELO.md; nível na obra no controller
+        Route::get('calendar', [ProjectCalendarController::class, 'show'])->name('projects.calendar.show');
+        Route::get('calendar/exceptions', [ProjectCalendarController::class, 'exceptions'])->name('projects.calendar.exceptions.index');
+        Route::post('calendar/exceptions', [ProjectCalendarController::class, 'storeException'])->name('projects.calendar.exceptions.store');
+        Route::put('calendar/exceptions/{exceptionUuid}', [ProjectCalendarController::class, 'updateException'])->whereUuid('exceptionUuid')->name('projects.calendar.exceptions.update');
+        Route::delete('calendar/exceptions/{exceptionUuid}', [ProjectCalendarController::class, 'destroyException'])->whereUuid('exceptionUuid')->name('projects.calendar.exceptions.destroy');
+        Route::post('calendar/import-weekends', [ProjectCalendarController::class, 'importWeekends'])->name('projects.calendar.weekends');
+        Route::post('calendar/import-holidays', [ProjectCalendarController::class, 'importHolidays'])->name('projects.calendar.holidays');
+        Route::get('work-schedule', [ProjectCalendarController::class, 'schedule'])->name('projects.schedule.show');
+        Route::put('work-schedule', [ProjectCalendarController::class, 'updateSchedule'])->name('projects.schedule.update');
+        Route::delete('work-schedule', [ProjectCalendarController::class, 'resetSchedule'])->name('projects.schedule.reset');
     });
 });

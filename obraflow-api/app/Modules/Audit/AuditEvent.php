@@ -129,6 +129,13 @@ final class AuditEvent
     // Fase 4C — catálogo de insumos (CRUD em registry.*, entity_type resource)
     public const RESOURCE_IMPORTED = 'resource.imported';
 
+    // Calendário e horários da obra (CRUD de exceções em registry.*, entity_type project_calendar_exception)
+    public const CALENDAR_IMPORTED = 'calendar.imported';
+
+    public const SCHEDULE_UPDATED = 'calendar.schedule_updated';
+
+    public const SCHEDULE_RESET = 'calendar.schedule_reset';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -151,5 +158,11 @@ final class AuditEvent
     public static function phase4(): array
     {
         return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'reference.') || str_starts_with($e, 'budget.') || str_starts_with($e, 'resource.')));
+    }
+
+    /** Eventos do calendário e dos horários da obra (cobertura verificada pelos testes do calendário). @return list<string> */
+    public static function calendar(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'calendar.')));
     }
 }

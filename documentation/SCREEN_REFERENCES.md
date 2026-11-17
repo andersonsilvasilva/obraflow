@@ -150,3 +150,11 @@ Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os 
 | Obra → **Contratos** | Lista Contrato, Descrição, Valor, Observações, Arquivos, Excluir; "Adicionar contrato" | [FASE5_MODELO.md](FASE5_MODELO.md) (A-45) |
 | Obra → Execução → Contratos | Contratos no menu de execução da obra (bloqueado no plano do responsável) | [FASE5_MODELO.md](FASE5_MODELO.md) |
 | Obra → **Planejamento** → Atividades / Recursos | Gantt: tabela (ID, Atividade, Data de início, Data de término, Duração) + barras por mês; "Planejamento atual" × "Comparar com" (linhas de base, "Criar linha de base 0/10"); ações Adicionar/Remover atividade, Deletar tudo, Expandir/Recolher, **Caminho crítico**, Exportar, zoom | **Fase 6 — Planejamento** (ainda não proposta). O calendário e os horários da obra alimentam os dias úteis do cronograma |
+
+**Mais detalhes do Planejamento (Brickup, para a Fase 6):**
+- **Atividades em níveis** (1, 1.1, 1.1.1), com "+" em cada linha para criar uma subetapa. A etapa-mãe cobre o período das filhas.
+- **Duração** editável na linha (em dias corridos entre início e término). As barras do Gantt podem ser arrastadas. Linha vertical "Hoje".
+- **Aba Recursos** do planejamento: a mesma árvore de atividades com os insumos de cada uma.
+  - Modal "Adicionar item" por tipo: Materiais (multisseleção), Equipamento, Tipos de equipamentos, Cargo/Função, Outros, Serviços.
+  - Colunas: Tipo, Unidade, Qtd. unitária, Qtd. total, Valor de venda unitário, Valor de custo unitário, Total de venda, Total de custo, com os totais do planejamento no topo.
+  - Usa o catálogo de insumos (Fase 4C) e os cargos (Fase 3).

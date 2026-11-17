@@ -18,7 +18,7 @@ function phase3Routes(): array
 
 it('toda rota da Fase 3 exige tenant ativo e uma permissão do catálogo (can:)', function () {
     $routes = phase3Routes();
-    expect($routes)->toHaveCount(47);
+    expect($routes)->toHaveCount(57); // 47 da Fase 3 + 10 do calendário e horários da obra
 
     $semTenant = [];
     $semCan = [];

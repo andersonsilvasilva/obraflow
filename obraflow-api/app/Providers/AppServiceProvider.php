@@ -34,6 +34,7 @@ use App\Models\JobTitle;
 use App\Models\PersonalAccessToken;
 use App\Models\Project;
 use App\Models\ProjectAddress;
+use App\Models\ProjectCalendarException;
 use App\Models\ProjectMember;
 use App\Models\ProjectPhase;
 use App\Models\ProjectStatusHistory;
@@ -54,6 +55,7 @@ use App\Models\User;
 use App\Models\UserCompany;
 use App\Models\UserInvitation;
 use App\Models\UserProjectAccess;
+use App\Models\WorkSchedule;
 use App\Modules\Access\Console\BlockUserCommand;
 use App\Modules\Access\Console\ExpireInvitationsCommand;
 use App\Modules\Access\Console\ProvisionTenantCommand;
@@ -146,6 +148,8 @@ class AppServiceProvider extends ServiceProvider
             'reference_dataset' => ReferenceDataset::class,
             // Fase 4B — orçamentos
             'budget' => Budget::class,
+            'project_calendar_exception' => ProjectCalendarException::class,
+            'work_schedule' => WorkSchedule::class,
             'budget_version' => BudgetVersion::class,
             'budget_group' => BudgetGroup::class,
             'budget_item' => BudgetItem::class,

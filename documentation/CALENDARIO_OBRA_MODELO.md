@@ -59,3 +59,24 @@ Na obra, a nova aba **Calendário** tem duas colunas. Em telas estreitas, a list
 - **Quinzena:** "a cada quinzena" = a cada 14 dias a partir da data inicial. Se a empresa usar "dia 1 e dia 15 do mês", a regra é outra (duas exceções mensais).
 - **Fim de mês:** exceção mensal no dia 31 cai no último dia dos meses mais curtos.
 - **Cronograma:** nesta etapa as exceções só aparecem no calendário. Elas passam a afetar prazos quando o cronograma existir (Fase 6).
+
+## 7. Andamento
+
+### Etapa 1 — backend (concluída)
+
+- **Migrations:** `2026_11_17_350001` (`project_calendar_exceptions`) e `350002` (`work_schedules`).
+  - Os CHECKs exigem a regra completa da exceção recorrente. Um teste mostrou que, no MySQL, comparar um valor vazio (NULL) não viola o CHECK; por isso o `IS NOT NULL` é explícito.
+  - Horário: um único dono (empresa ou obra), dia da semana de 0 a 6, entrada e saída em pares completos e na ordem certa.
+- **API** em `/projects/{uuid}`:
+  - `calendar?from&to`: ocorrências e dias da semana sem horário;
+  - `calendar/exceptions`: CRUD;
+  - `calendar/import-weekends` e `calendar/import-holidays`;
+  - `work-schedule`: ver, salvar e voltar ao padrão.
+- **Horário-padrão da empresa:** `/companies/{uuid}/work-schedule`.
+- **Feriados nacionais:**
+  - datas fixas, mais o Dia da Consciência Negra a partir de 2024 (Lei 14.759/2023);
+  - datas móveis calculadas a partir da Páscoa (algoritmo de Meeus): Carnaval e Corpus Christi entram como "ponto facultativo", Sexta-feira Santa como feriado.
+- **Auditoria:**
+  - CRUD das exceções em `registry.*`;
+  - `calendar.imported`, `calendar.schedule_updated` e `calendar.schedule_reset`.
+- **Testes:** `Feature/Teams/ProjectCalendarTest` (7). Suíte 433/433.

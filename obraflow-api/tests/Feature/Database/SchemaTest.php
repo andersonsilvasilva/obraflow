@@ -21,6 +21,8 @@ const PHASE3_TABLES = [
     'departments', 'employee_certifications', 'employees', 'equipment', 'job_titles', 'project_addresses',
     'project_members', 'project_phases', 'project_status_history', 'projects', 'resource_groups',
     'user_companies', 'user_project_access',
+    // calendário e horários da obra (CALENDARIO_OBRA_MODELO.md)
+    'project_calendar_exceptions', 'work_schedules',
 ];
 
 /** Fase 4A (FASE4_MODELO.md): referências técnicas GLOBAIS (sem tenant_id, D-P29). */
