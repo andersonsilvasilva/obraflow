@@ -17,7 +17,7 @@ use Tests\Support\Scenario;
 
 const MEMBER_FASE1 = ['tenant.view', 'members.view', 'roles.view', 'settings.view'];
 /** O que falta a um member anterior à Fase 2, na ordem do catálogo: leitura de cadastros (Fase 2) + equipamentos e obras (Fase 3, D-P28). */
-const LEITURA_CADASTROS = ['units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view', 'equipment.view', 'projects.view'];
+const LEITURA_CADASTROS = ['units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view', 'equipment.view', 'projects.view', 'references.view'];
 
 function permsOf(Tenant $tenant, string $role): array
 {

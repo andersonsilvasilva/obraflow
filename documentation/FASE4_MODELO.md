@@ -126,3 +126,12 @@ As tabelas `reference_competencies` e `reference_locations` do plano original vi
 **Testes:** `Feature/References/ReferenceImportTest` (9), sobre um recorte com o mesmo layout montado em XLSX na hora (`Tests\Support\XlsxFixture`). Suíte **373/373 (2.341 asserções)**.
 
 **Banco `obraflow`:** sem alterações. A importação real exige autorização (D-P30).
+Commit `4961b76`.
+
+### 4A.2 — API de consulta
+
+- **Rotas:** 5 rotas `GET /references/...`, todas em `tenant.required` com `references.view`. Detalhe em [API.md](API.md) §Fase 4A.
+- **Busca:** por código (prefixo) ou palavras da descrição, com curingas escapados.
+- **Visibilidade:** só bases ativas ou substituídas.
+- **Permissão:** `references.view` entra no catálogo (28 permissões). O `member` de **tenants novos** recebe a permissão. Na HighTech, a permissão só é instalada e concedida com autorização.
+- **Testes:** `Feature/References/ReferenceApiTest` (8): listagem, busca, detalhe com itens, 404 de base indisponível, base substituída, permissão e tenant, ausência de escrita, token. O recorte foi para `Tests\Support\SinapiFixture`. Suíte **381/381 (2.424 asserções)**.

@@ -43,6 +43,8 @@ final class PermissionCatalog
         'equipment.manage' => 'equipment',
         'projects.view' => 'projects',
         'projects.manage' => 'projects',
+        // Fase 4 — referências técnicas (globais, somente leitura; escrita só pelo comando de importação)
+        'references.view' => 'references',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -70,7 +72,9 @@ final class PermissionCatalog
             'member' => ['tenant.view', 'members.view', 'roles.view', 'settings.view',
                 'units.view', 'companies.view', 'customers.view', 'suppliers.view', 'documents.view',
                 // D-P28: sem employees.view (dados pessoais); obras visíveis só com acesso por obra (D-P24)
-                'equipment.view', 'projects.view'],
+                'equipment.view', 'projects.view',
+                // Fase 4: bases técnicas públicas
+                'references.view'],
             'viewer' => ['tenant.view'],
         ];
     }

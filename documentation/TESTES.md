@@ -42,7 +42,8 @@ npm test && npm run lint && npm run build
 | **Fase 3 — API de equipes, equipamentos e obras** (permissões por rota e por obra, 404 entre tenants, D-P21, status com histórico, acesso auditado, documentos, tokens, cobertura `phase3()`) | `Feature/Teams/TeamsApiTest`, `Feature/Teams/ProjectsApiTest` | 22 |
 | **Fase 3 — revisão estrutural de rotas** (toda rota com tenant e `can:` do catálogo; escrita com `*.manage`) | `Feature/Teams/RouteAuthorizationTest` | 3 |
 | **Fase 4A — importação de referências** (valores exatos, idempotência, regime/competência, filha ausente, dry-run, ativação/substituição, FKs por base, conversão decimal) | `Feature/References/ReferenceImportTest` | 9 |
-| **Backend** | | **373 (2.341 asserções)** |
+| **Fase 4A — API de referências** (listagem, busca por código/descrição, detalhe com itens, base indisponível/substituída, permissão, sem escrita, token) | `Feature/References/ReferenceApiTest` | 8 |
+| **Backend** | | **381 (2.424 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

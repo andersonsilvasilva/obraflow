@@ -128,3 +128,17 @@ Todas as rotas em `tenant.required`; entidades por uuid (funcionários, equipame
 - **Nível na resposta:** cada obra traz `access_level`, o nível de quem consulta, para o frontend habilitar ações.
 - **CPF (D-P21):** CPF do funcionário completo só com `employees.manage`; os demais recebem `***.982.247-**`.
 - **Status da obra (D-P27):** não é aceito no `PUT`. As transições permitidas estão em `Project::TRANSITIONS`.
+
+## Fase 4A — Referências técnicas (implementado)
+
+Dados **globais e somente leitura** (D-P29), iguais para todos os tenants. As rotas ficam em `tenant.required` e exigem `references.view`. Não há rota de escrita: as bases entram só pelo comando `obraflow:references:import` (D-P30).
+
+| Rota | Retorno |
+|---|---|
+| `GET /references/datasets` | Bases ativas: fonte, competência, UF, localidade, regime de encargos e contagens. Filtros `state`, `charges_regime`, `include_superseded=1` |
+| `GET /references/datasets/{id}/resources` | Insumos paginados: `q` (código por prefixo ou palavras da descrição) e `kind` (`material`, `labor`, `equipment`, `service`, `none`). Cada insumo traz preço e origem do preço publicados |
+| `GET /references/datasets/{id}/resources/{code}` | Insumo e a base de origem |
+| `GET /references/datasets/{id}/compositions` | Composições paginadas: `q`, `class_code` |
+| `GET /references/datasets/{id}/compositions/{code}` | Composição com decomposição de custos, classe, tipo, agrupador e itens: insumo **ou** composição filha, coeficiente com 7 casas, preço unitário, custo e origem |
+
+Base em importação ou com falha → 404. Base substituída continua consultável pelo `id`, para manter rastreáveis os orçamentos antigos.
