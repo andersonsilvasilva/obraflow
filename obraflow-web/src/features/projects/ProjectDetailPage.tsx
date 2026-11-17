@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Pencil, Plus, RefreshCw, Trash2, UserMinus } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Panel } from '@/components/data-display/DataTable'
 import { ProgressIndicator, StatusBadge } from '@/components/data-display/indicators'
@@ -69,8 +69,10 @@ export function ProjectDetailPage() {
   const { uuid = '' } = useParams()
   const { notify } = useToast()
   const client = useQueryClient()
-  const [tab, setTab] = useState('dados')
-  const [dialog, setDialog] = useState<Dialog | null>(null)
+  // ?aba=equipe e ?acao=status vêm do menu ⋮ do painel de obras (A-46)
+  const [params] = useSearchParams()
+  const [tab, setTab] = useState(() => params.get('aba') ?? 'geral')
+  const [dialog, setDialog] = useState<Dialog | null>(() => (params.get('acao') === 'status' ? { kind: 'status' } : null))
   const lookups = useProjectLookups()
 
   const query = useQuery({ queryKey: ['project', uuid], queryFn: () => projectsApi.get(uuid) })
@@ -94,6 +96,7 @@ export function ProjectDetailPage() {
   if (query.isError || !project) return <ErrorState error={query.error} onRetry={() => query.refetch()} />
 
   const tabs = [
+    { id: 'geral', label: 'Geral' },
     { id: 'dados', label: 'Dados gerais' },
     { id: 'endereco', label: 'Endereço' },
     { id: 'calendario', label: 'Calendário' },
@@ -130,6 +133,7 @@ export function ProjectDetailPage() {
 
       <Panel className="p-4">
         <Tabs tabs={tabs} active={tab} onChange={setTab} label="Seções da obra">
+          {tab === 'geral' && <OverviewTab project={project} />}
           {tab === 'dados' && <GeneralTab project={project} />}
           {tab === 'endereco' && (
             <ListSection
@@ -270,11 +274,64 @@ export function ProjectDetailPage() {
   )
 }
 
+/**
+ * Aba Geral (A-46, referência: Brickup): indicadores da obra. Os que dependem de fases futuras (financeiro, RDO,
+ * planejamento) aparecem com "—" e "em breve", nunca com valor inventado.
+ */
+function OverviewTab({ project }: { project: Project }) {
+  const soon = (phase: string) => ({ value: '—', hint: `em breve: ${phase}` })
+  const groups: [string, { label: string; value: string; hint?: string; bar?: boolean }[]][] = [
+    [
+      'Financeiro',
+      [
+        { label: 'Saúde financeira', ...soon('Financeiro') },
+        { label: 'Custo total da obra', ...soon('Financeiro') },
+        { label: 'Valor do contrato', value: project.contract_value ? formatCurrency(Number(project.contract_value)) : '—' },
+      ],
+    ],
+    [
+      'Métricas',
+      [
+        { label: 'Execução', value: `${project.progress}% executado`, bar: true },
+        { label: 'Dias decorridos', value: String(project.elapsed_days ?? 0), hint: project.start_date ? `desde ${formatDateOrDash(project.start_date)}` : 'sem data de início' },
+        { label: 'Efetivos na obra', value: String(project.active_members ?? 0), hint: 'equipe com vínculo em aberto' },
+        { label: 'Previsão de entrega', value: formatDateOrDash(project.expected_end_date) },
+        { label: 'RDOs criados', ...soon('Diário de obra') },
+        { label: 'Atividades atrasadas', ...soon('Planejamento') },
+      ],
+    ],
+  ]
+  return (
+    <div className="space-y-5">
+      {groups.map(([title, cards]) => (
+        <section key={title} aria-label={title}>
+          <h2 className="text-muted-foreground mb-2 text-sm font-medium">{title}</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {cards.map((c) => (
+              <div key={c.label} className="bg-card rounded-lg border p-4">
+                <p className="text-muted-foreground text-xs">{c.label}</p>
+                <p className={c.value === '—' ? 'text-muted-foreground mt-1 text-xl font-semibold' : 'mt-1 text-xl font-semibold tabular-nums'}>{c.value}</p>
+                {c.bar && (
+                  <div className="bg-muted mt-2 h-2 overflow-hidden rounded-full" aria-hidden>
+                    <div className="bg-success h-full rounded-full" style={{ width: `${project.progress}%` }} />
+                  </div>
+                )}
+                {c.hint && <p className="text-muted-foreground mt-1 text-xs">{c.hint}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
 function GeneralTab({ project }: { project: Project }) {
   const rows: [string, ReactNode][] = [
     ['Empresa', project.company?.legal_name ?? '—'],
     ['Cliente', project.customer?.name ?? '—'],
     ['Responsável técnico', project.technical_manager?.name ?? '—'],
+    ['Encarregado', project.foreman?.name ?? '—'],
     ['Início', formatDateOrDash(project.start_date)],
     ['Previsão de término', formatDateOrDash(project.expected_end_date)],
     ['Término real', formatDateOrDash(project.actual_end_date)],

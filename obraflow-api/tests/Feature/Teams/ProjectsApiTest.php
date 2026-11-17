@@ -267,3 +267,29 @@ it('regressão: busca com 3+ dígitos em obras e documentos não quebra (tabelas
     $this->b->post('/api/v1/documents', ['title' => 'DEMO Alvará 2026'])->assertCreated();
     $this->b->get('/api/v1/documents?q=2026')->assertOk()->assertJsonPath('meta.total', 1);
 });
+
+it('painel de obras (A-46): encarregado da mesma empresa, filtros por situação/responsável/encarregado, efetivos e dias decorridos', function () {
+    $eng = $this->b->post('/api/v1/employees', ['company_uuid' => $this->co, 'name' => 'DEMO Engenheira'])->json('data.uuid');
+    $enc = $this->b->post('/api/v1/employees', ['company_uuid' => $this->co, 'name' => 'DEMO Encarregado'])->json('data.uuid');
+    $fora = $this->b->post('/api/v1/employees', ['company_uuid' => $this->co2, 'name' => 'DEMO Fora'])->json('data.uuid');
+
+    $this->b->put("/api/v1/projects/{$this->obra}", ['foreman_uuid' => $fora])->assertUnprocessable()->assertJsonValidationErrors('foreman_uuid', 'error.details');
+    $this->b->put("/api/v1/projects/{$this->obra}", ['technical_manager_uuid' => $eng, 'foreman_uuid' => $enc, 'start_date' => now()->subDays(10)->toDateString()])
+        ->assertOk()->assertJsonPath('data.foreman.uuid', $enc)->assertJsonPath('data.elapsed_days', 10);
+
+    $this->b->post("/api/v1/projects/{$this->obra}/members", ['employee_uuid' => $enc, 'started_on' => now()->subDays(5)->toDateString()])->assertCreated();
+    $saiu = $this->b->post("/api/v1/projects/{$this->obra}/members", ['employee_uuid' => $eng, 'started_on' => now()->subDays(9)->toDateString()])->json('data.id');
+    $this->b->put("/api/v1/projects/{$this->obra}/members/{$saiu}", ['ended_on' => now()->subDay()->toDateString()])->assertOk();
+
+    $outra = $this->b->post('/api/v1/projects', ['company_uuid' => $this->co, 'name' => 'DEMO Concluída'])->json('data.uuid');
+    $this->b->post("/api/v1/projects/{$outra}/status", ['status' => 'in_progress'])->assertOk();
+    $this->b->post("/api/v1/projects/{$outra}/status", ['status' => 'completed'])->assertOk();
+
+    $this->b->get('/api/v1/projects?situation=active')->assertOk()->assertJsonPath('meta.total', 1)
+        ->assertJsonPath('data.0.uuid', $this->obra)->assertJsonPath('data.0.active_members', 1)->assertJsonPath('data.0.technical_manager.uuid', $eng);
+    $this->b->get('/api/v1/projects?situation=inactive')->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.uuid', $outra);
+    $this->b->get("/api/v1/projects?foreman_uuid={$enc}")->assertOk()->assertJsonPath('meta.total', 1);
+    $this->b->get("/api/v1/projects?technical_manager_uuid={$enc}")->assertOk()->assertJsonPath('meta.total', 0);
+    $this->b->get("/api/v1/projects/{$outra}")->assertOk()->assertJsonPath('data.elapsed_days', 0)->assertJsonPath('data.active_members', 0); // sem data de início
+    $this->b->delete("/api/v1/employees/{$enc}")->assertStatus(409); // encarregado em uso
+});

@@ -48,6 +48,11 @@ export interface Project {
   company?: { uuid: string; legal_name: string }
   customer?: { uuid: string; name: string } | null
   technical_manager?: { uuid: string; name: string } | null
+  /** Encarregado (A-46). */
+  foreman?: { uuid: string; name: string } | null
+  /** Painel: equipe com vínculo em aberto e dias desde o início. */
+  active_members?: number
+  elapsed_days?: number
   addresses?: Address[]
   phases?: Phase[]
   members?: Member[]

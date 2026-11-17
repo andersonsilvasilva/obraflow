@@ -32,7 +32,7 @@ function createMigrationCount(): int
 it('migrate:fresh cria uma tabela por migration, rollback remove todas e migrate recria (up/down simétricos)', function () {
     $n = migrationCount();
     $tables = createMigrationCount();
-    expect($n)->toBe(72)->and($tables)->toBe(69);
+    expect($n)->toBe(73)->and($tables)->toBe(69);
 
     Artisan::call('migrate:fresh', ['--force' => true]);
     expect(tableCount())->toBe($tables);

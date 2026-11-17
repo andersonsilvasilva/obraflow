@@ -42,6 +42,10 @@ class ProjectResource extends JsonResource
             'company' => $this->whenLoaded('company', fn () => ['uuid' => $this->company->uuid, 'legal_name' => $this->company->legal_name]),
             'customer' => $this->whenLoaded('customer', fn () => $this->customer?->only(['uuid', 'name'])),
             'technical_manager' => $this->whenLoaded('technicalManager', fn () => $this->technicalManager?->only(['uuid', 'name'])),
+            'foreman' => $this->whenLoaded('foreman', fn () => $this->foreman?->only(['uuid', 'name'])),
+            // painel de obras (A-46): efetivos = equipe com vínculo em aberto; dias decorridos desde o início até hoje (ou o término real)
+            'active_members' => $this->when($this->active_members !== null, fn () => (int) $this->active_members),
+            'elapsed_days' => $this->elapsedDays(),
             'addresses' => AddressResource::collection($this->whenLoaded('addresses')),
             'phases' => $this->whenLoaded('phases', fn () => $this->phases->sortBy(['sort_order', 'id'])->values()->map(fn ($p) => [
                 'id' => $p->id, 'parent_id' => $p->parent_id, 'name' => $p->name, 'sort_order' => $p->sort_order,
@@ -54,5 +58,15 @@ class ProjectResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    private function elapsedDays(): int
+    {
+        if ($this->start_date === null || $this->start_date->isFuture()) {
+            return 0;
+        }
+        $end = $this->actual_end_date ?? now()->startOfDay();
+
+        return max(0, (int) $this->start_date->diffInDays($end));
     }
 }

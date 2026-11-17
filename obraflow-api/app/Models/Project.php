@@ -31,7 +31,7 @@ class Project extends Model
     ];
 
     protected $fillable = [
-        'company_id', 'customer_id', 'code', 'name', 'description', 'technical_manager_id', 'contract_value',
+        'company_id', 'customer_id', 'code', 'name', 'description', 'technical_manager_id', 'foreman_id', 'contract_value',
         'progress', 'start_date', 'expected_end_date', 'actual_end_date',
     ];
 
@@ -90,6 +90,12 @@ class Project extends Model
     public function phases(): HasMany
     {
         return $this->hasMany(ProjectPhase::class);
+    }
+
+    /** Encarregado (A-46): funcionário da mesma empresa (FK composta). */
+    public function foreman(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'foreman_id');
     }
 
     public function members(): HasMany

@@ -5,6 +5,7 @@ namespace App\Modules\Projects\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\Employee;
 use App\Models\Project;
 use App\Models\ProjectStatusHistory;
 use App\Models\User;
@@ -34,7 +35,10 @@ class ProjectController extends Controller
 {
     use ListsRecords;
 
-    private const RELATIONS = ['company', 'customer', 'technicalManager'];
+    private const RELATIONS = ['company', 'customer', 'technicalManager', 'foreman'];
+
+    /** Ativas = em andamento ou a iniciar; inativas = encerradas (aba do painel, A-46). */
+    private const ACTIVE = ['planning', 'in_progress', 'paused', 'delayed'];
 
     public function __construct(
         private readonly RegistryService $registry,
@@ -54,12 +58,16 @@ class ProjectController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = $this->access->visible(Project::query()->with(self::RELATIONS), $request->user())->orderBy('code');
+        $query = $this->access->visible(Project::query()->with(self::RELATIONS)->withCount(['members as active_members' => fn ($q) => $q->whereNull('ended_on')]), $request->user())->orderBy('code');
+        if (in_array($request->query('situation'), ['active', 'inactive'], true)) {
+            $request->query('situation') === 'active' ? $query->whereIn('status', self::ACTIVE) : $query->whereNotIn('status', self::ACTIVE);
+        }
         $this->search($query, $request, ['code', 'name'], digitsColumn: null);
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
-        foreach (['company_uuid' => [Company::class, 'company_id'], 'customer_uuid' => [Customer::class, 'customer_id']] as $param => [$model, $column]) {
+        foreach (['company_uuid' => [Company::class, 'company_id'], 'customer_uuid' => [Customer::class, 'customer_id'],
+            'technical_manager_uuid' => [Employee::class, 'technical_manager_id'], 'foreman_uuid' => [Employee::class, 'foreman_id']] as $param => [$model, $column]) {
             if ($request->filled($param)) {
                 $query->where($column, $model::query()->where('uuid', $request->query($param))->value('id') ?? 0);
             }
@@ -77,7 +85,8 @@ class ProjectController extends Controller
 
     public function show(Request $request, string $uuid): JsonResponse
     {
-        $project = $this->find($request, $uuid, 'view')->load([...self::RELATIONS, 'addresses', 'phases', 'members.employee']);
+        $project = $this->find($request, $uuid, 'view')->load([...self::RELATIONS, 'addresses', 'phases', 'members.employee'])
+            ->loadCount(['members as active_members' => fn ($q) => $q->whereNull('ended_on')]);
 
         return $this->respond($request, $project);
     }
