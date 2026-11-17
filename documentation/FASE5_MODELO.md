@@ -102,7 +102,9 @@ Na HighTech, as permissões só entram com autorização, como nas fases anterio
 
 ## 7. Telas (no padrão de layout já homologado)
 
-- **Menu "Contratos"** (novo item principal): lista com busca e filtros (tipo, status, obra, cliente/fornecedor) e colunas código, objeto, parte, obra, valor atual, % medido, status.
+- **Onde ficam.** O Brickup, sistema usado hoje pelo responsável, põe os contratos **dentro da obra → Execução → Contratos** (junto de Etapas e Efetivos), e o orçamento fica em **Comercial**. Seguimos a mesma organização, com o layout do ObraFlow:
+  - **na obra**, uma aba **"Contratos"** é o caminho principal: os contratos daquela obra e as medições dentro de cada contrato;
+  - **Comercial → Orçamentos · Contratos** no menu: a lista geral de todos os contratos, inclusive os sem obra, com busca e filtros (tipo, status, obra, cliente/fornecedor) e as colunas código, objeto, parte, obra, valor atual, % medido e status.
 - **Contrato (detalhe)**, com abas:
   - **Resumo**: original × atual, medido, saldo, prazos;
   - **Itens**: com "Gerar do orçamento aprovado";
@@ -111,9 +113,9 @@ Na HighTech, as permissões só entram com autorização, como nas fases anterio
   - **Documentos**;
   - **Histórico**.
 - **Medição (boletim)**: tabela por item com contratado, acumulado anterior, **este período** (editável), acumulado, % executado e valor. Rodapé com bruto, retenção e líquido. Ações enviar, aprovar e rejeitar, conforme o status e as permissões.
-- Na **obra**, nova aba "Contratos" com os contratos dela.
+- Ao criar um contrato pela aba da obra, a obra já vem preenchida.
 
-Não há telas de referência para contratos e medições em `documentation/telas`. Se você tiver imagens do sistema que usa hoje, posso seguir o mesmo modelo.
+As telas de contrato e medição do Brickup estão bloqueadas no plano atual do responsável, então não há referência visual dos campos. As telas seguem o padrão de layout já homologado ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md)).
 
 ## 8. Etapas (após aprovação)
 
