@@ -49,8 +49,10 @@ npm test && npm run lint && npm run build
 | **Ajustes pós-homologação da Fase 3** (código automático OB-NNN/AAAA, regressão da busca com dígitos) | `Feature/Teams/ProjectsApiTest` | 2 |
 | **Código automático do orçamento** (ORC-NNN/AAAA por ano da data-base) | `Feature/Budgets/BudgetApiTest` | 1 |
 | **Fase 4C — catálogo de insumos** (CRUD, grupos por tipo, balanço da mão de obra, importação com pré-visualização, item do catálogo no orçamento, cópia da base SINAPI, permissões, isolamento, CHECKs) | `Feature/Catalog/ResourceCatalogTest` | 9 |
-| **Backend** | | **425 (2.997 asserções)** |
-| **Frontend** (cliente HTTP/CSRF, tenant hint e BroadcastChannel, menu por permissão, paginação local, formatação, obras, fluxo e EAP do orçamento, primeiros passos, máscaras CPF/CNPJ/telefone/CEP, prévia do balanço, envio multipart) | `src/**/*.test.ts` | **37** |
+| **Calendário e horários da obra** (exceções única/recorrente, importações, horários com herança, CHECKs, acesso, auditoria) | `Feature/Teams/ProjectCalendarTest` | 7 |
+| **Fase 5A — contratos** (cadastro, itens, ativação, geração pelo orçamento aprovado, aditivos, ciclo de vida, acesso por obra, documentos, CHECKs, auditoria) | `Feature/Contracts/ContractApiTest` | 8 |
+| **Backend** | | **442** |
+| **Frontend** (cliente HTTP/CSRF, tenant hint e BroadcastChannel, menu por permissão, paginação local, formatação, obras, fluxo e EAP do orçamento, primeiros passos, máscaras CPF/CNPJ/telefone/CEP, prévia do balanço, envio multipart, calendário, consulta de CEP) | `src/**/*.test.ts` | **41** |
 
 ## 3. Requisitos obrigatórios × testes
 

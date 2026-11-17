@@ -36,6 +36,11 @@ const PHASE4_TABLES = [
     'resource_labor_costs', 'resources',
 ];
 
+/** Fase 5A (FASE5_MODELO.md): contratos da obra. */
+const PHASE5_TABLES = [
+    'contract_addenda', 'contract_addendum_items', 'contract_items', 'contract_status_history', 'contracts',
+];
+
 function dbName(): string
 {
     return DB::connection()->getDatabaseName();
@@ -45,7 +50,7 @@ it('cria exatamente as tabelas das Fases 1 a 4 (mais a tabela migrations)', func
     $tables = collect(DB::select('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?', [dbName()]))
         ->pluck('t')->map(fn ($t) => strtolower($t))->reject(fn ($t) => $t === 'migrations')->sort()->values()->all();
 
-    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES, ...PHASE3_TABLES, ...PHASE4_TABLES])->sort()->values()->all();
+    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES, ...PHASE3_TABLES, ...PHASE4_TABLES, ...PHASE5_TABLES])->sort()->values()->all();
 
     expect($tables)->toBe($expected);
 });

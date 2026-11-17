@@ -20,6 +20,10 @@ use App\Models\CompanyBranch;
 use App\Models\CompanyBranchAddress;
 use App\Models\CompanyBranchContact;
 use App\Models\CompanyContact;
+use App\Models\Contract;
+use App\Models\ContractAddendum;
+use App\Models\ContractAddendumItem;
+use App\Models\ContractItem;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
 use App\Models\CustomerContact;
@@ -150,6 +154,10 @@ class AppServiceProvider extends ServiceProvider
             'budget' => Budget::class,
             'project_calendar_exception' => ProjectCalendarException::class,
             'work_schedule' => WorkSchedule::class,
+            'contract' => Contract::class,
+            'contract_item' => ContractItem::class,
+            'contract_addendum' => ContractAddendum::class,
+            'contract_addendum_item' => ContractAddendumItem::class,
             'budget_version' => BudgetVersion::class,
             'budget_group' => BudgetGroup::class,
             'budget_item' => BudgetItem::class,

@@ -137,3 +137,38 @@ As telas de contrato e medição do Brickup estão bloqueadas no plano atual do 
 - **Regras legais:** o aviso de 25% vale para contratos públicos; contratos privados seguem o que foi assinado. O sistema não substitui a análise jurídica.
 - **Separação de funções (D-P56):** numa organização com um só usuário que aprova, a medição não pode ser aprovada até que outra pessoa tenha `measurements.approve`.
 - **Financeiro:** a medição aprovada ainda não gera título. A integração fica para a Fase 8.
+
+## 10. Andamento
+
+### 5A — etapas 1 e 2 (backend)
+
+- **Migrations** `2026_11_17_400001` a `400006`:
+  - tabelas `contracts`, `contract_addenda`, `contract_items`, `contract_addendum_items` e `contract_status_history`;
+  - ajuste em `document_links` para aceitar `contract` e `contract_addendum` (o arquivo assinado de cada aditivo fica no próprio aditivo).
+  - **Regras do banco:**
+    - parte do contrato × tipo;
+    - retenção abaixo de 100%;
+    - contrato ativo, suspenso ou concluído exige assinatura;
+    - aditivo aprovado exige assinatura, data e aprovador; aditivo de prazo exige nova data ao ser aprovado;
+    - linhas do aditivo coerentes com o tipo.
+- **Regras na aplicação:**
+  - contrato sempre de uma obra, com a empresa da obra;
+  - código CTR-NNN/AAAA;
+  - itens só em rascunho;
+  - ativação exige assinatura e itens e fixa o valor original;
+  - depois de ativo, só observações e regra de reajuste mudam fora dos aditivos.
+- **Gerar do orçamento aprovado (D-P47):**
+  - o preço de venda unitário leva o desconto global repartido, arredondado a 2 casas;
+  - os custos indiretos viram o item "CI" (VB);
+  - a diferença de centavos em relação ao preço final do orçamento volta na resposta.
+- **Aditivos (D-P48):**
+  - só contrato ativo recebe aditivo;
+  - linhas de alteração de quantidade e de item novo;
+  - o valor do aditivo é a diferença dos totais dos itens, então atual = original + Σ aditivos, exato;
+  - o prazo atualiza o término atual;
+  - a resposta avisa quando os acréscimos passam de 25%, sem bloquear;
+  - aditivo aprovado é imutável; o rascunho pode ser cancelado.
+- **Ciclo de vida:** ativar, suspender (com motivo), retomar, concluir e cancelar (com motivo). Aditivo em rascunho impede concluir ou cancelar. Nada se exclui (DELETE → 405).
+- **Acesso (D-P56):** `contracts.view` e `contracts.manage` (35 no catálogo), mais o acesso por obra. Sem acesso à obra, a resposta é 404. O `member` de tenants novos recebe `contracts.view`.
+- **Auditoria:** `contract.status_changed`, `contract.items_generated`, `contract.addendum_approved` e `contract.addendum_canceled`. O cadastro em si audita em `registry.*`.
+- **Testes:** `Feature/Contracts/ContractApiTest` (8). Suíte 442/442.

@@ -52,6 +52,9 @@ final class PermissionCatalog
         // Fase 4C — catálogo de insumos da organização (D-P37)
         'resources.view' => 'resources',
         'resources.manage' => 'resources',
+        // Fase 5A — contratos (sempre de uma obra: o acesso por obra também vale — A-45/D-P56)
+        'contracts.view' => 'contracts',
+        'contracts.manage' => 'contracts',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -81,7 +84,9 @@ final class PermissionCatalog
                 // D-P28: sem employees.view (dados pessoais); obras visíveis só com acesso por obra (D-P24)
                 'equipment.view', 'projects.view',
                 // Fase 4: bases técnicas públicas
-                'references.view', 'budgets.view', 'resources.view'],
+                'references.view', 'budgets.view', 'resources.view',
+                // Fase 5: contratos (consulta)
+                'contracts.view'],
             'viewer' => ['tenant.view'],
         ];
     }

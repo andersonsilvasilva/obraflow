@@ -5,6 +5,8 @@ namespace App\Modules\Registry\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\CompanyBranch;
+use App\Models\Contract;
+use App\Models\ContractAddendum;
 use App\Models\Customer;
 use App\Models\Document;
 use App\Models\DocumentCategory;
@@ -14,6 +16,7 @@ use App\Models\Employee;
 use App\Models\Equipment;
 use App\Models\Project;
 use App\Models\Supplier;
+use App\Modules\Contracts\Services\ContractAccess;
 use App\Modules\Projects\Services\ProjectAccess;
 use App\Modules\Registry\Http\Controllers\Concerns\ListsRecords;
 use App\Modules\Registry\Http\Requests\DocumentCategoryRequest;
@@ -50,6 +53,9 @@ class DocumentController extends Controller
         'employee' => [Employee::class, 'uuid'],
         'equipment' => [Equipment::class, 'uuid'],
         'project' => [Project::class, 'uuid'],
+        // Fase 5A (D-P55): contrato pelo uuid; aditivo pelo id. Ver/vincular segue o acesso ao contrato (obra)
+        'contract' => [Contract::class, 'uuid'],
+        'contract_addendum' => [ContractAddendum::class, 'id'],
     ];
 
     public function __construct(
@@ -57,6 +63,7 @@ class DocumentController extends Controller
         private readonly DocumentAccess $access,
         private readonly RegistryService $registry,
         private readonly ProjectAccess $projects,
+        private readonly ContractAccess $contracts,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -235,6 +242,9 @@ class DocumentController extends Controller
             $owner instanceof Employee => $user->can('employees.view'),
             $owner instanceof Equipment => $user->can('equipment.view'),
             $owner instanceof Project => $this->projects->allows($user, $owner, $ability),
+            $owner instanceof Contract => $this->contracts->allows($user, $owner, $ability === 'view' ? 'view' : 'edit'),
+            $owner instanceof ContractAddendum => ($c = Contract::query()->find($owner->contract_id)) !== null
+                && $this->contracts->allows($user, $c, $ability === 'view' ? 'view' : 'edit'),
             default => true, // donos da Fase 2: regra original (permissão de documento)
         };
     }

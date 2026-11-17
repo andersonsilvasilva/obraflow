@@ -136,6 +136,15 @@ final class AuditEvent
 
     public const SCHEDULE_RESET = 'calendar.schedule_reset';
 
+    // Fase 5A — contratos (CRUD em registry.*, entity_type contract, contract_item, contract_addendum…)
+    public const CONTRACT_STATUS_CHANGED = 'contract.status_changed';
+
+    public const CONTRACT_ITEMS_GENERATED = 'contract.items_generated';
+
+    public const CONTRACT_ADDENDUM_APPROVED = 'contract.addendum_approved';
+
+    public const CONTRACT_ADDENDUM_CANCELED = 'contract.addendum_canceled';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -158,6 +167,12 @@ final class AuditEvent
     public static function phase4(): array
     {
         return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'reference.') || str_starts_with($e, 'budget.') || str_starts_with($e, 'resource.')));
+    }
+
+    /** Eventos da Fase 5 (cobertura verificada pelos testes de contratos). @return list<string> */
+    public static function phase5(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'contract.')));
     }
 
     /** Eventos do calendário e dos horários da obra (cobertura verificada pelos testes do calendário). @return list<string> */
