@@ -270,3 +270,16 @@ Commit `8387d64`.
   - **Removidos:** `BudgetCreatePage`, `BudgetEditorPage`, `BudgetFinalizationPage`, `BudgetWorkspace`, `CompositionPanel` e o cálculo local `calc.ts` (com seus 7 testes).
   - **Mantido:** o protótipo "Orçamento inteligente (IA)", como **demo** em "Em preparação" (IA fora desta fase).
 - **Testes frontend:** **25/25**, com o novo `budgets.test.ts` (ações do fluxo por status/permissão, árvore de etapas). `tsc`, lint e build ok.
+Commit `c0f5568`. CI verde: run 44103187515 (`8387d64`) e run 44104212735 (`c0f5568`).
+
+### 4B — Banco `obraflow` (autorizado, 2026-11-17)
+
+| Passo | Resultado |
+|---|---|
+| Migrations da 4B | 11 aplicadas; **66** no total; tabelas vazias |
+| Permissões | `budgets.view`, `budgets.manage` e `budgets.approve` instaladas; catálogo com **31** permissões |
+| Papéis da HighTech | `admin` com 31 permissões; `member` com 13 (+ `budgets.view`, só consulta). Concessões auditadas; a segunda execução respondeu "nada a fazer" |
+
+Nenhum orçamento foi criado. Os servidores foram ligados para teste no navegador.
+
+**Parte 4B aguarda homologação.**
