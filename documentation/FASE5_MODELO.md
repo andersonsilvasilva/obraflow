@@ -194,4 +194,4 @@ As telas de contrato e medição do Brickup estão bloqueadas no plano atual do 
 - `admin` da HighTech com 35 permissões, `member` com 15 (`contracts.view`);
 - nenhum dado inserido.
 
-**5A aguarda homologação.**
+**Parte 5A homologada pelo responsável em 2026-11-17 (A-48).** A 5B (Medições) aguarda autorização.
