@@ -39,7 +39,7 @@ Formato: ID · data · decisão · justificativa. Decisões de dados: [DB_DECISI
 - **mapa OpenStreetMap** (Leaflet): "Localizar pelo endereço" envia só o endereço da obra ao Nominatim, quando o usuário pede; o pino arrastável grava as coordenadas no endereço; se o endereço muda, as coordenadas são limpas;
 - **dados técnicos**: área a ser construída, prazo em meses (calcula a entrega) e CNO;
 - **encargo social da obra** (com, sem desoneração ou sem encargo): o orçamento manual herda; a base SINAPI deve ter o mesmo regime (D-P03).
-Migration `410001`. Tipo de contrato, taxa administrativa, telefone, SFObras, ID externo, CNPJs vinculados e SUDECAP ficaram de fora. | [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md) |
+Migration `410001`, aplicada no `obraflow` com autorização (80 migrations). Tipo de contrato, taxa administrativa, telefone, SFObras, ID externo, CNPJs vinculados e SUDECAP ficaram de fora. | [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md) |
 | A-46 | 2026-11-17 | **Painel de obras em cards** (referência Brickup), pedido do responsável:
 - abas Todas/Ativas/Inativas, filtros, indicadores, cards, menu ⋮ e aba **Geral** na obra;
 - indicadores ainda sem dados (financeiro, compras, RDO, atividades) aparecem como "em breve", nunca com valor inventado;
