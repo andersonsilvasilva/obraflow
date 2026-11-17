@@ -181,3 +181,11 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
   - O servidor manda: arrastar a barra muda início e duração; ligar as bolinhas cria a dependência (FS, SS, FF, SF); apagar a ligação remove a dependência; o duplo clique abre a janela da atividade. O Gantt nunca muda sozinho: cada ação vira chamada à API, e a tela recebe o cronograma recalculado.
 - **Janela da atividade:** nome, etapa (mover), início, duração em dias úteis (com o equivalente em dias corridos e o término), quantidade e unidade, avanço (%), início e término reais. Predecessoras com tipo e atraso, incluir e remover. Excluir (a etapa sai com o que está dentro).
 - **Testes frontend:** 49/49 (+2: conversão para o Gantt e tipos de dependência).
+
+**Aplicado no `obraflow` em 2026-11-17, com autorização do usuário:**
+- migrations `500001`–`500005` (80 → 85);
+- permissões `schedules.view` e `schedules.manage` (37 no catálogo);
+- `admin` da HighTech com 37 permissões, `member` com 16 (`schedules.view`);
+- nenhum dado inserido.
+
+**6A aguarda homologação.**
