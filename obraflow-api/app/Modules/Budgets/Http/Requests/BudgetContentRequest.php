@@ -46,6 +46,14 @@ class BudgetContentRequest extends TenantRequest
                 'bdi_percent' => ['nullable', ...$pct],
                 'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:99.9999', 'decimal:0,4'],
             ],
+            str_ends_with($name, 'budgets.items.catalog') => [
+                'resource_uuid' => ['required', 'uuid', $this->existsInTenant('resources')],
+                'group_id' => ['required', 'integer', $group()],
+                'quantity' => ['required', 'numeric', 'min:0', 'max:99999999999.9999', 'decimal:0,4'],
+                'item_code' => ['nullable', 'string', 'max:30'],
+                'bdi_percent' => ['nullable', ...$pct],
+                'discount_percent' => ['nullable', 'numeric', 'min:0', 'max:99.9999', 'decimal:0,4'],
+            ],
             str_contains($name, 'budgets.items.') => [
                 'group_id' => [$req, 'integer', $group()],
                 'code' => [$req, 'string', 'max:30'],

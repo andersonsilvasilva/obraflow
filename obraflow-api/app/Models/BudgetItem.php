@@ -15,7 +15,7 @@ class BudgetItem extends Model
 {
     use BelongsToBudgetVersion, BelongsToTenant;
 
-    public const SOURCES = ['official', 'custom', 'manual'];
+    public const SOURCES = ['official', 'custom', 'manual', 'catalog'];
 
     protected $fillable = [
         'budget_version_id', 'group_id', 'code', 'description', 'unit_code', 'quantity', 'unit_cost',

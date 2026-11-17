@@ -38,7 +38,9 @@ use App\Models\ProjectMember;
 use App\Models\ProjectPhase;
 use App\Models\ProjectStatusHistory;
 use App\Models\ReferenceDataset;
+use App\Models\Resource;
 use App\Models\ResourceGroup;
+use App\Models\ResourceLaborCost;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\SupplierAddress;
@@ -153,6 +155,9 @@ class AppServiceProvider extends ServiceProvider
             'budget_item_resource' => BudgetItemResource::class,
             'budget_approval' => BudgetApproval::class,
             'budget_status_history' => BudgetStatusHistory::class,
+            // Fase 4C — catálogo
+            'resource' => Resource::class,
+            'resource_labor_cost' => ResourceLaborCost::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

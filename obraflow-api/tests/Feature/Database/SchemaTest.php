@@ -30,6 +30,8 @@ const PHASE4_TABLES = [
     // 4B — orçamentos
     'budget_approvals', 'budget_bdi', 'budget_composition_items', 'budget_compositions', 'budget_groups', 'budget_indirect_costs',
     'budget_item_resources', 'budget_items', 'budget_status_history', 'budget_versions', 'budgets',
+    // 4C — catálogo de insumos
+    'resource_labor_costs', 'resources',
 ];
 
 function dbName(): string
@@ -113,7 +115,7 @@ it('os CHECK constraints estão ativos (e aplicados) e as colunas geradas existe
         'company_branch_contacts.primary_marker', 'company_branches.active_marker', 'company_contacts.primary_marker',
         'customer_addresses.main_marker', 'customer_contacts.primary_marker', 'customers.active_marker',
         'employees.active_marker', 'equipment.active_marker', 'project_addresses.main_marker', 'project_members.open_marker',
-        'projects.active_marker', 'resource_groups.parent_key',
+        'projects.active_marker', 'resource_groups.parent_key', 'resources.active_marker',
         'supplier_addresses.main_marker', 'supplier_contacts.primary_marker', 'suppliers.active_marker',
         'tenant_domains.primary_marker', 'user_invitations.pending_email',
     ]);

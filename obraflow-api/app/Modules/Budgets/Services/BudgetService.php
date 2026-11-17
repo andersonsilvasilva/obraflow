@@ -12,6 +12,7 @@ use App\Models\BudgetItem;
 use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
 use App\Models\ReferenceDataset;
+use App\Models\Resource;
 use App\Models\User;
 use App\Modules\Audit\AuditEvent;
 use App\Modules\Audit\AuditLogger;
@@ -144,6 +145,35 @@ final class BudgetService
             }
             $this->registry->create($item, $fields, $actor);
             $this->storeCopy($version, $item, $copy['composition'], $copy['composition_items'], $copy['resources']);
+        });
+
+        return $item->refresh();
+    }
+
+    /**
+     * Item a partir do catálogo da organização (D-P41): copia nome, unidade e preço vigentes com origem `catalog`;
+     * mudar o preço no catálogo depois NÃO altera o orçamento (D-08). Insumo sem preço é recusado.
+     */
+    public function addCatalogItem(BudgetVersion $version, array $data, User $actor): BudgetItem
+    {
+        $resource = Resource::query()->where('uuid', $data['resource_uuid'])->where('status', 'active')->with('unit')->firstOrFail();
+        if ($resource->price === null) {
+            throw new DomainRuleException("O insumo \"{$resource->name}\" não tem preço no catálogo.");
+        }
+        $item = new BudgetItem(['budget_version_id' => $version->id]);
+
+        $this->mutate($version, function () use ($version, $data, $resource, $item, $actor) {
+            $this->registry->create($item, [
+                'group_id' => $data['group_id'], 'code' => $data['item_code'] ?? ($resource->code ?: 'CAT'),
+                'description' => $resource->name, 'unit_code' => $resource->unit->code, 'quantity' => $data['quantity'],
+                'unit_cost' => (string) $resource->price, 'discount_percent' => $data['discount_percent'] ?? '0', 'bdi_percent' => $data['bdi_percent'] ?? null,
+                'source' => 'catalog', 'sort_order' => $this->nextOrder('budget_items', $version->id),
+                'source_ref' => ['source' => 'CATÁLOGO', 'type' => 'catalog', 'uuid' => $resource->uuid, 'code' => $resource->code ?? '',
+                    'kind' => $resource->kind, 'price' => (string) $resource->price, 'price_date' => $resource->price_date?->toDateString(),
+                    'competency' => $resource->price_date?->format('Y-m') ?? '', 'state' => '', 'regime' => ''],
+            ], $actor);
+            $this->storeCopy($version, $item, null, [], [['kind' => $resource->kind, 'code' => $resource->code ?: "CAT-{$resource->id}",
+                'description' => $resource->name, 'unit_code' => $resource->unit->code, 'coefficient' => '1.0000000', 'unit_price' => (string) $resource->price]]);
         });
 
         return $item->refresh();

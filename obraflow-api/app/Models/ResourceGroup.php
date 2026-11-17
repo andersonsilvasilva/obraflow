@@ -16,7 +16,7 @@ class ResourceGroup extends Model
 {
     use BelongsToTenant;
 
-    public const KINDS = ['equipment', 'material'];
+    public const KINDS = ['equipment', 'material', 'labor', 'service'];
 
     protected $fillable = ['kind', 'parent_id', 'name'];
 

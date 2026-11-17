@@ -1,6 +1,6 @@
-# FASE 4C — CATÁLOGO DE INSUMOS DA ORGANIZAÇÃO: PROPOSTA DE MODELO
+# FASE 4C — CATÁLOGO DE INSUMOS DA ORGANIZAÇÃO: MODELO APROVADO
 
-> **Proposta — aguarda aprovação.** Pedido do responsável em 2026-11-17 ("cadastro de insumos próprio"). O item tinha sido adiado na D-P35. Nenhuma migration é criada antes da aprovação das decisões D-P37 a D-P43.
+> **Aprovado em 2026-11-17.** Pedido do responsável ("cadastro de insumos próprio"); o item tinha sido adiado na D-P35. As decisões D-P37 a D-P43 foram aprovadas conforme a recomendação.
 > **Base:**
 > - telas de referência "Cadastro de Produtos" (Materiais), "Cadastro de Recursos" (Mão de obra) e "Balanço" ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md), itens 14, 16 e 17);
 > - planilhas `product.xlsx` (Subgrupo, Grupo*, Nome*, Marca, Fornecedor principal, Unidade de medida*) e `equipment.xlsx`;
@@ -23,7 +23,7 @@ Menu: **Cadastros → Recursos → Materiais · Mão de obra · Equipamentos · 
 | ± | `resource_groups` | `kind` passa a aceitar `labor` e `service` (hoje: `equipment`, `material`) | migration de ajuste |
 | ± | orçamento | item com origem **`catalog`** e `source_ref` apontando para o insumo (cópia, sem FK — D-08) | ajuste do CHECK de `budget_items.source` |
 
-## 3. Decisões para aprovação
+## 3. Decisões (aprovadas conforme a recomendação, 2026-11-17)
 
 | ID | Decisão | Recomendação |
 |---|---|---|
@@ -52,3 +52,25 @@ Menu: **Cadastros → Recursos → Materiais · Mão de obra · Equipamentos · 
 - **Fórmula do balanço:** é simplificada (D-P39). Se a empresa usa outra metodologia de custo de mão de obra, a fórmula precisa ser ajustada antes do uso.
 - **Importação:** grupos e unidades com nomes diferentes podem gerar duplicados. A pré-visualização mostra o que será criado.
 - **Preço vigente:** o catálogo guarda o preço atual. Orçamentos antigos não mudam (D-08).
+
+## 7. Andamento
+
+### Backend (etapas 1, 3 e 4)
+
+**Migrations** `2026_11_17_300001` a `300004`:
+- ajuste do CHECK de `resource_groups.kind` (+ `labor` e `service`);
+- tabelas `resources` e `resource_labor_costs`;
+- ajuste do CHECK de `budget_items.source` (+ `catalog`).
+
+No banco: FK `(tenant_id, kind, group_id)` (grupo do mesmo tipo) e CHECK de cargo só em mão de obra e de equipamento só em equipamento.
+
+**API:**
+- `/resources`: CRUD; filtros `kind`, `group_id`, `parent_group_id` e `status`; busca por nome, código e marca.
+- `/resources/{uuid}/labor-costs`: balanço da mão de obra. O preço/hora é calculado e gravado; o balanço vigente (maior data até hoje) define o preço do insumo.
+- `/resources/import/preview` e `/resources/import`: planilha-modelo de materiais ou equipamentos. A pré-visualização não grava nada; a execução grava só as linhas válidas, numa transação, e audita `resource.imported`.
+- `/catalog-groups`: grupos de material, mão de obra e serviço. Os grupos de equipamento continuam em `/resource-groups`.
+- `POST …/items/catalog`: item do catálogo no orçamento, com origem `catalog` e cópia do preço vigente.
+
+**Permissões:** `resources.view` e `resources.manage` (33 no catálogo). O `member` de tenants novos recebe `resources.view`.
+
+**Testes:** `Feature/Catalog/ResourceCatalogTest` (9). Suíte **425/425 (2.997 asserções)**.

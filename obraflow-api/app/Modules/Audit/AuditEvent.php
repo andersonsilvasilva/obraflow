@@ -126,6 +126,9 @@ final class AuditEvent
 
     public const BUDGET_VERSION_CREATED = 'budget.version_created';
 
+    // Fase 4C — catálogo de insumos (CRUD em registry.*, entity_type resource)
+    public const RESOURCE_IMPORTED = 'resource.imported';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -147,6 +150,6 @@ final class AuditEvent
     /** Eventos da Fase 4 (cobertura verificada pelos testes de referências/orçamentos). @return list<string> */
     public static function phase4(): array
     {
-        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'reference.') || str_starts_with($e, 'budget.')));
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'reference.') || str_starts_with($e, 'budget.') || str_starts_with($e, 'resource.')));
     }
 }

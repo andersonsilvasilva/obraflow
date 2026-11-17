@@ -34,6 +34,7 @@ Route::middleware('tenant.required')->group(function (): void {
 
             Route::post('items', [BudgetContentController::class, 'storeItem'])->middleware('can:budgets.manage')->name('budgets.items.store');
             Route::post('items/reference', [BudgetContentController::class, 'storeReferenceItem'])->middleware(['can:budgets.manage', 'can:references.view'])->name('budgets.items.reference');
+            Route::post('items/catalog', [BudgetContentController::class, 'storeCatalogItem'])->middleware(['can:budgets.manage', 'can:resources.view'])->name('budgets.items.catalog');
             Route::put('items/{id}', [BudgetContentController::class, 'updateItem'])->whereNumber('id')->middleware('can:budgets.manage')->name('budgets.items.update');
             Route::delete('items/{id}', [BudgetContentController::class, 'destroyItem'])->whereNumber('id')->middleware('can:budgets.manage')->name('budgets.items.destroy');
             Route::get('items/{id}/composition', [BudgetContentController::class, 'composition'])->whereNumber('id')->middleware('can:budgets.view')->name('budgets.items.composition');

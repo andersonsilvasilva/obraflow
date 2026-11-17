@@ -195,7 +195,8 @@ it('exclusão de rascunho funciona e todos os eventos da Fase 4 são emitidos po
     $this->b->post("/api/v1/budgets/{$this->orc}/versions")->assertCreated();
 
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
-    expect(array_values(array_diff(AuditEvent::phase4(), $emitidos)))->toBe([]);
+    // resource.imported é coberto em Feature/Catalog/ResourceCatalogTest
+    expect(array_values(array_diff(AuditEvent::phase4(), [AuditEvent::RESOURCE_IMPORTED], $emitidos)))->toBe([]);
 });
 
 it('código vazio gera ORC-NNN/AAAA com o ano da data-base; numeração por ano; manual é respeitado', function () {

@@ -9,16 +9,27 @@ use App\Modules\Teams\Http\Requests\ResourceGroupRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/** Grupos/subgrupos de equipamentos (D-P22). Exclusão de grupo com subgrupos ou equipamentos → 409 `in_use`. */
+/** Grupos/subgrupos de recursos (D-P22, D-P40): equipamentos ou, em /catalog-groups, insumos do catálogo. Em uso → 409 `in_use`. */
 class ResourceGroupController extends Controller
 {
     private const FIELDS = ['id', 'kind', 'parent_id', 'name'];
 
     public function __construct(private readonly RegistryService $registry) {}
 
-    public function index(): JsonResponse
+    /** Tipos atendidos pela rota: /resource-groups → equipment; /catalog-groups → material, labor, service (D-P40). */
+    public static function kindsOf(Request $request): array
     {
-        $groups = ResourceGroup::query()->where('kind', 'equipment')->orderByRaw('parent_key, name')->get(self::FIELDS);
+        return $request->route('scope')['kinds'] ?? ['equipment'];
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $kinds = self::kindsOf($request);
+        $query = ResourceGroup::query()->whereIn('kind', $kinds)->orderByRaw('kind, parent_key, name');
+        if ($request->filled('kind')) {
+            $query->where('kind', $request->query('kind'));
+        }
+        $groups = $query->get(self::FIELDS);
 
         return response()->json(['data' => $groups]);
     }
@@ -32,20 +43,20 @@ class ResourceGroupController extends Controller
 
     public function update(ResourceGroupRequest $request, int $id): JsonResponse
     {
-        $group = $this->registry->update($this->find($id), $request->payload(), $request->user());
+        $group = $this->registry->update($this->find($request, $id), $request->payload(), $request->user());
 
         return response()->json(['data' => $group->only(self::FIELDS)]);
     }
 
     public function destroy(Request $request, int $id): JsonResponse
     {
-        $this->registry->delete($this->find($id), $request->user());
+        $this->registry->delete($this->find($request, $id), $request->user());
 
         return response()->json(null, 204);
     }
 
-    private function find(int $id): ResourceGroup
+    private function find(Request $request, int $id): ResourceGroup
     {
-        return ResourceGroup::query()->where('kind', 'equipment')->findOrFail($id);
+        return ResourceGroup::query()->whereIn('kind', self::kindsOf($request))->findOrFail($id);
     }
 }

@@ -86,6 +86,13 @@ class BudgetContentController extends Controller
         return response()->json(['data' => $this->itemData($item)], 201);
     }
 
+    public function storeCatalogItem(BudgetContentRequest $request, string $uuid, int $number): JsonResponse
+    {
+        $item = $this->budgets->addCatalogItem($this->version($request, $uuid, $number, 'edit'), $request->validated(), $request->user());
+
+        return response()->json(['data' => $this->itemData($item)], 201);
+    }
+
     public function updateItem(BudgetContentRequest $request, string $uuid, int $number, int $id): JsonResponse
     {
         $v = $this->version($request, $uuid, $number, 'edit');
