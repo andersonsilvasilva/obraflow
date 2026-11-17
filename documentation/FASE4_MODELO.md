@@ -152,4 +152,41 @@ Commit `bb224f4`. CI verde nos dois commits da 4A: run 44092650459 (`4961b76`) e
 - **Tipos de insumo:** 3 insumos por base ficam sem tipo (Macro-Classe "ESPECIAIS", como publicada).
 - **Dados dos tenants:** nenhum cadastro de tenant foi criado.
 
-**Parte 4A aguarda homologação.** A parte 4B (Orçamentos) começa depois dela.
+**Parte 4A homologada pelo responsável em 2026-11-17.** A parte 4B (Orçamentos) foi autorizada.
+
+### 4B.4 — Orçamentos, versões, etapas, itens, BDI, custos indiretos, cálculo e imutabilidade
+
+**6 tabelas por tenant** (migrations `2026_11_17_200001` a `200006`):
+`budgets`, `budget_versions`, `budget_groups`, `budget_items`, `budget_bdi`, `budget_indirect_costs`.
+- **Por que BDI e indiretos entraram agora:** foram antecipados da 4B.5, porque o cálculo depende deles.
+- **Isolamento e versão:** FK composta com `tenant_id` e, nos filhos, com a **versão**. O banco recusa etapa-pai, etapa do item, BDI de etapa ou de item que sejam de outra versão. A versão corrente precisa ser do próprio orçamento.
+- **CHECKs:**
+  - modo "referência" exige base;
+  - versão aprovada exige `locked_at`;
+  - percentuais e valores no domínio;
+  - BDI coerente com o escopo, e o método TCU exige componentes;
+  - custo indireto fixo **ou** percentual, nunca os dois.
+- **Base de referência:** o orçamento referencia a base global com FK simples. O teste estrutural de isolamento passou a isentar FKs para tabelas **globais** (sem `tenant_id`).
+
+**Cálculo** (`BudgetCalculator`, `bcmath`; D-P02, D-P32, D-P33):
+- **Item:** custo = arred₂(quantidade × custo unitário); venda = arred₂(arred₂(custo × (1+BDI)) × (1 − desconto do item)).
+- **BDI efetivo:** o do item, senão a etapa mais próxima subindo na árvore, senão o global, senão zero.
+- **Versão:**
+  - indiretos (fixo ou % do custo direto, fora do BDI);
+  - desconto global sobre (vendas + indiretos);
+  - snapshot com custo direto, indireto, total, BDI, descontos, preço final e subtotais por etapa (com as subetapas).
+- **Fórmula do TCU** (`BdiFormula`): opcional; guarda os componentes.
+
+**Serviço** (`BudgetService`): toda mudança roda em transação, com auditoria (`registry.*`) e recálculo. Modo "referência" herda a UF e o regime da base ativa. Nova versão:
+- só a partir de uma versão aprovada ou rejeitada;
+- copia etapas (árvore remapeada), itens, BDI e indiretos;
+- vira a versão corrente, em rascunho.
+
+**Imutabilidade (D-P31, sem trigger):**
+- Versão bloqueada recusa criar, alterar ou excluir etapas, itens, BDI, indiretos e desconto, além de recalcular e de ser excluída (422 `domain_rule`).
+- A única mudança aceita é de aprovada para substituída.
+
+**Testes:**
+- `Feature/Budgets/BudgetCalculationTest` (13): valores conferidos com cálculo decimal independente. Exemplo: custo direto 455,15, indiretos 522,76, preço final 1.037,08; TCU 25,88%.
+- `Feature/Database/BudgetIntegrityTest` (6).
+- Suíte **399/399 (2.548 asserções)**.

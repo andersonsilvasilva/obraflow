@@ -27,6 +27,8 @@ const PHASE3_TABLES = [
 const PHASE4_TABLES = [
     'reference_composition_items', 'reference_compositions', 'reference_datasets', 'reference_imports',
     'reference_resource_prices', 'reference_resources', 'reference_sources', 'reference_units',
+    // 4B — orçamentos
+    'budget_bdi', 'budget_groups', 'budget_indirect_costs', 'budget_items', 'budget_versions', 'budgets',
 ];
 
 function dbName(): string
@@ -106,7 +108,7 @@ it('os CHECK constraints estão ativos (e aplicados) e as colunas geradas existe
     ))->pluck('c')->sort()->values()->all();
 
     expect($generated)->toBe([
-        'companies.active_marker', 'company_addresses.main_marker', 'company_branch_addresses.main_marker',
+        'budget_bdi.scope_key', 'budgets.active_marker', 'companies.active_marker', 'company_addresses.main_marker', 'company_branch_addresses.main_marker',
         'company_branch_contacts.primary_marker', 'company_branches.active_marker', 'company_contacts.primary_marker',
         'customer_addresses.main_marker', 'customer_contacts.primary_marker', 'customers.active_marker',
         'employees.active_marker', 'equipment.active_marker', 'project_addresses.main_marker', 'project_members.open_marker',

@@ -3,6 +3,12 @@
 namespace App\Providers;
 
 use App\Models\AuditLog;
+use App\Models\Budget;
+use App\Models\BudgetBdi;
+use App\Models\BudgetGroup;
+use App\Models\BudgetIndirectCost;
+use App\Models\BudgetItem;
+use App\Models\BudgetVersion;
 use App\Models\Company;
 use App\Models\CompanyAddress;
 use App\Models\CompanyBranch;
@@ -130,6 +136,13 @@ class AppServiceProvider extends ServiceProvider
             'user_company' => UserCompany::class,
             // Fase 4 — referências (globais)
             'reference_dataset' => ReferenceDataset::class,
+            // Fase 4B — orçamentos
+            'budget' => Budget::class,
+            'budget_version' => BudgetVersion::class,
+            'budget_group' => BudgetGroup::class,
+            'budget_item' => BudgetItem::class,
+            'budget_bdi' => BudgetBdi::class,
+            'budget_indirect_cost' => BudgetIndirectCost::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

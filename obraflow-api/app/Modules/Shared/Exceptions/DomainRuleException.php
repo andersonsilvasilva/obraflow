@@ -9,4 +9,4 @@ use LogicException;
  * Na API vira 422 `domain_rule` com a mensagem; fora dela continua sendo uma LogicException.
  * Violações de append-only NÃO usam esta classe (são erro de programação → 500).
  */
-final class DomainRuleException extends LogicException {}
+class DomainRuleException extends LogicException {}

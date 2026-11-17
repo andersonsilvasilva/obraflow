@@ -59,8 +59,12 @@ it('toda FK entre tabelas operacionais é composta com tenant_id (nenhuma FK sim
          GROUP BY k.constraint_name, k.table_name, k.referenced_table_name",
     );
 
+    // FK para tabela GLOBAL (sem tenant_id, ex.: reference_datasets — D-P29) não atravessa tenants: fica fora da regra
+    $globais = collect(DB::select('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = DATABASE()'))
+        ->pluck('t')->map(fn ($t) => strtolower($t))->reject(fn ($t) => in_array($t, tenantTables(), true) || in_array($t, TENANT_SCOPE_EXCEPTIONS, true))->all();
     $simples = collect($fks)
         ->filter(fn ($fk) => in_array(strtolower($fk->t), $tables, true))
+        ->reject(fn ($fk) => in_array(strtolower($fk->r), $globais, true))
         ->reject(fn ($fk) => str_starts_with($fk->cols, 'tenant_id,'))
         ->map(fn ($fk) => "{$fk->t}.{$fk->c} ({$fk->cols} → {$fk->r})")->values()->all();
 

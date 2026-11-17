@@ -43,7 +43,8 @@ npm test && npm run lint && npm run build
 | **Fase 3 — revisão estrutural de rotas** (toda rota com tenant e `can:` do catálogo; escrita com `*.manage`) | `Feature/Teams/RouteAuthorizationTest` | 3 |
 | **Fase 4A — importação de referências** (valores exatos, idempotência, regime/competência, filha ausente, dry-run, ativação/substituição, FKs por base, conversão decimal) | `Feature/References/ReferenceImportTest` | 9 |
 | **Fase 4A — API de referências** (listagem, busca por código/descrição, detalhe com itens, base indisponível/substituída, permissão, sem escrita, token) | `Feature/References/ReferenceApiTest` | 8 |
-| **Backend** | | **381 (2.424 asserções)** |
+| **Fase 4B.4 — orçamentos** (cálculo exato item a item, BDI por escopo e TCU, indiretos, desconto, recálculo, imutabilidade, nova versão, regras de modelo; FKs por versão e CHECKs no banco) | `Feature/Budgets/BudgetCalculationTest`, `Feature/Database/BudgetIntegrityTest` | 19 |
+| **Backend** | | **399 (2.548 asserções)** |
 | **Frontend** (cálculos de orçamento, hint, BroadcastChannel) | `src/**/*.test.ts` | **14** |
 
 ## 3. Requisitos obrigatórios × testes

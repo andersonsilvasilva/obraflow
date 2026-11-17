@@ -17,4 +17,5 @@ pest()->use(RefreshDatabase::class)->in(
     'Feature/Registry',
     'Feature/Teams',
     'Feature/References',
+    'Feature/Budgets',
 );
