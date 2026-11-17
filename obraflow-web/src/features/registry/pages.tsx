@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/components/data-display/indicators'
+import { CompanyScheduleButton } from '@/features/projects/calendar/CompanyScheduleButton'
 import { formatDocument } from '@/utils/format'
 import { formatPhone } from '@/utils/masks'
 import { api, statusLabel, statusOptions, type CatalogItem, type Company, type Employee, type Equipment, type Option, type Party, type ResourceGroup, type Unit } from './api'
@@ -55,6 +56,7 @@ const companies: ResourceConfig<Company> = {
   update: (r, b) => api.companies.update(r.uuid, b),
   remove: (r) => api.companies.remove(r.uuid),
   invalidates: ['companies'],
+  rowActions: (r) => <CompanyScheduleButton company={r} />,
 }
 
 // ================================================================== Clientes e fornecedores

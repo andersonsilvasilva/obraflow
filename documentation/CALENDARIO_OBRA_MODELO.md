@@ -80,3 +80,15 @@ Na obra, a nova aba **Calendário** tem duas colunas. Em telas estreitas, a list
   - CRUD das exceções em `registry.*`;
   - `calendar.imported`, `calendar.schedule_updated` e `calendar.schedule_reset`.
 - **Testes:** `Feature/Teams/ProjectCalendarTest` (7). Suíte 433/433.
+
+### Etapa 2 — telas (concluída)
+
+- **Obra, aba Calendário:** lista de exceções ao lado do calendário.
+  - FullCalendar 7.0.2, tema "classic" ligado aos tokens do ObraFlow (`calendar/fullcalendar.css`, sem cores fixas).
+  - Visões Mensal, Semanal e Diária, em português.
+  - Dias com exceção ficam em destaque; dias da semana sem horário ficam acinzentados.
+  - Clicar num dia abre "Nova exceção" com a data; clicar numa exceção abre a edição.
+  - Botões "Importar sábados e domingos", "Importar feriados nacionais do ano" (o ano visível no calendário) e "Nova exceção".
+- **Obra, aba Horários:** grade com os dias como colunas e Entrada/Saída 1 e 2 como linhas, horas por dia e total da semana. A tela indica se o horário é próprio, herdado da empresa ou inexistente, e tem o botão "Voltar ao padrão da empresa".
+- **Cadastros → Empresas:** ação "Horário de trabalho" em cada linha (horário-padrão, `companies.manage` para editar).
+- **Testes frontend:** 39/39 (+2: texto da repetição, horas do dia).

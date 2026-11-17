@@ -1,0 +1,41 @@
+/*
+ * FullCalendar 7 (tema "classic") com a identidade do ObraFlow (D-P61): as variáveis do tema apontam para os
+ * tokens de src/index.css — nenhuma cor fixa aqui. Escopo: .obraflow-calendar.
+ */
+.obraflow-calendar {
+    --fc-classic-button: var(--card);
+    --fc-classic-button-border: var(--input);
+    --fc-classic-button-strong: var(--primary);
+    --fc-classic-button-strong-border: var(--primary);
+    --fc-classic-button-outline: var(--ring);
+    --fc-classic-button-foreground: var(--foreground);
+    --fc-classic-primary: var(--primary);
+    --fc-classic-primary-foreground: var(--primary-foreground);
+    --fc-classic-event: var(--warning);
+    --fc-classic-event-contrast: var(--warning-foreground);
+    --fc-classic-highlight: var(--primary-soft);
+    --fc-classic-today: var(--primary-soft);
+    --fc-classic-now: var(--destructive);
+    --fc-classic-background: var(--card);
+    --fc-classic-foreground: var(--foreground);
+    --fc-classic-muted-foreground: var(--muted-foreground);
+    --fc-classic-faint-foreground: var(--muted-foreground);
+    --fc-classic-border: var(--border);
+    font-size: 0.875rem;
+}
+
+/* botão ativo (visão escolhida) e "Hoje" em azul, texto branco */
+.obraflow-calendar [aria-pressed='true'],
+.obraflow-calendar button[aria-selected='true'] {
+    color: var(--primary-foreground);
+}
+
+/* dia da semana sem horário de trabalho (D-P64) */
+.obraflow-calendar .of-day-off {
+    background-color: var(--muted);
+}
+
+/* dia com exceção (não trabalhado) */
+.obraflow-calendar .of-day-exception {
+    background-color: var(--warning-soft);
+}

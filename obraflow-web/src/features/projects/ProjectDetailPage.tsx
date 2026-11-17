@@ -17,6 +17,9 @@ import { useEmployeeOptions } from '@/features/registry/lookups'
 import { getErrorMessage } from '@/lib/api-error'
 import { http } from '@/lib/http'
 import { formatCurrency, formatDateOrDash } from '@/utils/format'
+import { CalendarTab } from './calendar/CalendarTab'
+import { calendarApi } from './calendar/api'
+import { ScheduleEditor } from './calendar/ScheduleEditor'
 import { projectFields, projectToForm, useProjectLookups } from './form'
 import {
   atLeast,
@@ -93,6 +96,8 @@ export function ProjectDetailPage() {
   const tabs = [
     { id: 'dados', label: 'Dados gerais' },
     { id: 'endereco', label: 'Endereço' },
+    { id: 'calendario', label: 'Calendário' },
+    { id: 'horarios', label: 'Horários' },
     { id: 'fases', label: 'Fases' },
     { id: 'equipe', label: 'Equipe' },
     { id: 'historico', label: 'Histórico de status' },
@@ -196,6 +201,17 @@ export function ProjectDetailPage() {
                   />
                 </>
               )}
+            />
+          )}
+          {tab === 'calendario' && <CalendarTab uuid={uuid} canEdit={canEdit} startDate={project.start_date} />}
+          {tab === 'horarios' && (
+            <ScheduleEditor
+              scope="project"
+              queryKey={['project-schedule', uuid]}
+              load={() => calendarApi.schedule(uuid)}
+              save={(days) => calendarApi.saveSchedule(uuid, days)}
+              reset={() => calendarApi.resetSchedule(uuid)}
+              canEdit={canEdit}
             />
           )}
           {tab === 'historico' && <HistoryTab uuid={uuid} />}
