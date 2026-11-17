@@ -138,3 +138,15 @@ Somente o que está **visível** na captura; nada foi implementado (decisão do 
 ## Lacunas conhecidas vs. referências
 
 Árvore EAP multinível expansível · Desconto por item (o global já existe) · Importar/Exportar reais · Curva S · Curva ABC de recursos separada · grade de obras · cadastro rápido de cliente no orçamento · progresso de análise de IA · cota de uso de IA.
+
+## Referências do Brickup (vídeo de treinamento, 2026-11-17)
+
+Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os prints **não** ficam no repositório, porque mostram nome e e-mail de terceiros. Usamos a organização e os campos como referência; a aparência segue a identidade do ObraFlow.
+
+| Tela | O que mostra | Onde entra |
+|---|---|---|
+| Obra → **Calendário** | Lista de exceções (Descrição, Data, Tipo, Criado por) ao lado do calendário Mensal/Semanal/Diário; "Importar sábados e domingos como exceções"; "Nova exceção" (Descrição, Data, Tipo Única/Recorrente, "Repetir a cada N dia/semana/quinzena/mês/ano") | [CALENDARIO_OBRA_MODELO.md](CALENDARIO_OBRA_MODELO.md) |
+| Obra → **Horários** | Grade domingo–sábado × Entrada 1, Saída 1, Entrada 2, Saída 2; "Atualizar" e "Atualizar e sair" | [CALENDARIO_OBRA_MODELO.md](CALENDARIO_OBRA_MODELO.md) (D-P63) |
+| Obra → **Contratos** | Lista Contrato, Descrição, Valor, Observações, Arquivos, Excluir; "Adicionar contrato" | [FASE5_MODELO.md](FASE5_MODELO.md) (A-45) |
+| Obra → Execução → Contratos | Contratos no menu de execução da obra (bloqueado no plano do responsável) | [FASE5_MODELO.md](FASE5_MODELO.md) |
+| Obra → **Planejamento** → Atividades / Recursos | Gantt: tabela (ID, Atividade, Data de início, Data de término, Duração) + barras por mês; "Planejamento atual" × "Comparar com" (linhas de base, "Criar linha de base 0/10"); ações Adicionar/Remover atividade, Deletar tudo, Expandir/Recolher, **Caminho crítico**, Exportar, zoom | **Fase 6 — Planejamento** (ainda não proposta). O calendário e os horários da obra alimentam os dias úteis do cronograma |
