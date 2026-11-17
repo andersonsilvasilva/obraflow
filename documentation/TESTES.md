@@ -46,7 +46,8 @@ npm test && npm run lint && npm run build
 | **Fase 4B.4 — orçamentos** (cálculo exato item a item, BDI por escopo e TCU, indiretos, desconto, recálculo, imutabilidade, nova versão, regras de modelo; FKs por versão e CHECKs no banco) | `Feature/Budgets/BudgetCalculationTest`, `Feature/Database/BudgetIntegrityTest` | 19 |
 | **Fase 4B.5 — referências no orçamento e Curva ABC** (cópia autossuficiente, árvore expandida, ABC de insumos/serviços, regime/UF, preço custom, versões, FKs por versão) | `Feature/Budgets/BudgetReferenceTest` | 8 |
 | **Fase 4B.6 — API de orçamentos** (totais, validação, fluxo e aprovação, permissões e aprovador, acesso por obra, isolamento, token, eventos) | `Feature/Budgets/BudgetApiTest` | 7 |
-| **Backend** | | **414 (2.795 asserções)** |
+| **Ajustes pós-homologação da Fase 3** (código automático OB-NNN/AAAA, regressão da busca com dígitos) | `Feature/Teams/ProjectsApiTest` | 2 |
+| **Backend** | | **416 (2.827 asserções)** |
 | **Frontend** (cliente HTTP/CSRF, tenant hint e BroadcastChannel, menu por permissão, paginação local, formatação, obras, fluxo e EAP do orçamento, primeiros passos, máscaras CPF/CNPJ/telefone/CEP) | `src/**/*.test.ts` | **35** |
 
 ## 3. Requisitos obrigatórios × testes

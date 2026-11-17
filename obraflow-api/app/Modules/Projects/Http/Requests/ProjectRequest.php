@@ -30,7 +30,7 @@ class ProjectRequest extends TenantRequest
 
         return [
             'company_uuid' => [$creating ? 'required' : 'prohibited', 'uuid', $this->existsInTenant('companies')],
-            'code' => [$creating ? 'required' : 'sometimes', 'string', 'max:30',
+            'code' => [$creating ? 'nullable' : 'sometimes', 'string', 'max:30', // vazio na criação = automático OB-NNN/AAAA
                 Rule::unique('projects', 'code')->where('tenant_id', $this->tenantId())->whereNull('deleted_at')
                     ->when($current, fn ($r) => $r->ignore($current->id))],
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:200'],

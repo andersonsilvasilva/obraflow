@@ -62,7 +62,7 @@ class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = $this->access->visible(Document::query()->with('currentVersion'), $request->user())->orderByDesc('id');
-        $this->search($query, $request, ['title']);
+        $this->search($query, $request, ['title'], digitsColumn: null);
 
         foreach (['status', 'visibility', 'category_id'] as $filter) {
             if ($request->filled($filter)) {

@@ -76,3 +76,15 @@
 **Pendências que seguem abertas:** LGPD/retenção (R1), `user_companies` sem bloqueio (R3), importação de planilhas (R6) e custos (Fase 4, R7). A etapa das telas ([TELAS_PLANO.md](TELAS_PLANO.md)) tem homologação própria.
 
 **Fase 4 (Orçamentos): não iniciada.** Aguarda autorização expressa.
+
+## 7. Ajustes após a homologação (2026-11-17)
+
+- **Código automático da obra** (pedido do responsável): com o código vazio, o sistema gera **`OB-NNN/AAAA`**.
+  - A sequência é por organização e **por ano**, recomeçando em 001 a cada ano.
+  - O ano é o da **data de início** da obra; sem data, o ano atual.
+  - Códigos de obras excluídas não são reaproveitados.
+  - A geração trava as linhas do ano, para evitar duplicidade.
+  - Um código digitado à mão é mantido.
+  - Nova rota `GET /projects/next-code?start_date=` (`projects.manage`) devolve a sugestão.
+- **Defeito corrigido:** buscar com 3 ou mais dígitos em **Obras** ou **Documentos** procurava numa coluna de CPF/CNPJ que essas tabelas não têm, e a resposta era 500. A busca por documento passou a ser opcional e fica desligada nessas telas.
+- **Testes:** +2 em `ProjectsApiTest` (código automático e regressão da busca). `RouteAuthorizationTest` agora cobre 47 rotas. Suíte **416/416 (2.827 asserções)**.

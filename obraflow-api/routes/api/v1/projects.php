@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('tenant.required')->group(function (): void {
     Route::get('projects', [ProjectController::class, 'index'])->middleware('can:projects.view')->name('projects.index');
     Route::post('projects', [ProjectController::class, 'store'])->middleware('can:projects.manage')->name('projects.store');
+    Route::get('projects/next-code', [ProjectController::class, 'nextCode'])->middleware('can:projects.manage')->name('projects.next-code');
 
     Route::prefix('projects/{uuid}')->whereUuid('uuid')->middleware('can:projects.view')->group(function (): void {
         Route::get('/', [ProjectController::class, 'show'])->name('projects.show');

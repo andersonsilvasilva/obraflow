@@ -116,7 +116,7 @@ Todas as rotas em `tenant.required`; entidades por uuid (funcionários, equipame
 | Certificações | `GET/POST /employees/{uuid}/certifications`, `PUT/DELETE …/{id}` (`document_uuid` opcional) | idem |
 | Grupos de recursos | `GET/POST /resource-groups`, `PUT/DELETE /resource-groups/{id}` (só `equipment` nesta fase; 2 níveis) | `equipment.view` / `equipment.manage` |
 | Equipamentos | `GET/POST /equipment`, `GET/PUT/DELETE /equipment/{uuid}` (filtros `company_uuid`, `group_id`, `unit_id`, `ownership`, `status`) | `equipment.view` / `equipment.manage` |
-| Obras | `GET/POST /projects`, `GET/PUT/DELETE /projects/{uuid}` (filtros `status`, `company_uuid`, `customer_uuid`) | `projects.view` + nível na obra; criar/excluir `projects.manage` |
+| Obras | `GET/POST /projects` (`code` vazio ⇒ automático `OB-NNN/AAAA`, sequência por ano da data de início), `GET /projects/next-code?start_date=`, `GET/PUT/DELETE /projects/{uuid}` (filtros `status`, `company_uuid`, `customer_uuid`) | `projects.view` + nível na obra; criar/excluir `projects.manage` |
 | Status da obra | `POST /projects/{uuid}/status` `{status, reason?}`, `GET …/status-history` | nível `edit` / `view` |
 | Endereço, fases, equipe | `GET/POST /projects/{uuid}/addresses`, `PUT/DELETE …/{id}`; `POST /projects/{uuid}/phases`, `PUT/DELETE …/{id}`; `POST /projects/{uuid}/members`, `PUT/DELETE …/{id}` | leitura `view`, escrita `edit` |
 | Acesso por obra | `GET/POST /projects/{uuid}/access` `{user_uuid, access_level}`, `DELETE …/access/{userUuid}` | nível `manage` |

@@ -4,7 +4,12 @@ import type { Project } from './api'
 
 export const projectFields: FieldDef[] = [
   { name: 'company_uuid', label: 'Empresa', type: 'select', options: 'companies', required: true, createOnly: true, full: true },
-  { name: 'code', label: 'Código', required: true, placeholder: 'Ex.: OB-001' },
+  {
+    name: 'code',
+    label: 'Código',
+    placeholder: `Automático: OB-001/${new Date().getFullYear()}`,
+    help: 'Deixe em branco para gerar automaticamente no formato OB-NNN/AAAA: numeração sequencial que recomeça a cada ano, usando o ano da data de início (sem data, o ano atual).',
+  },
   { name: 'name', label: 'Nome da obra', required: true },
   { name: 'customer_uuid', label: 'Cliente', type: 'select', options: 'customers', help: 'Cliente da mesma empresa da obra.' },
   { name: 'technical_manager_uuid', label: 'Responsável técnico', type: 'select', options: 'employees', help: 'Funcionário da mesma empresa da obra.' },

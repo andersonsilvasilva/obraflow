@@ -233,3 +233,37 @@ it('todos os eventos próprios da Fase 3 são emitidos por operações reais e f
     expect(array_values(array_diff(AuditEvent::phase3(), $emitidos)))->toBe([])
         ->and(AuditLog::query()->whereIn('event', AuditEvent::phase3())->pluck('tenant_id')->unique()->all())->toBe([$this->A->id]);
 });
+
+// ---------------------------------------------------------------- código automático OB-NNN/AAAA
+it('código vazio gera OB-NNN/AAAA com o ano da data de início; numeração recomeça por ano; manual é respeitado', function () {
+    $novo = fn (array $x) => $this->b->post('/api/v1/projects', ['company_uuid' => $this->co, 'name' => 'DEMO', ...$x])->assertCreated()->json('data.code');
+
+    expect($novo(['start_date' => '2026-03-01']))->toBe('OB-001/2026')
+        ->and($novo(['start_date' => '2026-07-10', 'code' => '']))->toBe('OB-002/2026')
+        ->and($novo(['start_date' => '2027-01-05']))->toBe('OB-001/2027') // outro ano: recomeça
+        ->and($novo(['code' => 'ESPECIAL-9']))->toBe('ESPECIAL-9');        // digitado: mantido
+
+    $this->b->get('/api/v1/projects/next-code?start_date=2026-12-31')->assertOk()->assertJsonPath('data.code', 'OB-003/2026')->assertJsonPath('data.year', 2026);
+    $this->b->get('/api/v1/projects/next-code')->assertOk()->assertJsonPath('data.year', (int) now()->format('Y'));
+
+    // código de obra excluída não é reaproveitado
+    $uuid = collect($this->b->get('/api/v1/projects?q=OB-002')->json('data'))->first()['uuid'];
+    $this->b->delete("/api/v1/projects/{$uuid}")->assertNoContent();
+    expect($novo(['start_date' => '2026-08-01']))->toBe('OB-003/2026');
+
+    // sequência é por tenant
+    $bb = new Browser($this);
+    $bb->login(Scenario::member($this->B, 'admin')->email)->assertOk();
+    $coB = $bb->post('/api/v1/companies', ['legal_name' => 'DEMO B', 'document_number' => '11222333000181'])->json('data.uuid');
+    expect($bb->post('/api/v1/projects', ['company_uuid' => $coB, 'name' => 'DEMO', 'start_date' => '2026-01-01'])->assertCreated()->json('data.code'))->toBe('OB-001/2026');
+
+    // member (sem projects.manage) não consulta a sugestão
+    $this->mb->get('/api/v1/projects/next-code')->assertForbidden();
+});
+
+it('regressão: busca com 3+ dígitos em obras e documentos não quebra (tabelas sem CPF/CNPJ)', function () {
+    $this->b->get('/api/v1/projects?q=OB-001')->assertOk();
+    $this->b->get('/api/v1/projects?q=2026')->assertOk();
+    $this->b->post('/api/v1/documents', ['title' => 'DEMO Alvará 2026'])->assertCreated();
+    $this->b->get('/api/v1/documents?q=2026')->assertOk()->assertJsonPath('meta.total', 1);
+});

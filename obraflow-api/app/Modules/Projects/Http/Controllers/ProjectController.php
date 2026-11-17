@@ -14,6 +14,7 @@ use App\Modules\Projects\Http\Requests\ProjectRequest;
 use App\Modules\Projects\Http\Resources\ProjectResource;
 use App\Modules\Projects\Services\ProjectAccess;
 use App\Modules\Projects\Services\ProjectAccessManager;
+use App\Modules\Projects\Services\ProjectCodeGenerator;
 use App\Modules\Projects\Services\ProjectStatusService;
 use App\Modules\Registry\Http\Controllers\Concerns\ListsRecords;
 use App\Modules\Registry\Http\Requests\AddressRequest;
@@ -22,6 +23,7 @@ use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Obras e seus detalhes (endereço, fases, equipe, status, acesso). Autorização em duas camadas:
@@ -39,12 +41,21 @@ class ProjectController extends Controller
         private readonly ProjectAccess $access,
         private readonly ProjectStatusService $status,
         private readonly ProjectAccessManager $grants,
+        private readonly ProjectCodeGenerator $codes,
     ) {}
+
+    /** Próximo código automático (OB-NNN/AAAA) para pré-preencher a tela; `start_date` define o ano. */
+    public function nextCode(Request $request): JsonResponse
+    {
+        $year = ProjectCodeGenerator::yearOf($request->filled('start_date') ? (string) $request->query('start_date') : null);
+
+        return response()->json(['data' => ['code' => $this->codes->suggest($year), 'year' => $year]]);
+    }
 
     public function index(Request $request): JsonResponse
     {
         $query = $this->access->visible(Project::query()->with(self::RELATIONS), $request->user())->orderBy('code');
-        $this->search($query, $request, ['code', 'name']);
+        $this->search($query, $request, ['code', 'name'], digitsColumn: null);
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
@@ -75,7 +86,13 @@ class ProjectController extends Controller
     {
         $project = new Project;
         $project->created_by = $request->user()->getKey();
-        $this->registry->create($project, $request->payload(), $request->user());
+        $data = $request->payload();
+        DB::transaction(function () use ($project, &$data, $request) {
+            if (blank($data['code'] ?? null)) { // código automático com o ano da obra
+                $data['code'] = $this->codes->next(ProjectCodeGenerator::yearOf($data['start_date'] ?? null));
+            }
+            $this->registry->create($project, $data, $request->user());
+        });
 
         return $this->respond($request, $project->load(self::RELATIONS), 201);
     }

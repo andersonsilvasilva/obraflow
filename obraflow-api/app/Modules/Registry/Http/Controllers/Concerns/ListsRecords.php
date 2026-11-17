@@ -11,8 +11,11 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /** Listagem paginada no formato da API (data + meta) e busca textual segura (curingas escapados). */
 trait ListsRecords
 {
-    /** @param  list<string>  $columns */
-    protected function search(Builder $query, Request $request, array $columns): Builder
+    /**
+     * @param  list<string>  $columns
+     * @param  string|null  $digitsColumn  coluna de documento (CPF/CNPJ) buscada por dígitos; null quando a tabela não tem
+     */
+    protected function search(Builder $query, Request $request, array $columns, ?string $digitsColumn = 'document_number'): Builder
     {
         $term = trim((string) $request->query('q', ''));
         if ($term === '') {
@@ -22,12 +25,12 @@ trait ListsRecords
         $like = '%'.addcslashes(mb_substr($term, 0, 100), '%_\\').'%';
         $digits = preg_replace('/\D+/', '', $term);
 
-        return $query->where(function (Builder $w) use ($columns, $like, $digits) {
+        return $query->where(function (Builder $w) use ($columns, $like, $digits, $digitsColumn) {
             foreach ($columns as $column) {
                 $w->orWhere($column, 'like', $like);
             }
-            if ($digits !== '' && strlen($digits) >= 3) {
-                $w->orWhere('document_number', 'like', '%'.$digits.'%');
+            if ($digitsColumn !== null && $digits !== '' && strlen($digits) >= 3) {
+                $w->orWhere($digitsColumn, 'like', '%'.$digits.'%');
             }
         });
     }
