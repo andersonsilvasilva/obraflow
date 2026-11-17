@@ -5,9 +5,12 @@ namespace App\Providers;
 use App\Models\AuditLog;
 use App\Models\Budget;
 use App\Models\BudgetBdi;
+use App\Models\BudgetComposition;
+use App\Models\BudgetCompositionItem;
 use App\Models\BudgetGroup;
 use App\Models\BudgetIndirectCost;
 use App\Models\BudgetItem;
+use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
 use App\Models\Company;
 use App\Models\CompanyAddress;
@@ -143,6 +146,9 @@ class AppServiceProvider extends ServiceProvider
             'budget_item' => BudgetItem::class,
             'budget_bdi' => BudgetBdi::class,
             'budget_indirect_cost' => BudgetIndirectCost::class,
+            'budget_composition' => BudgetComposition::class,
+            'budget_composition_item' => BudgetCompositionItem::class,
+            'budget_item_resource' => BudgetItemResource::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);

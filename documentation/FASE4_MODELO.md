@@ -190,3 +190,32 @@ Commit `bb224f4`. CI verde nos dois commits da 4A: run 44092650459 (`4961b76`) e
 - `Feature/Budgets/BudgetCalculationTest` (13): valores conferidos com cálculo decimal independente. Exemplo: custo direto 455,15, indiretos 522,76, preço final 1.037,08; TCU 25,88%.
 - `Feature/Database/BudgetIntegrityTest` (6).
 - Suíte **399/399 (2.548 asserções)**.
+Commit `011041f`.
+
+### 4B.5 — Itens a partir das referências, insumos finais e Curva ABC
+
+**3 tabelas** (migrations `2026_11_17_200007` a `200009`):
+- `budget_compositions`: composição copiada, uma por item, com `source_snapshot` (fonte, base, competência, UF, regime, classe, origem do preço);
+- `budget_composition_items`: itens diretos, insumos e composições auxiliares, como publicados;
+- `budget_item_resources`: **insumos finais** do item, com a árvore expandida e o coeficiente acumulado **por unidade do item**.
+  - Substitui `budget_resources` e `budget_resource_items` do plano: a consolidação é calculada sob demanda (D-P33).
+- Todas com FK composta pela **versão**.
+
+**`addReferenceItem` (D-08):**
+- **Cópia:** copia a composição (custo total **publicado**) ou o insumo (preço publicado). Insumo sem preço na base é recusado.
+- **Regime e UF:** a base precisa ter o mesmo regime de encargos da versão (D-P03) e a mesma UF do orçamento.
+- **Base substituída:** continua utilizável.
+- **Item auxiliar sem preço:** na expansão, um insumo sem preço na base usa o preço publicado na linha da composição.
+
+**Ajustes e versões:**
+- Alterar o preço de um item oficial muda a origem para `custom`; o valor publicado fica no `source_ref` (D-P02).
+- Excluir o item remove a composição e os insumos.
+- A nova versão copia composições e insumos.
+
+**Curva ABC** (`AbcCurve`, sem tabela):
+- **Serviços:** por custo total do item.
+- **Insumos:** quantidade = Σ quantidade do item × coeficiente; valor = arred₂(quantidade × preço).
+- **Saída:** % e % acumulado com 4 casas.
+- **Faixas:** A se o item **começa** antes de 80%; B antes de 95%; C o restante.
+
+**Testes:** `Feature/Budgets/BudgetReferenceTest` (8): cópia, árvore expandida, ABC com valores, regime/UF, preço `custom`, exclusão, nova versão, FKs por versão. Suíte **407/407 (2.620 asserções)**.

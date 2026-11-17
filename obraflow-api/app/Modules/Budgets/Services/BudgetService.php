@@ -4,12 +4,16 @@ namespace App\Modules\Budgets\Services;
 
 use App\Models\Budget;
 use App\Models\BudgetBdi;
+use App\Models\BudgetComposition;
+use App\Models\BudgetCompositionItem;
 use App\Models\BudgetGroup;
 use App\Models\BudgetIndirectCost;
 use App\Models\BudgetItem;
+use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
 use App\Models\ReferenceDataset;
 use App\Models\User;
+use App\Modules\Budgets\Support\Dec;
 use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Exceptions\DomainRuleException;
@@ -104,8 +108,45 @@ final class BudgetService
         return $item->refresh();
     }
 
+    /**
+     * Item a partir de uma base de referência (composição ou insumo): cópia autossuficiente (D-08) com a
+     * composição, seus itens diretos e os insumos finais. A base precisa ter o MESMO regime de encargos da versão
+     * (D-P03) e, se o orçamento tiver UF, a mesma UF.
+     */
+    public function addReferenceItem(BudgetVersion $version, array $data, User $actor): BudgetItem
+    {
+        $dataset = ReferenceDataset::query()->whereKey($data['reference_dataset_id'])->whereIn('status', ['active', 'superseded'])->with('source')->firstOrFail();
+        $budget = $version->budget;
+        if ($version->social_charges_regime !== 'not_applicable' && $dataset->charges_regime !== $version->social_charges_regime) {
+            throw new DomainRuleException('A base escolhida tem regime de encargos diferente do orçamento.');
+        }
+        if ($budget->state && $dataset->state !== $budget->state) {
+            throw new DomainRuleException("A base escolhida é de {$dataset->state} e o orçamento é de {$budget->state}.");
+        }
+
+        $copy = app(ReferenceCopier::class)->copy($dataset, $data['type'], $data['code']);
+        $item = new BudgetItem(['budget_version_id' => $version->id]);
+
+        $this->mutate($version, function () use ($version, $data, $copy, $item, $actor) {
+            $fields = $copy['item'] + ['group_id' => $data['group_id'], 'quantity' => $data['quantity'],
+                'discount_percent' => $data['discount_percent'] ?? '0', 'bdi_percent' => $data['bdi_percent'] ?? null,
+                'sort_order' => $this->nextOrder('budget_items', $version->id)];
+            if (! empty($data['item_code'])) {
+                $fields['code'] = $data['item_code'];
+            }
+            $this->registry->create($item, $fields, $actor);
+            $this->storeCopy($version, $item, $copy['composition'], $copy['composition_items'], $copy['resources']);
+        });
+
+        return $item->refresh();
+    }
+
+    /** Preço de um item oficial alterado passa a `custom` (o valor publicado fica no `source_ref`). */
     public function updateItem(BudgetItem $item, array $data, User $actor): BudgetItem
     {
+        if (isset($data['unit_cost']) && $item->source === 'official' && Dec::cmp((string) $data['unit_cost'], (string) $item->unit_cost) !== 0) {
+            $data['source'] = 'custom';
+        }
         $this->mutate($item->version, fn () => $this->registry->update($item, $data, $actor));
 
         return $item->refresh();
@@ -115,8 +156,34 @@ final class BudgetService
     {
         $this->mutate($item->version, function () use ($item, $actor) {
             BudgetBdi::query()->where('item_id', $item->id)->get()->each(fn ($b) => $this->registry->delete($b, $actor));
+            $this->dropCopy($item);
             $this->registry->delete($item, $actor);
         });
+    }
+
+    /** Grava composição copiada, itens diretos e insumos finais de um item. */
+    private function storeCopy(BudgetVersion $version, BudgetItem $item, ?array $composition, array $compositionItems, array $resources): void
+    {
+        if ($composition) {
+            $comp = new BudgetComposition(['budget_version_id' => $version->id, 'budget_item_id' => $item->id] + $composition);
+            $comp->save();
+            foreach ($compositionItems as $ci) {
+                (new BudgetCompositionItem(['budget_version_id' => $version->id, 'budget_composition_id' => $comp->id] + $ci))->save();
+            }
+        }
+        foreach ($resources as $r) {
+            (new BudgetItemResource(['budget_version_id' => $version->id, 'budget_item_id' => $item->id] + $r))->save();
+        }
+    }
+
+    private function dropCopy(BudgetItem $item): void
+    {
+        $comp = BudgetComposition::query()->where('budget_item_id', $item->id)->first();
+        if ($comp) {
+            BudgetCompositionItem::query()->where('budget_composition_id', $comp->id)->get()->each->delete();
+            $comp->delete();
+        }
+        BudgetItemResource::query()->where('budget_item_id', $item->id)->get()->each->delete();
     }
 
     // ------------------------------------------------------------ BDI e custos indiretos (D-P02)
@@ -211,7 +278,7 @@ final class BudgetService
         });
     }
 
-    /** Copia etapas (remapeando pais), itens, BDI e custos indiretos. Composições copiadas entram na 4B.5. */
+    /** Copia etapas (remapeando pais), itens, BDI, custos indiretos, composições copiadas e insumos finais. */
     private function copyContents(BudgetVersion $from, BudgetVersion $to): void
     {
         $map = [];
@@ -245,6 +312,18 @@ final class BudgetService
         }
         foreach (BudgetIndirectCost::query()->where('budget_version_id', $from->id)->get() as $cost) {
             (new BudgetIndirectCost(['budget_version_id' => $to->id] + $cost->only(['description', 'method', 'percent', 'amount', 'sort_order'])))->save();
+        }
+
+        // composições copiadas e insumos finais acompanham o item
+        foreach (BudgetComposition::query()->where('budget_version_id', $from->id)->with('items')->get() as $comp) {
+            $this->storeCopy($to, BudgetItem::query()->findOrFail($this->copied[$comp->budget_item_id]),
+                $comp->only(['code', 'description', 'unit_code', 'unit_cost', 'source_snapshot']),
+                $comp->items->map(fn ($ci) => $ci->only(['item_type', 'kind', 'code', 'description', 'unit_code', 'coefficient', 'unit_price', 'cost', 'price_origin', 'sort_order']))->all(),
+                []);
+        }
+        foreach (BudgetItemResource::query()->where('budget_version_id', $from->id)->get() as $r) {
+            (new BudgetItemResource(['budget_version_id' => $to->id, 'budget_item_id' => $this->copied[$r->budget_item_id]]
+                + $r->only(['kind', 'code', 'description', 'unit_code', 'coefficient', 'unit_price'])))->save();
         }
     }
 

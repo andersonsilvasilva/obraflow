@@ -28,7 +28,8 @@ const PHASE4_TABLES = [
     'reference_composition_items', 'reference_compositions', 'reference_datasets', 'reference_imports',
     'reference_resource_prices', 'reference_resources', 'reference_sources', 'reference_units',
     // 4B — orçamentos
-    'budget_bdi', 'budget_groups', 'budget_indirect_costs', 'budget_items', 'budget_versions', 'budgets',
+    'budget_bdi', 'budget_composition_items', 'budget_compositions', 'budget_groups', 'budget_indirect_costs',
+    'budget_item_resources', 'budget_items', 'budget_versions', 'budgets',
 ];
 
 function dbName(): string
