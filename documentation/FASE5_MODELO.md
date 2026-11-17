@@ -187,3 +187,11 @@ As telas de contrato e medição do Brickup estão bloqueadas no plano atual do 
   - **Histórico** de status.
 - O item "Em preparação → Contratos" saiu do menu: o contrato vive dentro da obra (A-45).
 - **Testes frontend:** 44/44 (+3: ações por status, parte do contrato, menu sem "Contratos").
+
+**Aplicado no `obraflow` em 2026-11-17, com autorização do usuário:**
+- migrations `400001`–`400006` (73 → 79);
+- permissões `contracts.view` e `contracts.manage` (35 no catálogo);
+- `admin` da HighTech com 35 permissões, `member` com 15 (`contracts.view`);
+- nenhum dado inserido.
+
+**5A aguarda homologação.**
