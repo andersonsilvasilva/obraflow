@@ -1,6 +1,6 @@
-# FASE 5 — CONTRATOS E MEDIÇÕES: PROPOSTA DE MODELO
+# FASE 5 — CONTRATOS E MEDIÇÕES: MODELO APROVADO
 
-> **Aguardando aprovação.** Fase autorizada pelo responsável em 2026-11-17 ("pode começar a nova fase"). Nada será implementado antes da aprovação das decisões D-P44 a D-P56.
+> **Aprovado em 2026-11-17.** Fase autorizada pelo responsável ("pode começar a nova fase"); decisões D-P44 a D-P56 aprovadas conforme a recomendação. A parte 5A (Contratos) está autorizada; a 5B (Medições) só começa após a homologação da 5A (D-P44).
 > **Base:**
 > - modelagem original ([DATABASE.md](DATABASE.md) §2.5 e §2.10; [ERD.md](ERD.md) §4);
 > - regras já aprovadas: nada de contrato ou medição é excluído, só cancelado ([DB_DECISIONS.md](DB_DECISIONS.md), [DB_CONSTRAINTS.md](DB_CONSTRAINTS.md)); orçamento aprovado é imutável (Fase 4B); acesso por obra (D-P24); precisão (D-P32).
