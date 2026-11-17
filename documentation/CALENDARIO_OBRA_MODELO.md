@@ -92,3 +92,5 @@ Na obra, a nova aba **Calendário** tem duas colunas. Em telas estreitas, a list
 - **Obra, aba Horários:** grade com os dias como colunas e Entrada/Saída 1 e 2 como linhas, horas por dia e total da semana. A tela indica se o horário é próprio, herdado da empresa ou inexistente, e tem o botão "Voltar ao padrão da empresa".
 - **Cadastros → Empresas:** ação "Horário de trabalho" em cada linha (horário-padrão, `companies.manage` para editar).
 - **Testes frontend:** 39/39 (+2: texto da repetição, horas do dia).
+
+**Aplicado no `obraflow` em 2026-11-17, com autorização do usuário:** migrations `350001` e `350002` (70 → 72). As tabelas foram criadas vazias, sem permissões novas.
