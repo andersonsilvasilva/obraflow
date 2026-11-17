@@ -293,3 +293,11 @@ A pedido do responsável, o orçamento segue o mesmo padrão da obra: com o cód
 - **Sugestão:** `GET /budgets/next-code?reference_date=` (`budgets.manage`).
 - **Implementação:** o gerador virou genérico (`Shared\Support\YearlyCodeGenerator`), usado pela obra (`OB`) e pelo orçamento (`ORC`). Na refatoração, a detecção de soft delete foi corrigida (`withTrashed` é macro, não método), coberta pelo teste da obra.
 - **Testes:** +1 em `BudgetApiTest`. Suíte **417/417 (2.843 asserções)**.
+
+### Ajuste — etapa no lançamento da base de referência (2026-11-17)
+
+A pedido do responsável, o modal "Adicionar da base de referência" mostra o campo **Etapa onde o item será lançado** **no topo**, sempre visível (com a árvore indentada) e ao lado da base. A quantidade aparece depois de escolher o item. Outras melhorias:
+- botão **+** na linha de cada etapa da planilha, que abre o modal já naquela etapa;
+- **"Adicionar e continuar"**, para lançar vários itens em sequência sem fechar o modal.
+
+Frontend 35/35; build ok.

@@ -11,25 +11,11 @@ import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/utils/format'
 import { budgetsApi, budgetStatusLabel, type Group, type Item, type Version } from './api'
+import { orderedGroups } from './tree'
 
 const money = (v: string | null | undefined) => (v === null || v === undefined ? '—' : formatCurrency(Number(v)))
 const num = (v: string, digits = 4) => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: digits })
 const pct = (v: string | null) => (v === null ? '—' : `${Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 4 })}%`)
-
-/** Etapas em ordem de árvore com profundidade. */
-export function orderedGroups(groups: Group[]): { group: Group; depth: number }[] {
-  const out: { group: Group; depth: number }[] = []
-  const walk = (parent: number | null, depth: number) =>
-    groups
-      .filter((g) => g.parent_id === parent)
-      .sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
-      .forEach((g) => {
-        out.push({ group: g, depth })
-        walk(g.id, depth + 1)
-      })
-  walk(null, 0)
-  return out
-}
 
 // ================================================================== Planilha (EAP + itens)
 export function SheetTab({
@@ -50,7 +36,7 @@ export function SheetTab({
   onEditGroup: (g: Group) => void
   onDeleteGroup: (g: Group) => void
   onAddItem: () => void
-  onAddReference: () => void
+  onAddReference: (groupId?: number) => void
   onEditItem: (i: Item) => void
   onDeleteItem: (i: Item) => void
   onComposition: (i: Item) => void
@@ -68,7 +54,7 @@ export function SheetTab({
         <Button variant="outline" onClick={onAddItem} disabled={!editable || tree.length === 0} title={lockHint}>
           <Plus className="size-4" /> Item manual
         </Button>
-        <Button onClick={onAddReference} disabled={!editable || tree.length === 0} title={lockHint}>
+        <Button onClick={() => onAddReference()} disabled={!editable || tree.length === 0} title={lockHint}>
           <Plus className="size-4" /> Da base de referência
         </Button>
       </div>
@@ -103,7 +89,16 @@ export function SheetTab({
                     <td className="px-3 py-2 text-right tabular-nums">{money(version.totals.groups[group.id]?.cost)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{money(version.totals.groups[group.id]?.sale)}</td>
                     <td className="px-2 py-1">
-                      <RowButtons editable={editable} onEdit={() => onEditGroup(group)} onDelete={() => onDeleteGroup(group)} />
+                      <RowButtons
+                        editable={editable}
+                        onEdit={() => onEditGroup(group)}
+                        onDelete={() => onDeleteGroup(group)}
+                        extra={
+                          <Button variant="ghost" size="icon" aria-label={`Adicionar item da base na etapa ${group.code}`} title="Adicionar item da base nesta etapa" disabled={!editable} onClick={() => onAddReference(group.id)}>
+                            <Plus className="size-4" />
+                          </Button>
+                        }
+                      />
                     </td>
                   </tr>
                   {itemsOf(group.id).map((it) => (

@@ -15,13 +15,14 @@ import { EntityFormModal, type FieldDef } from '@/features/registry/components/E
 import { getErrorMessage } from '@/lib/api-error'
 import { formatCurrency } from '@/utils/format'
 import { budgetsApi, budgetStatusLabel, budgetStatusTone, regimeLabel, workflowActions, type Group, type Item, type WorkflowAction } from './api'
-import { AbcTab, BdiTab, CompositionModal, HistoryTab, orderedGroups, RejectDialog, SheetTab } from './BudgetTabs'
+import { AbcTab, BdiTab, CompositionModal, HistoryTab, RejectDialog, SheetTab } from './BudgetTabs'
+import { orderedGroups } from './tree'
 import { ReferencePicker } from './ReferencePicker'
 
 type Dialog =
   | { kind: 'group'; row?: Group }
   | { kind: 'item'; row?: Item }
-  | { kind: 'reference' }
+  | { kind: 'reference'; groupId?: number }
   | { kind: 'composition'; row: Item }
   | { kind: 'reject' }
   | { kind: 'confirm'; title: string; description: string; run: () => Promise<unknown> }
@@ -201,7 +202,7 @@ export function BudgetDetailPage() {
                 onEditGroup={(g) => setDialog({ kind: 'group', row: g })}
                 onDeleteGroup={(g) => setDialog({ kind: 'confirm', title: `Excluir a etapa ${g.code}?`, description: 'Só etapas sem itens e sem subetapas podem ser excluídas.', run: () => budgetsApi.groups.remove(uuid, number, g.id) })}
                 onAddItem={() => setDialog({ kind: 'item' })}
-                onAddReference={() => setDialog({ kind: 'reference' })}
+                onAddReference={(groupId) => setDialog({ kind: 'reference', groupId })}
                 onEditItem={(i) => setDialog({ kind: 'item', row: i })}
                 onDeleteItem={(i) => setDialog({ kind: 'confirm', title: `Excluir o item ${i.code}?`, description: 'A composição copiada e os insumos do item também são removidos.', run: () => budgetsApi.items.remove(uuid, number, i.id) })}
                 onComposition={(i) => setDialog({ kind: 'composition', row: i })}
@@ -263,8 +264,13 @@ export function BudgetDetailPage() {
           groups={v.groups}
           datasetId={b.reference_dataset?.id ?? null}
           regime={v.social_charges_regime}
+          initialGroupId={dialog.groupId}
           onClose={() => setDialog(null)}
-          onAdded={() => (notify('success', 'Item adicionado da base'), setDialog(null), refresh())}
+          onAdded={(keepOpen) => {
+            notify('success', 'Item adicionado da base')
+            refresh()
+            if (!keepOpen) setDialog(null)
+          }}
         />
       )}
       {dialog?.kind === 'composition' && <CompositionModal uuid={uuid} number={number} item={dialog.row} onClose={() => setDialog(null)} />}

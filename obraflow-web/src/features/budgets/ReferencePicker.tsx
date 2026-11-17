@@ -9,6 +9,7 @@ import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/utils/format'
 import { budgetsApi, regimeLabel, type Dataset, type Group, type RefResult } from './api'
+import { orderedGroups } from './tree'
 
 interface Props {
   uuid: string
@@ -17,12 +18,15 @@ interface Props {
   /** Base do orçamento (pré-selecionada) e regime exigido (D-P03). */
   datasetId: number | null
   regime: string
+  /** Etapa já escolhida (quando aberto pela linha da etapa). */
+  initialGroupId?: number | null
   onClose: () => void
-  onAdded: () => void
+  /** keepOpen = "Adicionar e continuar" (lançamentos em sequência na mesma etapa). */
+  onAdded: (keepOpen: boolean) => void
 }
 
 /** Busca composições/insumos na base de referência e adiciona como item (cópia autossuficiente — D-08). */
-export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClose, onAdded }: Props) {
+export function ReferencePicker({ uuid, number, groups, datasetId, regime, initialGroupId, onClose, onAdded }: Props) {
   const datasets = useQuery({ queryKey: ['reference-datasets'], queryFn: () => budgetsApi.references.datasets(), staleTime: 300_000 })
   const compatible = (datasets.data ?? []).filter((d: Dataset) => regime === 'not_applicable' || d.charges_regime === regime)
   const [dataset, setDataset] = useState<number | null>(datasetId)
@@ -30,7 +34,9 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
   const [term, setTerm] = useState('')
   const [q, setQ] = useState('')
   const [chosen, setChosen] = useState<RefResult | null>(null)
-  const [groupId, setGroupId] = useState(groups[0] ? String(groups[0].id) : '')
+  const tree = orderedGroups(groups)
+  const [groupId, setGroupId] = useState(initialGroupId ? String(initialGroupId) : tree[0] ? String(tree[0].group.id) : '')
+  const [keepOpen, setKeepOpen] = useState(false)
   const [quantity, setQuantity] = useState('1')
   const [error, setError] = useState<string | null>(null)
 
@@ -56,7 +62,14 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
         group_id: Number(groupId),
         quantity,
       }),
-    onSuccess: onAdded,
+    onSuccess: () => {
+      setError(null)
+      if (keepOpen) {
+        setChosen(null)
+        setQuantity('1')
+      }
+      onAdded(keepOpen)
+    },
     onError: (e) => setError(getErrorMessage(e)),
   })
 
@@ -72,7 +85,10 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
           <Button variant="outline" size="lg" onClick={onClose}>
             Cancelar
           </Button>
-          <Button size="lg" disabled={!chosen || !groupId || !quantity || add.isPending} onClick={() => add.mutate()}>
+          <Button variant="outline" size="lg" disabled={!chosen || !groupId || !quantity || add.isPending} onClick={() => (setKeepOpen(true), add.mutate())}>
+            Adicionar e continuar
+          </Button>
+          <Button size="lg" disabled={!chosen || !groupId || !quantity || add.isPending} onClick={() => (setKeepOpen(false), add.mutate())}>
             {add.isPending && <Loader2 className="size-4 animate-spin" />} Adicionar
           </Button>
         </>
@@ -88,7 +104,17 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
           Crie uma etapa antes de adicionar itens.
         </Alert>
       )}
-      <div className="mb-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+      <div className="mb-3 grid gap-3 sm:grid-cols-2">
+        <FormField label="Etapa onde o item será lançado" required>
+          <SelectInput value={groupId} onChange={(e) => setGroupId(e.target.value)} disabled={groups.length === 0}>
+            {tree.map(({ group, depth }) => (
+              <option key={group.id} value={group.id}>
+                {'\u00A0\u00A0'.repeat(depth)}
+                {group.code} — {group.name}
+              </option>
+            ))}
+          </SelectInput>
+        </FormField>
         <FormField label="Base">
           <SelectInput value={ds ?? ''} onChange={(e) => setDataset(Number(e.target.value))}>
             {compatible.map((d) => (
@@ -98,13 +124,13 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
             ))}
           </SelectInput>
         </FormField>
-        <div className="flex items-end gap-1" role="tablist" aria-label="Tipo">
+      </div>
+      <div className="mb-3 flex gap-1" role="tablist" aria-label="Tipo">
           {(['compositions', 'resources'] as const).map((t) => (
             <Button key={t} role="tab" aria-selected={type === t} variant={type === t ? 'default' : 'outline'} size="lg" onClick={() => (setType(t), setChosen(null))}>
               {t === 'compositions' ? 'Composições' : 'Insumos'}
             </Button>
           ))}
-        </div>
       </div>
       <SearchInput placeholder="Código ou palavras da descrição (mín. 2 caracteres)" aria-label="Buscar na base" value={term} onChange={(e) => setTerm(e.target.value)} autoFocus />
 
@@ -142,16 +168,10 @@ export function ReferencePicker({ uuid, number, groups, datasetId, regime, onClo
       </div>
 
       {chosen && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <FormField label="Etapa" required>
-            <SelectInput value={groupId} onChange={(e) => setGroupId(e.target.value)}>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.code} — {g.name}
-                </option>
-              ))}
-            </SelectInput>
-          </FormField>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_12rem]">
+          <p className="self-end text-sm">
+            <span className="font-mono text-xs">{chosen.code}</span> {chosen.description}
+          </p>
           <FormField label={`Quantidade (${chosen.unit})`} required>
             <TextInput inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value.replace(',', '.'))} />
           </FormField>

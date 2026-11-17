@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { workflowActions } from './api'
-import { orderedGroups } from './BudgetTabs'
+import { orderedGroups } from './tree'
 
 describe('ações do fluxo por status e permissão (espelho do BudgetWorkflow)', () => {
   const all = { edit: true, approve: true }
