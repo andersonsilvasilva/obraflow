@@ -73,7 +73,7 @@ No banco: FK `(tenant_id, kind, group_id)` (grupo do mesmo tipo) e CHECK de carg
 
 **Permissões:** `resources.view` e `resources.manage` (33 no catálogo). O `member` de tenants novos recebe `resources.view`.
 
-**Testes:** `Feature/Catalog/ResourceCatalogTest` (8). Suíte **425/425 (2.997 asserções)**.
+**Testes:** `Feature/Catalog/ResourceCatalogTest` (9). Suíte **426/426 (3.022 asserções)**.
 
 ### Telas (etapas 2, 3 e 4)
 
@@ -84,3 +84,15 @@ No banco: FK `(tenant_id, kind, group_id)` (grupo do mesmo tipo) e CHECK de carg
 - **Orçamento**: o botão "Da base / catálogo" abre o seletor com 3 origens (Composições SINAPI, Insumos SINAPI, Catálogo da empresa). O catálogo só aparece com `resources.view`.
 
 **Testes frontend:** 37/37 (+2: prévia do balanço, multipart).
+
+### Cópia da base SINAPI para o catálogo
+
+Comando `obraflow:catalog:copy-references --tenant= --user= --dataset= --kinds=material,labor [--dry-run]`:
+- Cada insumo da base vira uma **cópia editável** no catálogo, com código, descrição, unidade e preço oficial. A data do preço é o 1º dia da competência, e a origem fica nas observações (base, UF, competência, regime e código).
+- A base de referência não é alterada (D-08). Mudar o preço no catálogo não mexe na base nem nos orçamentos.
+- **Pode ser rodado de novo** sem duplicar: se já existe um insumo com o mesmo código (ativo) ou com o mesmo nome no mesmo tipo, ele é pulado. Edições feitas no catálogo são preservadas.
+- As unidades que faltam no tenant são criadas com o código da base e o nome por extenso (UN = Unidade, H = Hora, MES = Mês…).
+- Descrição acima de 200 caracteres: o nome é abreviado e a descrição completa vai para as observações.
+- A cópia é feita numa transação única e auditada com `resource.imported` (`source: reference`).
+- Mão de obra: o preço depende do regime da base escolhida (desonerado ou não desonerado). Materiais têm o mesmo preço nos dois regimes.
+- Grupos: a base só traz as classes "MATERIAL" e "MÃO DE OBRA", então os insumos copiados ficam sem grupo, para a empresa organizar depois.

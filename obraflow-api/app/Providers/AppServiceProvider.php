@@ -63,6 +63,7 @@ use App\Modules\Access\Console\TenantStatusCommand;
 use App\Modules\Access\Console\UnblockUserCommand;
 use App\Modules\Audit\AuditEvent;
 use App\Modules\Audit\AuditLogger;
+use App\Modules\Catalog\Console\CopySinapiResourcesCommand;
 use App\Modules\Core\Health\DatabaseCheck;
 use App\Modules\Core\Health\HealthReport;
 use App\Modules\Core\Health\RedisCheck;
@@ -171,6 +172,7 @@ class AppServiceProvider extends ServiceProvider
                 SyncPermissionsCommand::class,
                 SyncSystemRolesCommand::class,
                 ImportReferencesCommand::class,
+                CopySinapiResourcesCommand::class,
                 ProvisionTenantCommand::class,
                 BlockUserCommand::class,
                 UnblockUserCommand::class,

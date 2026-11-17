@@ -185,3 +185,45 @@ it('banco: grupo precisa ser do mesmo tipo; cargo só em mão de obra; equipamen
         ->and(Fx::errno(fn () => $ins(['kind' => 'tool'])))->toBe(3819)
         ->and(app(TenantContext::class)->run(Tenant::query()->find($t), fn () => Resource::query()->count()))->toBe(2); // só as 2 inserções válidas
 });
+
+it('copia insumos da base de referência para o catálogo: cópia editável, idempotente, só no tenant indicado', function () {
+    $src = DB::table('reference_sources')->insertGetId(['code' => 'SINAPI', 'name' => 'SINAPI']);
+    $ds = DB::table('reference_datasets')->insertGetId(['source_id' => $src, 'version' => '2024-12', 'state' => 'MT', 'location_name' => 'CUIABA', 'charges_regime' => 'without_relief', 'status' => 'active']);
+    $un = DB::table('reference_units')->insertGetId(['code' => 'UN']);
+    $h = DB::table('reference_units')->insertGetId(['code' => 'H']);
+    $ref = function (string $code, string $desc, string $kind, int $unit, string $price) use ($ds) {
+        $id = DB::table('reference_resources')->insertGetId(['dataset_id' => $ds, 'code' => $code, 'description' => $desc, 'unit_id' => $unit, 'kind' => $kind]);
+        DB::table('reference_resource_prices')->insert(['resource_id' => $id, 'price' => $price]);
+    };
+    $ref('00001', 'DEMO TIJOLO CERAMICO', 'material', $un, '1.25');
+    $ref('00002', 'DEMO PEDREIRO COM ENCARGOS', 'labor', $h, '23.83');
+    $ref('00003', 'DEMO BETONEIRA', 'equipment', $un, '9.00');
+    $ref('00004', str_repeat('DEMO DESCRICAO LONGA ', 12), 'material', $un, '2.00');
+    $B = Scenario::tenant();
+    $args = ['--tenant' => $this->A->id, '--user' => $this->admin->id, '--dataset' => $ds, '--kinds' => 'material,labor'];
+
+    $this->artisan('obraflow:catalog:copy-references', $args + ['--dry-run' => true])->assertSuccessful();
+    expect(DB::table('resources')->count())->toBe(0);
+
+    $this->artisan('obraflow:catalog:copy-references', $args)->assertSuccessful();
+    $rows = DB::table('resources')->where('tenant_id', $this->A->id)->orderBy('code')->get();
+    expect($rows->pluck('code')->all())->toBe(['00001', '00002', '00004']) // equipamento não pedido
+        ->and($rows[0]->kind)->toBe('material')->and($rows[0]->price)->toBe('1.25')->and($rows[0]->price_date)->toBe('2024-12-01')
+        ->and($rows[1]->kind)->toBe('labor')->and($rows[1]->notes)->toContain('não desonerado, código 00002')
+        ->and(mb_strlen($rows[2]->name))->toBeLessThanOrEqual(200)->and($rows[2]->notes)->toContain('Descrição completa:')
+        ->and(DB::table('resources')->where('tenant_id', $B->id)->count())->toBe(0);
+    // unidade já existente é reaproveitada sem diferenciar caixa ('h' = H); a ausente (UN) é criada no tenant
+    expect($rows[1]->unit_id)->toBe($this->h)
+        ->and(DB::table('units_of_measure')->where('tenant_id', $this->A->id)->where('code', 'UN')->value('name'))->toBe('Unidade');
+    expect(AuditLog::query()->withoutGlobalScopes()->where('event', AuditEvent::RESOURCE_IMPORTED)->count())->toBe(1);
+
+    // cópia editável pela API e idempotência
+    $uuid = $rows[0]->uuid;
+    $this->b->put("/api/v1/resources/{$uuid}", ['price' => '1.40'])->assertOk()->assertJsonPath('data.price', '1.40');
+    $this->artisan('obraflow:catalog:copy-references', $args)->assertSuccessful();
+    expect(DB::table('resources')->count())->toBe(3)
+        ->and(DB::table('resources')->where('uuid', $uuid)->value('price'))->toBe('1.40');
+
+    // usuário de fora do tenant é recusado
+    $this->artisan('obraflow:catalog:copy-references', ['--user' => Scenario::member($B)->id] + $args)->assertFailed();
+});
