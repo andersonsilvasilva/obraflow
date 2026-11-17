@@ -21,7 +21,8 @@ use Illuminate\Support\Str;
  *
  * - Idempotente: insumo com o mesmo código (ativo) ou o mesmo nome no mesmo tipo é ignorado.
  * - Unidades de medida ausentes no tenant são criadas (código da base + nome por extenso).
- * - Descrição acima de 200 caracteres: o nome é abreviado e a descrição completa vai para as observações.
+ * - Descrição acima de 200 caracteres: o nome guarda o início e o FIM (onde o SINAPI põe as especificações que
+ *   distinguem itens parecidos, ex.: "40/50 MM" × "70/80 MM") e a descrição completa vai para as observações.
  * - Tudo numa transação + auditoria `resource.imported`; `--dry-run` executa e desfaz.
  */
 class CopySinapiResourcesCommand extends Command
@@ -96,7 +97,7 @@ class CopySinapiResourcesCommand extends Command
 
                 foreach ($source as $r) {
                     $name = trim(preg_replace('/\s+/', ' ', $r->description));
-                    $short = Str::limit($name, self::NAME_MAX - 1, '…');
+                    $short = $this->abbreviate($name);
                     if (isset($existingCodes[$r->code]) || isset($existingNames[$r->kind.'|'.$this->key($short)])) {
                         $skipped++;
 
@@ -150,6 +151,17 @@ class CopySinapiResourcesCommand extends Command
         $this->line('Unidades criadas: '.($summary['units_created'] ? implode(', ', $summary['units_created']) : 'nenhuma'));
 
         return self::SUCCESS;
+    }
+
+    /** Até NAME_MAX caracteres: início + " … " + fim (o fim distingue variantes da mesma descrição). */
+    private function abbreviate(string $name): string
+    {
+        if (mb_strlen($name) <= self::NAME_MAX) {
+            return $name;
+        }
+        $tail = 57;
+
+        return rtrim(mb_substr($name, 0, self::NAME_MAX - $tail - 3)).' … '.ltrim(mb_substr($name, -$tail));
     }
 
     private function key(string $s): string

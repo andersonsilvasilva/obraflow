@@ -198,7 +198,9 @@ it('copia insumos da base de referência para o catálogo: cópia editável, ide
     $ref('00001', 'DEMO TIJOLO CERAMICO', 'material', $un, '1.25');
     $ref('00002', 'DEMO PEDREIRO COM ENCARGOS', 'labor', $h, '23.83');
     $ref('00003', 'DEMO BETONEIRA', 'equipment', $un, '9.00');
-    $ref('00004', str_repeat('DEMO DESCRICAO LONGA ', 12), 'material', $un, '2.00');
+    $ref('00004', str_repeat('DEMO DESCRICAO LONGA ', 12).'ESPESSURA 40/50 MM', 'material', $un, '2.00');
+    $ref('00005', str_repeat('DEMO DESCRICAO LONGA ', 12).'ESPESSURA 70/80 MM', 'material', $un, '3.00'); // difere só no fim
+    $ref('00006', str_repeat('X', 200), 'material', $un, '1.00'); // exatamente 200: não abrevia
     $B = Scenario::tenant();
     $args = ['--tenant' => $this->A->id, '--user' => $this->admin->id, '--dataset' => $ds, '--kinds' => 'material,labor'];
 
@@ -207,10 +209,11 @@ it('copia insumos da base de referência para o catálogo: cópia editável, ide
 
     $this->artisan('obraflow:catalog:copy-references', $args)->assertSuccessful();
     $rows = DB::table('resources')->where('tenant_id', $this->A->id)->orderBy('code')->get();
-    expect($rows->pluck('code')->all())->toBe(['00001', '00002', '00004']) // equipamento não pedido
+    expect($rows->pluck('code')->all())->toBe(['00001', '00002', '00004', '00005', '00006']) // equipamento não pedido
         ->and($rows[0]->kind)->toBe('material')->and($rows[0]->price)->toBe('1.25')->and($rows[0]->price_date)->toBe('2024-12-01')
         ->and($rows[1]->kind)->toBe('labor')->and($rows[1]->notes)->toContain('não desonerado, código 00002')
-        ->and(mb_strlen($rows[2]->name))->toBeLessThanOrEqual(200)->and($rows[2]->notes)->toContain('Descrição completa:')
+        ->and(mb_strlen($rows[2]->name))->toBeLessThanOrEqual(200)->and($rows[2]->name)->toEndWith('40/50 MM')->and($rows[3]->name)->toEndWith('70/80 MM')
+        ->and($rows[2]->notes)->toContain('Descrição completa:')->and($rows[4]->name)->toBe(str_repeat('X', 200))->and($rows[4]->notes)->not->toContain('Descrição completa')
         ->and(DB::table('resources')->where('tenant_id', $B->id)->count())->toBe(0);
     // unidade já existente é reaproveitada sem diferenciar caixa ('h' = H); a ausente (UN) é criada no tenant
     expect($rows[1]->unit_id)->toBe($this->h)
@@ -221,7 +224,7 @@ it('copia insumos da base de referência para o catálogo: cópia editável, ide
     $uuid = $rows[0]->uuid;
     $this->b->put("/api/v1/resources/{$uuid}", ['price' => '1.40'])->assertOk()->assertJsonPath('data.price', '1.40');
     $this->artisan('obraflow:catalog:copy-references', $args)->assertSuccessful();
-    expect(DB::table('resources')->count())->toBe(3)
+    expect(DB::table('resources')->count())->toBe(5)
         ->and(DB::table('resources')->where('uuid', $uuid)->value('price'))->toBe('1.40');
 
     // usuário de fora do tenant é recusado

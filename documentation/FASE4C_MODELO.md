@@ -92,7 +92,12 @@ Comando `obraflow:catalog:copy-references --tenant= --user= --dataset= --kinds=m
 - A base de referência não é alterada (D-08). Mudar o preço no catálogo não mexe na base nem nos orçamentos.
 - **Pode ser rodado de novo** sem duplicar: se já existe um insumo com o mesmo código (ativo) ou com o mesmo nome no mesmo tipo, ele é pulado. Edições feitas no catálogo são preservadas.
 - As unidades que faltam no tenant são criadas com o código da base e o nome por extenso (UN = Unidade, H = Hora, MES = Mês…).
-- Descrição acima de 200 caracteres: o nome é abreviado e a descrição completa vai para as observações.
+- Descrição acima de 200 caracteres: o nome guarda o início e o fim, com "…" no meio, porque é no fim que o SINAPI põe as especificações que distinguem itens parecidos (ex.: "40/50 MM" × "70/80 MM"). A descrição completa vai para as observações.
 - A cópia é feita numa transação única e auditada com `resource.imported` (`source: reference`).
 - Mão de obra: o preço depende do regime da base escolhida (desonerado ou não desonerado). Materiais têm o mesmo preço nos dois regimes.
 - Grupos: a base só traz as classes "MATERIAL" e "MÃO DE OBRA", então os insumos copiados ficam sem grupo, para a empresa organizar depois.
+
+**Aplicado no `obraflow` em 2026-11-17, com autorização do usuário:**
+- migrations `300001`–`300004` (66 → 70);
+- permissões `resources.view` e `resources.manage` (33): `admin` 33, `member` 14;
+- cópia da base SINAPI MT 2024-12 **desonerada** (dataset 1): **4.443 insumos** (4.259 materiais e 184 de mão de obra), 72 com nome abreviado e 17 unidades de medida criadas, com 1 evento `resource.imported`.
