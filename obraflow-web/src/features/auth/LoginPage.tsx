@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { HardHat, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -54,11 +54,8 @@ export function LoginPage() {
   return (
     <main className="bg-background flex min-h-dvh items-center justify-center p-4">
       <div className="bg-card shadow-card w-full max-w-sm rounded-xl border p-6">
-        <div className="mb-6 flex items-center gap-2">
-          <span className="bg-primary text-primary-foreground rounded-lg p-1.5">
-            <HardHat className="size-5" aria-hidden />
-          </span>
-          <span className="text-xl font-semibold tracking-tight">ObraFlow</span>
+        <div className="mb-6 flex justify-center">
+          <img src="/brand/logo-completa.png" alt="ObraFlow" width={477} height={109} className="h-11 w-auto" />
         </div>
         <h1 className="mb-1 text-lg font-semibold">Entrar</h1>
         <p className="text-muted-foreground mb-5 text-sm">Use seu e-mail e senha de acesso.</p>

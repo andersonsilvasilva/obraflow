@@ -80,3 +80,17 @@ Desktop-first. `lg+`: sidebar fixa (recolhível, preferência em `localStorage` 
 ## 8. Acessibilidade
 
 Link "Ir para o conteúdo"; `nav` com `aria-label`; foco visível global (`:focus-visible`); `FormField` liga `label`/erro/dica via `htmlFor`, `aria-invalid`, `aria-describedby`; `Modal` sobre `<dialog>` (foco preso, ESC); `Tabs` com `role=tab` e setas; tabelas com `caption` (sr-only), `scope="col"` e `aria-sort`; `role="progressbar"`, `role="status"/"alert"`; ícones decorativos `aria-hidden`; gráficos com `role="img"` e `aria-label`. **Pendência:** alternativa tabular dos gráficos e teste com leitor de tela.
+
+## Logomarca (2026-11-17)
+
+Arquivos enviados pelo responsável. Os originais ficam em `documentation/marca/`; as cópias usadas pelo sistema ficam em `obraflow-web/public/brand/`:
+
+| Arquivo no sistema | Original | Uso |
+|---|---|---|
+| `favicon.png` (70×67) | `Favicon ObraFlow.png` | ícone da aba do navegador |
+| `logo-simbolo.png` (217×185) | `logo ObraFlow.png` | símbolo (capacete + prédios): menu lateral e ícone no celular (`apple-touch-icon`) |
+| `logo-completa.png` (477×109, transparente) | `logo ObraFlow_transparente.png` | símbolo + "ObraFlow": tela de login |
+| `logo-completa-grande.png` (790×217) | `logo ObraFlow_gde.png` | impressão e relatórios |
+
+- O símbolo tem azul-marinho, azul-safira e amarelo (capacete). Sobre o menu grafite, ele fica num fundo claro (`--card`) arredondado, porque o azul-marinho não tem contraste direto sobre o grafite.
+- O amarelo do capacete é da marca. Na interface, a cor de destaque continua sendo o azul-safira (sem laranja nem amarelo nos componentes).
