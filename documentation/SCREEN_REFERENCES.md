@@ -176,6 +176,14 @@ Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os 
     - colunas visíveis no grupo Básico: ID, Atividade, Início, Término, Duração, Predecessoras, Unidade, Qtd. unitária, Qtd. total, Valor de custo unitário, BDI %, Desconto %, Valor de venda unitário, Total de custo, Total de venda e Recursos; há também um grupo Avançado;
     - **modo de visualização:** Somente tabela, Layout dividido ou Somente Gantt;
     - botões "Restaurar largura/ordem das colunas" e "Salvar preferências" (por usuário).
+- **Orçamento sintético do planejamento** (exportação do Brickup; o arquivo do responsável não fica no repositório). São 28 colunas por atividade:
+  - **Identificação:** ID, Atividade, Un. medida, Qtd. unit.
+  - **Custo unitário:** Valor de custo unit. e o custo unitário por tipo de insumo (material, equipamento, cargo/função, serviço, outros).
+  - **Percentuais:** BDI (%) e Desconto (%).
+  - **Venda unitária** por tipo de insumo (os mesmos 5 tipos).
+  - **Total de custo** por tipo de insumo.
+  - **Total de venda** e total de venda por tipo de insumo.
+  - Na Fase 6, cada atividade soma os recursos dela separados por tipo. Os tipos já existem no catálogo (4C: material, mão de obra, equipamento, serviço), "cargo/função" é a mão de obra e "outros" fica para os demais. BDI e desconto seguem a mesma conta do orçamento (D-P02).
 - **RDO — Diário de Obra** (um por dia, navegação por data, "Exportar"):
   - cabeçalho com obra, endereço, responsável técnico, encarregado, data de início e prazo; Nº do RDO; "Aprovado por" + botão **Aprovar**;
   - **condição climática** de manhã, tarde e noite (sol, nublado, chuva);
