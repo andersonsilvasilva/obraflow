@@ -49,3 +49,12 @@
 **Etapa das telas homologada pelo responsável** ("eu aprovo, e registre; a homologação é minha"), após o teste no navegador com o banco `obraflow`.
 - Commit `d4fb5b5`, com CI run 43972095774 verde.
 - As limitações conhecidas acima seguem como pendências.
+
+## Primeiros passos (2026-11-17)
+
+Página **"Primeiros passos"** (`/primeiros-passos`, primeiro item do menu), pedida pelo responsável:
+- **Percurso:** Empresa → Cliente → Responsável técnico (opcional) → Obra → Orçamento → Planilha → Envio e aprovação.
+- **Cada passo:** descrição, dica e atalho para a tela.
+- **Situação de cada passo:** calculada a partir dos dados reais da organização, por consultas à API (nada é gravado). Valores possíveis: "Feito", "Pendente" ou "Sem acesso", conforme as permissões de quem vê. A planilha conta como feita quando há orçamento enviado ou aprovado, porque a API não aceita enviar orçamento vazio.
+- **"Você está aqui":** marca o primeiro passo obrigatório pendente. Há também uma barra de progresso.
+- **Testes:** `src/features/onboarding/steps.test.ts` (4). Frontend **29/29**.

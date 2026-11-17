@@ -4,6 +4,7 @@ import {
   Calculator,
   CalendarRange,
   ClipboardList,
+  Compass,
   Clock,
   FileSignature,
   FileText,
@@ -32,6 +33,7 @@ export interface NavNode {
 }
 
 export const navigation: NavNode[] = [
+  { label: 'Primeiros passos', path: '/primeiros-passos', icon: Compass },
   { label: 'Visão geral', path: '/', icon: LayoutDashboard, demo: true },
   { label: 'Obras', path: '/obras', icon: HardHat, permission: 'projects.view' },
   {
@@ -96,6 +98,7 @@ export function firstPath(node: NavNode): string | undefined {
 
 /** Nome amigável por segmento de rota, usado pelo Breadcrumb. */
 export const routeLabels: Record<string, string> = {
+  'primeiros-passos': 'Primeiros passos',
   cadastros: 'Cadastros',
   empresas: 'Empresas',
   clientes: 'Clientes',

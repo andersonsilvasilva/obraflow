@@ -9,6 +9,7 @@ import { SelectTenantPage } from '@/features/auth/SelectTenantPage'
 import { BudgetDetailPage } from '@/features/budgets/BudgetDetailPage'
 import { BudgetsListPage } from '@/features/budgets/BudgetsListPage'
 import { SmartBudgetPage } from '@/features/budgets/SmartBudgetPage'
+import { GettingStartedPage } from '@/features/onboarding/GettingStartedPage'
 import { RequirePermission } from '@/features/auth/guards'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ModulePage } from '@/features/modules/ModulePage'
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
                 ],
               },
               { path: 'orcamento-inteligente', element: <SmartBudgetPage /> },
+              { path: 'primeiros-passos', element: <GettingStartedPage /> },
               { path: 'suprimentos', element: <ProcurementPage /> },
               { path: 'contratos', element: m('Contratos', 'Contratos com clientes e fornecedores.') },
               { path: 'planejamento', element: m('Planejamento', 'Cronogramas, dependências e linha de base.') },
