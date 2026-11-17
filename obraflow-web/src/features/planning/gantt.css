@@ -1,0 +1,59 @@
+/*
+ * SVAR React Gantt (tema Willow) com a identidade do ObraFlow: variáveis do tema apontam para os tokens de
+ * src/index.css — nenhuma cor fixa aqui. Escopo: .obraflow-gantt.
+ */
+.obraflow-gantt {
+    --wx-font-family: var(--font-sans);
+    --wx-font-size: 0.8125rem;
+    --wx-color-primary: var(--primary);
+    --wx-color-font: var(--foreground);
+    --wx-color-secondary-font: var(--muted-foreground);
+    --wx-background: var(--card);
+    --wx-background-alt: var(--muted);
+    --wx-border: 1px solid var(--border);
+    --wx-gantt-border-color: var(--border);
+    --wx-gantt-task-color: var(--primary);
+    --wx-gantt-task-fill-color: var(--primary-deep);
+    --wx-gantt-task-border-color: var(--primary-deep);
+    --wx-gantt-task-font-color: var(--primary-foreground);
+    --wx-gantt-summary-color: var(--secondary-foreground);
+    --wx-gantt-summary-fill-color: var(--primary-deep);
+    --wx-gantt-summary-border-color: var(--primary-deep);
+    --wx-gantt-milestone-color: var(--warning);
+    --wx-gantt-select-color: var(--primary-soft);
+    --wx-gantt-holiday-background: var(--muted);
+    --wx-gantt-link-color: var(--muted-foreground);
+    --wx-gantt-marker-color: var(--destructive);
+    height: 100%;
+}
+
+/* barra de atividade crítica (caminho crítico calculado no servidor — D-P67) */
+.obraflow-gantt .of-bar-critical {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--destructive);
+}
+
+.obraflow-gantt .of-bar-progress {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: inherit;
+    background: color-mix(in oklab, var(--foreground) 25%, transparent);
+}
+
+.obraflow-gantt .of-bar-label {
+    position: relative;
+    padding: 0 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--primary-foreground);
+    font-size: 0.75rem;
+    line-height: inherit;
+}
+
+/* dia não útil da obra (horário + exceções do calendário — D-P66) */
+.obraflow-gantt .wx-weekend {
+    background: var(--muted);
+}

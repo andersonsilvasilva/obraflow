@@ -161,3 +161,23 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
   - **Datas:** número de série do Excel, AAAA-MM-DD ou DD/MM/AAAA. MM/DD (formato do Brickup) só é aceito quando o segundo número passa de 12; caso contrário vale DD/MM.
   - **Duração:** dias úteis entre início e entrega. Sem data de início, a atividade usa a data inicial da obra (com aviso).
 - **Testes:** +1 (importação). Suíte 453/453.
+
+### 6A — etapa 3 (telas)
+
+- **Obra → aba Planejamento** (logo depois de Geral):
+  - **Sem planejamento:** "Escolha o formato".
+    - **Do orçamento aprovado:** escolhe a versão aprovada da obra.
+    - **Importar planilha:** escolher o arquivo, pré-visualizar as linhas (ok, ignorada, erro) e importar; link para baixar a planilha-modelo.
+    - **Criar do zero.**
+    - **Inteligência artificial:** desabilitada, "em breve (Fase 9)".
+  - **Com planejamento:**
+    - resumo: início, término, % executado, atividades, caminho crítico e atrasadas;
+    - barra de ações: + Atividade, + Etapa, + Marco, Caminho crítico (liga/desliga), Criar linha de base (n/10), "Comparar com", Tabela / Dividido / Gantt, zoom (dia, semana, mês) e Deletar tudo.
+    - Modo e zoom ficam guardados no navegador, por obra (D-P70).
+- **Gantt:** SVAR React Gantt 2.8.2 (tema Willow, com as cores dos tokens em `planning/gantt.css`).
+  - Colunas ID (EAP), Atividade, Início, Término, Dias úteis e Desvio (quando há comparação).
+  - Barras críticas em vermelho, % de avanço na barra, marcador "Hoje".
+  - Dias não úteis da obra (horário e exceções) destacados.
+  - O servidor manda: arrastar a barra muda início e duração; ligar as bolinhas cria a dependência (FS, SS, FF, SF); apagar a ligação remove a dependência; o duplo clique abre a janela da atividade. O Gantt nunca muda sozinho: cada ação vira chamada à API, e a tela recebe o cronograma recalculado.
+- **Janela da atividade:** nome, etapa (mover), início, duração em dias úteis (com o equivalente em dias corridos e o término), quantidade e unidade, avanço (%), início e término reais. Predecessoras com tipo e atraso, incluir e remover. Excluir (a etapa sai com o que está dentro).
+- **Testes frontend:** 49/49 (+2: conversão para o Gantt e tipos de dependência).

@@ -17,6 +17,7 @@ import { useEmployeeOptions } from '@/features/registry/lookups'
 import { getErrorMessage } from '@/lib/api-error'
 import { http } from '@/lib/http'
 import { formatCurrency, formatDateOrDash } from '@/utils/format'
+import { PlanningTab } from '@/features/planning/PlanningTab'
 import { ProjectMap } from './ProjectMap'
 import { ProjectContractsTab } from '@/features/contracts/ProjectContractsTab'
 import { CalendarTab } from './calendar/CalendarTab'
@@ -100,6 +101,7 @@ export function ProjectDetailPage() {
 
   const tabs = [
     { id: 'geral', label: 'Geral' },
+    { id: 'planejamento', label: 'Planejamento' },
     { id: 'dados', label: 'Dados gerais' },
     { id: 'endereco', label: 'Endereço' },
     { id: 'calendario', label: 'Calendário' },
@@ -138,6 +140,7 @@ export function ProjectDetailPage() {
       <Panel className="p-4">
         <Tabs tabs={tabs} active={tab} onChange={setTab} label="Seções da obra">
           {tab === 'geral' && <OverviewTab project={project} />}
+          {tab === 'planejamento' && <PlanningTab project={project} canEditProject={canEdit} />}
           {tab === 'dados' && (
             <>
               <GeneralTab project={project} />
