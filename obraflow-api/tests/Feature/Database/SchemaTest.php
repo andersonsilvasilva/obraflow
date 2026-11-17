@@ -23,16 +23,22 @@ const PHASE3_TABLES = [
     'user_companies', 'user_project_access',
 ];
 
+/** Fase 4A (FASE4_MODELO.md): referências técnicas GLOBAIS (sem tenant_id, D-P29). */
+const PHASE4_TABLES = [
+    'reference_composition_items', 'reference_compositions', 'reference_datasets', 'reference_imports',
+    'reference_resource_prices', 'reference_resources', 'reference_sources', 'reference_units',
+];
+
 function dbName(): string
 {
     return DB::connection()->getDatabaseName();
 }
 
-it('cria exatamente as tabelas das Fases 1, 2 e 3 (mais a tabela migrations)', function () {
+it('cria exatamente as tabelas das Fases 1 a 4 (mais a tabela migrations)', function () {
     $tables = collect(DB::select('SELECT table_name AS t FROM information_schema.tables WHERE table_schema = ?', [dbName()]))
         ->pluck('t')->map(fn ($t) => strtolower($t))->reject(fn ($t) => $t === 'migrations')->sort()->values()->all();
 
-    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES, ...PHASE3_TABLES])->sort()->values()->all();
+    $expected = collect([...PHASE1_TABLES, ...PHASE2_TABLES, ...PHASE3_TABLES, ...PHASE4_TABLES])->sort()->values()->all();
 
     expect($tables)->toBe($expected);
 });

@@ -108,6 +108,11 @@ final class AuditEvent
 
     public const PROJECT_ACCESS_REVOKED = 'project.access_revoked';
 
+    // Fase 4 — referências técnicas (globais: tenant_id NULL)
+    public const REFERENCE_IMPORTED = 'reference.imported';
+
+    public const REFERENCE_ACTIVATED = 'reference.activated';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -124,5 +129,11 @@ final class AuditEvent
     public static function phase3(): array
     {
         return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'project.')));
+    }
+
+    /** Eventos da Fase 4 (cobertura verificada pelos testes de referências/orçamentos). @return list<string> */
+    public static function phase4(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'reference.') || str_starts_with($e, 'budget.')));
     }
 }

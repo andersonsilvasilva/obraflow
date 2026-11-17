@@ -1,6 +1,6 @@
-# FASE 4 — REFERÊNCIAS E ORÇAMENTOS: PROPOSTA DE MODELO
+# FASE 4 — REFERÊNCIAS E ORÇAMENTOS: MODELO APROVADO
 
-> **Proposta — aguarda aprovação.** A Fase 4 foi autorizada pelo responsável em 2026-11-17. Nenhuma migration nasce antes da aprovação das decisões D-P02, D-P03 e D-P29 a D-P36.
+> **Aprovado em 2026-11-17.** A Fase 4 foi autorizada e as decisões D-P02, D-P03 e D-P29 a D-P36 foram aprovadas conforme a recomendação.
 > **Base:**
 > - [DATABASE.md](DATABASE.md) §2.6 e §2.7 e [DB_MIGRATION_PLAN.md](DB_MIGRATION_PLAN.md) (Fase 4);
 > - D-08 (orçamento aprovado imutável e autossuficiente);
@@ -58,7 +58,7 @@ As tabelas `reference_competencies` e `reference_locations` do plano original vi
 
 `budget_costs`, o cache de totais do plano original, é substituído por `totals_snapshot` na versão: o recálculo é feito pelo servidor e o cache fica dentro da própria versão (D-P33).
 
-## 3. Decisões para aprovação
+## 3. Decisões (aprovadas conforme a recomendação, 2026-11-17)
 
 | ID | Decisão | Opções | Recomendação |
 |---|---|---|---|
@@ -92,3 +92,37 @@ As tabelas `reference_competencies` e `reference_locations` do plano original vi
 - **Fidelidade:** os valores vêm da fonte oficial e **não são editados** na base. Ajustes de preço ficam no orçamento, como `custom`.
 - **Fórmula de BDI:** é regra contábil, e a fórmula do TCU é referência de obra pública. Cabe ao responsável validar o uso em obra privada (D-P02).
 - **Licença e uso:** o SINAPI é publicação pública (Caixa/IBGE). A fonte, a competência e a localidade ficam registradas em cada item copiado.
+
+## 6. Andamento
+
+### 4A.1 — Referências: tabelas, importador e testes
+
+**8 tabelas globais** (migrations `2026_11_17_100001` a `100008`), sem `tenant_id`:
+`reference_sources`, `reference_datasets`, `reference_imports`, `reference_units`, `reference_resources`, `reference_resource_prices`, `reference_compositions`, `reference_composition_items`.
+
+**Ajustes de implementação** (todos dentro do modelo aprovado):
+- **`reference_imports`:** tabela nova, com um registro por arquivo (insumos, composições, famílias) e a base que recebe esses arquivos. Guarda nome, SHA-256 e contagens.
+- **Itens de composição:** guardam também o preço unitário, o custo e a origem do preço publicados na linha.
+- **Composições:** guardam a decomposição publicada (mão de obra, material, equipamento, serviços, outros).
+- **Tipo do insumo:** vem da **Macro-Classe** do relatório de famílias da fonte:
+  - MATERIAL → material; MÃO DE OBRA → labor; EQUIPAMENTO (AQUISIÇÃO/LOCAÇÃO) → equipment; SERVIÇOS → service;
+  - ESPECIAIS fica sem tipo.
+- **Integridade:** `dataset_id` vai nos itens, com FKs `(dataset_id, x_id)`. O banco recusa item apontando para insumo ou composição de **outra base**. O CHECK exige exatamente um alvo.
+
+**Comando** `obraflow:references:import --competency=AAAA-MM --state=UF --regime=with_relief|without_relief --resources=… --compositions=… --families=… [--activate] [--dry-run]`:
+- leitor XLSX próprio por streaming (sem dependência nova);
+- confere o cabeçalho de cada arquivo (competência e regime) contra a base;
+- idempotente pelo hash; recusa outro arquivo para um tipo já importado;
+- tudo numa transação; composição filha ausente aborta tudo;
+- auditoria `reference.imported` e `reference.activated`, com `tenant_id` nulo;
+- `--activate` marca como `superseded` a base ativa anterior da mesma fonte, UF e regime.
+
+**Validação com os arquivos reais** (SINAPI MT 12/2024 desonerado, **só no `obraflow_testing`**):
+- 4.839 insumos, 7.829 composições e 40.538 itens, em cerca de 1 minuto;
+- valores conferidos com a planilha: composição 97141 com total 3,84 (mão de obra 1,49, material 0,93, equipamento 1,42); item 5678 com coeficiente 0,0063000, preço 139,00 e custo 0,87; insumo 11270 a 2,66 (CR);
+- a reexecução não duplica nada;
+- arquivo com outro regime ou outra competência é recusado.
+
+**Testes:** `Feature/References/ReferenceImportTest` (9), sobre um recorte com o mesmo layout montado em XLSX na hora (`Tests\Support\XlsxFixture`). Suíte **373/373 (2.341 asserções)**.
+
+**Banco `obraflow`:** sem alterações. A importação real exige autorização (D-P30).

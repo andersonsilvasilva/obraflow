@@ -26,6 +26,7 @@ use App\Models\ProjectAddress;
 use App\Models\ProjectMember;
 use App\Models\ProjectPhase;
 use App\Models\ProjectStatusHistory;
+use App\Models\ReferenceDataset;
 use App\Models\ResourceGroup;
 use App\Models\Role;
 use App\Models\Supplier;
@@ -52,6 +53,7 @@ use App\Modules\Audit\AuditLogger;
 use App\Modules\Core\Health\DatabaseCheck;
 use App\Modules\Core\Health\HealthReport;
 use App\Modules\Core\Health\RedisCheck;
+use App\Modules\References\Console\ImportReferencesCommand;
 use App\Modules\Tenancy\TenantContext;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -126,6 +128,8 @@ class AppServiceProvider extends ServiceProvider
             'project_member' => ProjectMember::class,
             'user_project_access' => UserProjectAccess::class,
             'user_company' => UserCompany::class,
+            // Fase 4 — referências (globais)
+            'reference_dataset' => ReferenceDataset::class,
         ]);
 
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
@@ -138,6 +142,7 @@ class AppServiceProvider extends ServiceProvider
             $this->commands([
                 SyncPermissionsCommand::class,
                 SyncSystemRolesCommand::class,
+                ImportReferencesCommand::class,
                 ProvisionTenantCommand::class,
                 BlockUserCommand::class,
                 UnblockUserCommand::class,
