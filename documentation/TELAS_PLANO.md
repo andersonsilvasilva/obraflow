@@ -58,3 +58,20 @@ Página **"Primeiros passos"** (`/primeiros-passos`, primeiro item do menu), ped
 - **Situação de cada passo:** calculada a partir dos dados reais da organização, por consultas à API (nada é gravado). Valores possíveis: "Feito", "Pendente" ou "Sem acesso", conforme as permissões de quem vê. A planilha conta como feita quando há orçamento enviado ou aprovado, porque a API não aceita enviar orçamento vazio.
 - **"Você está aqui":** marca o primeiro passo obrigatório pendente. Há também uma barra de progresso.
 - **Testes:** `src/features/onboarding/steps.test.ts` (4). Frontend **29/29**.
+
+## Máscaras de entrada (2026-11-17)
+
+Pedido do responsável. O utilitário `src/utils/masks.ts` aplica a máscara progressiva enquanto o usuário digita e valida na tela, antes de enviar:
+
+| Máscara | Formato | Onde | Validação na tela |
+|---|---|---|---|
+| CPF | 000.000.000-00 | Funcionários | Dígitos verificadores |
+| CNPJ | 00.000.000/0000-00 | Empresas | Dígitos verificadores |
+| CPF/CNPJ | Conforme o tipo (física/jurídica); trocar o tipo reaplica a máscara | Clientes, fornecedores | Dígitos verificadores do tipo escolhido |
+| Telefone/celular | (00) 0000-0000 com 10 dígitos; (00) 00000-0000 com 11 | Empresas, clientes, fornecedores, funcionários; telefone formatado também nas listas | DDD + 8 ou 9 dígitos |
+| CEP | 00000-000 | Endereço da obra | 8 dígitos |
+
+- **Teclado:** campos com máscara abrem o teclado numérico (ou de telefone) em celulares.
+- **Valor mascarado pela API:** o CPF que chega como `***.982.247-**` (D-P21) **não** é alterado nem reenviado.
+- **Servidor:** a API continua sendo a autoridade. Grava documentos e CEP só com dígitos e confere os dígitos verificadores de novo.
+- **Testes:** `src/utils/masks.test.ts` (6). Frontend **35/35**.

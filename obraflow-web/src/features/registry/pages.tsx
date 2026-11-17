@@ -1,5 +1,6 @@
 import { StatusBadge } from '@/components/data-display/indicators'
 import { formatDocument } from '@/utils/format'
+import { formatPhone } from '@/utils/masks'
 import { api, statusLabel, statusOptions, type CatalogItem, type Company, type Employee, type Equipment, type Option, type Party, type ResourceGroup, type Unit } from './api'
 import { CertificationsButton } from './CertificationsModal'
 import type { FieldDef } from './components/EntityFormModal'
@@ -42,9 +43,9 @@ const companies: ResourceConfig<Company> = {
   fields: [
     { name: 'legal_name', label: 'Razão social', required: true, full: true },
     { name: 'trade_name', label: 'Nome fantasia' },
-    { name: 'document_number', label: 'CNPJ', required: true, placeholder: '00.000.000/0000-00' },
+    { name: 'document_number', label: 'CNPJ', required: true, mask: 'cnpj' },
     { name: 'email', label: 'E-mail', type: 'email' },
-    { name: 'phone', label: 'Telefone', type: 'tel', placeholder: '(00) 00000-0000' },
+    { name: 'phone', label: 'Telefone', mask: 'phone' },
     statusField,
     { name: 'state_registration', label: 'Inscrição estadual', more: true },
     { name: 'municipal_registration', label: 'Inscrição municipal', more: true },
@@ -84,7 +85,7 @@ function partyConfig(kind: 'customers' | 'suppliers'): ResourceConfig<Party> {
       { key: 'name', header: 'Nome', cell: (r) => <span className="font-medium">{name(r)}</span>, sortValue: name },
       { key: 'type', header: 'Tipo', cell: (r) => (r.type === 'person' ? 'Física' : 'Jurídica') },
       { key: 'doc', header: 'CPF/CNPJ', cell: (r) => formatDocument(r.document_number) },
-      { key: 'phone', header: 'Telefone', cell: (r) => r.phone ?? '—' },
+      { key: 'phone', header: 'Telefone', cell: (r) => formatPhone(r.phone) },
       { key: 'status', header: 'Situação', cell: (r) => statusCell(r.status) },
     ],
     fields: [
@@ -96,9 +97,9 @@ function partyConfig(kind: 'customers' | 'suppliers'): ResourceConfig<Party> {
             { name: 'trade_name', label: 'Nome fantasia' } satisfies FieldDef,
           ]
         : [{ name: 'name', label: 'Nome', required: true, full: true } satisfies FieldDef]),
-      { name: 'document_number', label: 'CPF/CNPJ', required: supplier, placeholder: 'Somente números ou com máscara' },
+      { name: 'document_number', label: 'CPF/CNPJ', required: supplier, mask: 'cpf_cnpj', help: 'CPF para pessoa física, CNPJ para pessoa jurídica.' },
       { name: 'email', label: 'E-mail', type: 'email' },
-      { name: 'phone', label: 'Telefone', type: 'tel' },
+      { name: 'phone', label: 'Telefone', mask: 'phone' },
       statusField,
     ],
     toForm: (r) => mapStrings(r),
@@ -252,9 +253,9 @@ const employees: ResourceConfig<Employee> = {
     { name: 'department_id', label: 'Setor', type: 'select', options: 'departments', quickAdd: quick('departments') },
     { name: 'labor_type', label: 'Mão de obra', type: 'radio', options: laborOptions },
     { name: 'contract_type', label: 'Tipo de contrato', type: 'select', options: contractOptions },
-    { name: 'document_number', label: 'CPF', placeholder: '000.000.000-00', help: 'Opcional. Visível por completo só para quem administra funcionários.' },
+    { name: 'document_number', label: 'CPF', mask: 'cpf', help: 'Opcional. Visível por completo só para quem administra funcionários.' },
     { name: 'registration_number', label: 'Matrícula' },
-    { name: 'phone', label: 'Telefone', type: 'tel', more: true },
+    { name: 'phone', label: 'Telefone', mask: 'phone', more: true },
     { name: 'email', label: 'E-mail', type: 'email', more: true },
     { name: 'supervisor_uuid', label: 'Responsável', type: 'select', options: 'employees', more: true, help: 'Funcionário da mesma empresa.' },
     { name: 'hired_at', label: 'Admissão', type: 'date', more: true },

@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, CircleHelp, Loader2, Settings2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Alert } from '@/components/feedback/Alert'
 import { Modal } from '@/components/feedback/Modal'
@@ -7,6 +7,7 @@ import { FormField, SelectInput, TextArea, TextInput } from '@/components/forms/
 import { Button } from '@/components/ui/button'
 import { ApiError, getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
+import { applyMask, maskPlaceholder, validateMask, type MaskKind } from '@/utils/masks'
 import type { Option } from '../api'
 import { CatalogQuickModal, type QuickAddConfig } from './CatalogQuickModal'
 
@@ -31,7 +32,12 @@ export interface FieldDef {
   step?: string
   /** Visível conforme os valores atuais (ex.: campo só para fornecedor pessoa jurídica) */
   visible?: (values: Record<string, string>) => boolean
+  /** Máscara de entrada + validação na tela (CPF, CNPJ, CPF/CNPJ conforme o tipo, telefone, CEP). */
+  mask?: MaskKind
 }
+
+/** Campo que define pessoa física/jurídica para a máscara `cpf_cnpj`. */
+const PERSON_TYPE_FIELD = 'type'
 
 interface Props {
   title: string
@@ -51,12 +57,28 @@ interface Props {
  * e regras de negócio (domain_rule, duplicidade) aparecem no topo.
  */
 export function EntityFormModal({ title, fields, lookups, mode, initial, size = 'lg', onClose, onSubmit, onSaved }: Props) {
-  const defaults = Object.fromEntries(fields.map((f) => [f.name, initial[f.name] ?? (f.type === 'radio' ? (optionsFor(f, lookups)[0]?.value ?? '') : '')]))
-  const { register, handleSubmit, setError, watch, setValue, formState } = useForm<Record<string, string>>({ defaultValues: defaults })
+  const defaults = Object.fromEntries(
+    fields.map((f) => {
+      const raw = initial[f.name] ?? (f.type === 'radio' ? (optionsFor(f, lookups)[0]?.value ?? '') : '')
+      return [f.name, f.mask && raw ? applyMask(f.mask, raw, initial[PERSON_TYPE_FIELD]) : raw]
+    }),
+  )
+  const { register, handleSubmit, setError, watch, setValue, getValues, formState } = useForm<Record<string, string>>({ defaultValues: defaults })
   const [topError, setTopError] = useState<string | null>(null)
   const [showMore, setShowMore] = useState(fields.some((f) => f.more && initial[f.name]))
   const [quick, setQuick] = useState<FieldDef | null>(null)
   const values = watch()
+  const personType = values[PERSON_TYPE_FIELD]
+
+  // trocar pessoa física/jurídica reaplica a máscara do documento
+  useEffect(() => {
+    for (const f of fields) {
+      if (f.mask === 'cpf_cnpj') {
+        const cur = getValues(f.name) ?? ''
+        if (cur) setValue(f.name, applyMask('cpf_cnpj', cur, personType))
+      }
+    }
+  }, [personType, fields, getValues, setValue])
 
   const visible = fields.filter((f) => !f.visible || f.visible(values))
 
@@ -93,7 +115,10 @@ export function EntityFormModal({ title, fields, lookups, mode, initial, size = 
   const renderField = (f: FieldDef) => {
     const disabled = mode === 'edit' && f.createOnly
     const error = formState.errors[f.name]?.message
-    const reg = register(f.name, { required: f.required && !disabled ? 'Campo obrigatório.' : false })
+    const reg = register(f.name, {
+      required: f.required && !disabled ? 'Campo obrigatório.' : false,
+      validate: f.mask && !disabled ? (v: string) => validateMask(f.mask!, v, getValues(PERSON_TYPE_FIELD)) : undefined,
+    })
     const opts = optionsFor(f, lookups)
     const label = f.help ? `${f.label}` : f.label
 
@@ -131,7 +156,22 @@ export function EntityFormModal({ title, fields, lookups, mode, initial, size = 
     } else if (f.type === 'textarea') {
       control = <TextArea disabled={disabled} placeholder={f.placeholder} {...reg} />
     } else {
-      control = <TextInput type={f.type ?? 'text'} step={f.step} disabled={disabled} placeholder={f.placeholder} {...reg} />
+      control = f.mask ? (
+        <TextInput
+          type="text"
+          inputMode={f.mask === 'phone' ? 'tel' : 'numeric'}
+          autoComplete={f.mask === 'phone' ? 'tel' : f.mask === 'cep' ? 'postal-code' : 'off'}
+          disabled={disabled}
+          placeholder={f.placeholder ?? (f.mask === 'cpf_cnpj' && personType ? maskPlaceholder[personType === 'person' ? 'cpf' : 'cnpj'] : maskPlaceholder[f.mask])}
+          {...reg}
+          onChange={(e) => {
+            e.target.value = applyMask(f.mask!, e.target.value, getValues(PERSON_TYPE_FIELD))
+            return reg.onChange(e)
+          }}
+        />
+      ) : (
+        <TextInput type={f.type ?? 'text'} step={f.step} disabled={disabled} placeholder={f.placeholder} {...reg} />
+      )
     }
 
     return (

@@ -43,7 +43,7 @@ const kindOptions = [
 
 const addressFields: FieldDef[] = [
   { name: 'kind', label: 'Tipo', type: 'select', options: kindOptions, placeholder: 'Canteiro (padrão)' },
-  { name: 'postal_code', label: 'CEP', placeholder: '00000-000' },
+  { name: 'postal_code', label: 'CEP', mask: 'cep' },
   { name: 'street', label: 'Logradouro', required: true, full: true },
   { name: 'number', label: 'Número' },
   { name: 'complement', label: 'Complemento' },
