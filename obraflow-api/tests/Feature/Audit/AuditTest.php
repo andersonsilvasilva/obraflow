@@ -118,7 +118,7 @@ it('TODO evento do catálogo é de fato emitido por alguma operação real', fun
 
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
     // Os eventos da Fase 2 têm cobertura própria (tests/Feature/Registry, "todo evento da Fase 2 é emitido").
-    $faltando = array_values(array_diff(AuditEvent::all(), AuditEvent::phase2(), AuditEvent::phase3(), AuditEvent::phase4(), AuditEvent::calendar(), AuditEvent::phase5(), $emitidos));
+    $faltando = array_values(array_diff(AuditEvent::all(), AuditEvent::phase2(), AuditEvent::phase3(), AuditEvent::phase4(), AuditEvent::calendar(), AuditEvent::phase5(), AuditEvent::phase6(), $emitidos));
 
     expect($faltando)->toBe([], 'eventos do catálogo que NENHUMA operação emite: '.implode(', ', $faltando));
 });

@@ -145,6 +145,13 @@ final class AuditEvent
 
     public const CONTRACT_ADDENDUM_CANCELED = 'contract.addendum_canceled';
 
+    // Fase 6A — planejamento (atividades e dependências em registry.*, entity_type schedule_task, schedule_dependency)
+    public const SCHEDULE_CREATED = 'schedule.created';
+
+    public const SCHEDULE_DELETED = 'schedule.deleted';
+
+    public const SCHEDULE_BASELINE_CREATED = 'schedule.baseline_created';
+
     /** @return list<string> */
     public static function all(): array
     {
@@ -173,6 +180,12 @@ final class AuditEvent
     public static function phase5(): array
     {
         return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'contract.')));
+    }
+
+    /** Eventos da Fase 6 (cobertura verificada pelos testes do planejamento). @return list<string> */
+    public static function phase6(): array
+    {
+        return array_values(array_filter(self::all(), fn (string $e) => str_starts_with($e, 'schedule.')));
     }
 
     /** Eventos do calendário e dos horários da obra (cobertura verificada pelos testes do calendário). @return list<string> */

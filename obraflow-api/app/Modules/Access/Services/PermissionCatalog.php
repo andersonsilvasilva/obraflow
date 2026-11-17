@@ -55,6 +55,9 @@ final class PermissionCatalog
         // Fase 5A — contratos (sempre de uma obra: o acesso por obra também vale — A-45/D-P56)
         'contracts.view' => 'contracts',
         'contracts.manage' => 'contracts',
+        // Fase 6A — planejamento da obra (com o acesso por obra — D-P24)
+        'schedules.view' => 'schedules',
+        'schedules.manage' => 'schedules',
     ];
 
     public const ADMIN_ROLE = 'admin';
@@ -86,7 +89,9 @@ final class PermissionCatalog
                 // Fase 4: bases técnicas públicas
                 'references.view', 'budgets.view', 'resources.view',
                 // Fase 5: contratos (consulta)
-                'contracts.view'],
+                'contracts.view',
+                // Fase 6: planejamento (consulta)
+                'schedules.view'],
             'viewer' => ['tenant.view'],
         ];
     }

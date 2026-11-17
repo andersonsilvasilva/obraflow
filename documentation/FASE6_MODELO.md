@@ -120,3 +120,33 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Dias úteis × dias corridos:** a duração em dias úteis difere do que o Brickup mostra. A tela exibe os dois para evitar confusão.
 - **RDO com dados pessoais:** visitantes e funcionários. Só o necessário, com acesso por obra (LGPD, D-P07).
 - **Fotos:** volume de armazenamento. Uso o limite de tamanho dos documentos; compressão de imagem fica para depois.
+
+## 9. Andamento
+
+### 6A — etapa 1 (backend do cronograma)
+
+- **Gantt (D-P69):** SVAR React Gantt **2.8.2** (MIT), publicada em 27/10/2026. Usada só para desenhar, na etapa das telas. Na edição gratuita, caminho crítico, linha de base e reprogramação automática são recursos pagos; por isso esses cálculos ficam no servidor (D-P67), e a biblioteca só os exibe.
+- **Migrations** `2026_11_17_500001` a `500005`:
+  - tabelas `schedules`, `schedule_tasks`, `schedule_dependencies`, `schedule_baselines` e `schedule_progress_history`;
+  - FKs compostas e RESTRICT;
+  - **regras do banco:** marco com duração 0; atividade com ao menos 1 dia; % entre 0 e 100; dependência sem auto-ligação; até 10 linhas de base.
+- **Dias úteis (`WorkingCalendar`):** dia da semana com horário (aba Horários, herdado da empresa) e fora das exceções. Sem horário definido, todo dia é útil. Recorrente sem "até" continua valendo além do término previsto.
+- **Motor (`Scheduler`, CPM):**
+  - reprograma ASAP pelas dependências FS, SS, FF e SF, com atraso;
+  - calcula folga total e caminho crítico;
+  - etapas cobrem as filhas, com % ponderado pela duração;
+  - renumera a EAP;
+  - recusa ciclo.
+  - Roda a cada mudança e também na consulta, para que um feriado novo mova as datas na hora.
+  - **Desempenho:** 500 atividades encadeadas em 0,8 s.
+- **Serviço:**
+  - criar em branco ou do orçamento aprovado da obra (etapas → etapas; itens → atividades com quantidade, unidade e vínculo);
+  - atividades em até 6 níveis; o "+" numa atividade a transforma em etapa;
+  - mover, excluir (a etapa sai com tudo abaixo);
+  - avanço manual com histórico;
+  - até 10 linhas de base, com o desvio do término;
+  - "Deletar tudo", recusado se houver linha de base ou avanço registrado.
+- **API** `/projects/{uuid}/schedule`: ver (com `?baseline=n`), criar, apagar, tarefas (incluir, editar, mover, excluir), dependências e linhas de base. A resposta traz início e término, duração em dias úteis e em dias corridos, folga, caminho crítico, atrasadas e o resumo.
+- **Permissões:** `schedules.view` e `schedules.manage` (37 no catálogo), mais o acesso por obra; o `member` de tenants novos recebe `schedules.view`.
+- **Auditoria:** `schedule.created`, `schedule.deleted` e `schedule.baseline_created`. Atividades e dependências auditam em `registry.*`.
+- **Testes:** `Feature/Planning/ScheduleApiTest` (8). Suíte 452/452.

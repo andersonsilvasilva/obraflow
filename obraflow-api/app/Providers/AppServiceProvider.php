@@ -47,6 +47,8 @@ use App\Models\Resource;
 use App\Models\ResourceGroup;
 use App\Models\ResourceLaborCost;
 use App\Models\Role;
+use App\Models\ScheduleDependency;
+use App\Models\ScheduleTask;
 use App\Models\Supplier;
 use App\Models\SupplierAddress;
 use App\Models\SupplierContact;
@@ -158,6 +160,8 @@ class AppServiceProvider extends ServiceProvider
             'contract_item' => ContractItem::class,
             'contract_addendum' => ContractAddendum::class,
             'contract_addendum_item' => ContractAddendumItem::class,
+            'schedule_task' => ScheduleTask::class,
+            'schedule_dependency' => ScheduleDependency::class,
             'budget_version' => BudgetVersion::class,
             'budget_group' => BudgetGroup::class,
             'budget_item' => BudgetItem::class,

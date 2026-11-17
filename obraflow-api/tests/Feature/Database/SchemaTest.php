@@ -39,6 +39,8 @@ const PHASE4_TABLES = [
 /** Fase 5A (FASE5_MODELO.md): contratos da obra. */
 const PHASE5_TABLES = [
     'contract_addenda', 'contract_addendum_items', 'contract_items', 'contract_status_history', 'contracts',
+    // 6A — planejamento
+    'schedule_baselines', 'schedule_dependencies', 'schedule_progress_history', 'schedule_tasks', 'schedules',
 ];
 
 function dbName(): string
