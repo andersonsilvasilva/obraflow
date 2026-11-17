@@ -22,6 +22,7 @@ use App\Modules\Registry\Http\Requests\AddressRequest;
 use App\Modules\Registry\Http\Resources\AddressResource;
 use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +36,7 @@ class ProjectController extends Controller
 {
     use ListsRecords;
 
-    private const RELATIONS = ['company', 'customer', 'technicalManager', 'foreman'];
+    private const RELATIONS = ['company', 'customer', 'technicalManager', 'foreman', 'siteAddress'];
 
     /** Ativas = em andamento ou a iniciar; inativas = encerradas (aba do painel, A-46). */
     private const ACTIVE = ['planning', 'in_progress', 'paused', 'delayed'];
@@ -96,11 +97,13 @@ class ProjectController extends Controller
         $project = new Project;
         $project->created_by = $request->user()->getKey();
         $data = $request->payload();
-        DB::transaction(function () use ($project, &$data, $request) {
+        $site = $this->pullSiteAddress($data);
+        DB::transaction(function () use ($project, &$data, $request, $site) {
             if (blank($data['code'] ?? null)) { // código automático com o ano da obra
                 $data['code'] = $this->codes->next(ProjectCodeGenerator::yearOf($data['start_date'] ?? null));
             }
-            $this->registry->create($project, $data, $request->user());
+            $this->registry->create($project, $this->withDeliveryDate($project, $data), $request->user());
+            $this->saveSiteAddress($project, $site, $request->user());
         });
 
         return $this->respond($request, $project->load(self::RELATIONS), 201);
@@ -108,7 +111,13 @@ class ProjectController extends Controller
 
     public function update(ProjectRequest $request, string $uuid): JsonResponse
     {
-        $project = $this->registry->update($this->find($request, $uuid, 'edit'), $request->payload(), $request->user());
+        $project = $this->find($request, $uuid, 'edit');
+        $data = $request->payload();
+        $site = $this->pullSiteAddress($data);
+        DB::transaction(function () use ($project, $data, $site, $request) {
+            $this->registry->update($project, $this->withDeliveryDate($project, $data), $request->user());
+            $this->saveSiteAddress($project, $site, $request->user());
+        });
 
         return $this->respond($request, $project->load(self::RELATIONS));
     }
@@ -295,6 +304,44 @@ class ProjectController extends Controller
         return UserProjectAccess::query()->join('projects', 'projects.id', '=', 'user_project_access.project_id')
             ->where('user_project_access.user_id', $user->getKey())->whereIn('projects.uuid', $uuids)
             ->pluck('user_project_access.access_level', 'projects.uuid')->all();
+    }
+
+    /** Tira o endereço do canteiro dos dados da obra (vai para project_addresses). Vazio = não mexe. */
+    private function pullSiteAddress(array &$data): ?array
+    {
+        $site = $data['site_address'] ?? null;
+        unset($data['site_address']);
+
+        return is_array($site) && filled($site['street'] ?? null) ? $site : null;
+    }
+
+    /** Cria ou atualiza o endereço do canteiro (A-47); as coordenadas do mapa são preservadas se o endereço não mudou. */
+    private function saveSiteAddress(Project $project, ?array $site, User $actor): void
+    {
+        if ($site === null) {
+            return;
+        }
+        $fields = array_intersect_key($site, array_flip(['postal_code', 'street', 'number', 'complement', 'district', 'city', 'state']));
+        $current = $project->siteAddress()->first();
+        if ($current === null) {
+            $this->registry->create($project->addresses()->make(), $fields + ['kind' => 'site'], $actor);
+
+            return;
+        }
+        $moved = collect($fields)->some(fn ($v, $k) => (string) $v !== (string) $current->{$k});
+        $this->registry->update($current, $moved ? $fields + ['latitude' => null, 'longitude' => null] : $fields, $actor);
+    }
+
+    /** Prazo em meses sem previsão de entrega informada: entrega = data inicial + prazo (A-47). */
+    private function withDeliveryDate(Project $project, array $data): array
+    {
+        $months = $data['duration_months'] ?? null;
+        $start = $data['start_date'] ?? $project->start_date?->toDateString();
+        if ($months && $start && blank($data['expected_end_date'] ?? null) && ($project->expected_end_date === null || array_key_exists('duration_months', $data))) {
+            $data['expected_end_date'] = CarbonImmutable::parse($start)->addMonthsNoOverflow((int) $months)->toDateString();
+        }
+
+        return $data;
     }
 
     private function guardSingleMain(Project $project, string $kind, ?int $ignoreId): void

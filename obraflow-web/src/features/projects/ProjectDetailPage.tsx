@@ -17,11 +17,13 @@ import { useEmployeeOptions } from '@/features/registry/lookups'
 import { getErrorMessage } from '@/lib/api-error'
 import { http } from '@/lib/http'
 import { formatCurrency, formatDateOrDash } from '@/utils/format'
+import { ProjectMap } from './ProjectMap'
 import { ProjectContractsTab } from '@/features/contracts/ProjectContractsTab'
 import { CalendarTab } from './calendar/CalendarTab'
 import { calendarApi } from './calendar/api'
 import { ScheduleEditor } from './calendar/ScheduleEditor'
-import { projectFields, projectToForm, useProjectLookups } from './form'
+import { projectBody, projectFields, projectToForm, regimeOptions, useProjectLookups } from './form'
+import { maskCno } from '@/utils/masks'
 import {
   atLeast,
   levelOptions,
@@ -136,7 +138,12 @@ export function ProjectDetailPage() {
       <Panel className="p-4">
         <Tabs tabs={tabs} active={tab} onChange={setTab} label="Seções da obra">
           {tab === 'geral' && <OverviewTab project={project} />}
-          {tab === 'dados' && <GeneralTab project={project} />}
+          {tab === 'dados' && (
+            <>
+              <GeneralTab project={project} />
+              <ProjectMap project={project} canEdit={canEdit} onSaved={refresh} />
+            </>
+          )}
           {tab === 'endereco' && (
             <ListSection
               title="Endereços"
@@ -235,7 +242,7 @@ export function ProjectDetailPage() {
           lookups={lookups}
           initial={projectToForm(project)}
           onClose={() => setDialog(null)}
-          onSubmit={(b) => projectsApi.update(uuid, b)}
+          onSubmit={(b) => projectsApi.update(uuid, projectBody(b))}
           onSaved={() => done('Obra atualizada')}
         />
       )}
@@ -329,12 +336,23 @@ function OverviewTab({ project }: { project: Project }) {
   )
 }
 
+function siteAddressText(project: Project): string {
+  const a = project.site_address
+  if (!a) return '—'
+  return `${a.street}${a.number ? `, ${a.number}` : ''}${a.district ? ` — ${a.district}` : ''} — ${a.city}/${a.state}`
+}
+
 function GeneralTab({ project }: { project: Project }) {
   const rows: [string, ReactNode][] = [
     ['Empresa', project.company?.legal_name ?? '—'],
     ['Cliente', project.customer?.name ?? '—'],
     ['Responsável técnico', project.technical_manager?.name ?? '—'],
     ['Encarregado', project.foreman?.name ?? '—'],
+    ['Endereço do canteiro', siteAddressText(project)],
+    ['Área a ser construída', project.built_area ? `${Number(project.built_area).toLocaleString('pt-BR')} m²` : '—'],
+    ['Prazo', project.duration_months ? `${project.duration_months} meses` : '—'],
+    ['Encargo social', regimeOptions.find((o) => o.value === project.social_charges_regime)?.label ?? '—'],
+    ['CNO', project.cno ? maskCno(project.cno) : '—'],
     ['Início', formatDateOrDash(project.start_date)],
     ['Previsão de término', formatDateOrDash(project.expected_end_date)],
     ['Término real', formatDateOrDash(project.actual_end_date)],

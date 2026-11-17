@@ -8,6 +8,7 @@ use App\Modules\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -31,7 +32,7 @@ class Project extends Model
     ];
 
     protected $fillable = [
-        'company_id', 'customer_id', 'code', 'name', 'description', 'technical_manager_id', 'foreman_id', 'contract_value',
+        'company_id', 'customer_id', 'code', 'name', 'description', 'technical_manager_id', 'foreman_id', 'contract_value', 'built_area', 'duration_months', 'cno', 'social_charges_regime',
         'progress', 'start_date', 'expected_end_date', 'actual_end_date',
     ];
 
@@ -40,7 +41,7 @@ class Project extends Model
     protected function casts(): array
     {
         return [
-            'contract_value' => 'decimal:2', 'progress' => 'integer',
+            'contract_value' => 'decimal:2', 'progress' => 'integer', 'built_area' => 'decimal:2', 'duration_months' => 'integer',
             'start_date' => 'date', 'expected_end_date' => 'date', 'actual_end_date' => 'date',
         ];
     }
@@ -85,6 +86,12 @@ class Project extends Model
     public function addresses(): HasMany
     {
         return $this->hasMany(ProjectAddress::class);
+    }
+
+    /** Endereço do canteiro (o primeiro de tipo `site`): editado no próprio formulário da obra e usado no mapa (A-47). */
+    public function siteAddress(): HasOne
+    {
+        return $this->hasOne(ProjectAddress::class)->where('kind', 'site')->oldest('id');
     }
 
     public function phases(): HasMany

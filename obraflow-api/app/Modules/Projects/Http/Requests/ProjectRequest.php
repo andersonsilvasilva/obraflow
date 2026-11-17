@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Project;
+use App\Modules\Registry\Http\Requests\AddressRequest;
 use App\Modules\Teams\Http\Requests\TenantRequest;
 use Illuminate\Validation\Rule;
 
@@ -41,11 +42,41 @@ class ProjectRequest extends TenantRequest
             'foreman_uuid' => ['nullable', 'uuid', $this->existsInTenant('employees')->where('company_id', $companyId)],
             'contract_value' => ['nullable', 'numeric', 'min:0', 'max:9999999999999.99', 'decimal:0,2'],
             'progress' => ['sometimes', 'integer', 'between:0,100'],
+            // A-47: dados técnicos e endereço do canteiro no próprio formulário
+            'built_area' => ['nullable', 'numeric', 'gt:0', 'max:9999999999.99', 'decimal:0,2'],
+            'duration_months' => ['nullable', 'integer', 'between:1,600'],
+            'cno' => ['nullable', 'digits:12'],
+            'social_charges_regime' => ['nullable', Rule::in(['with_relief', 'without_relief', 'not_applicable'])],
+            'site_address' => ['nullable', 'array'],
+            'site_address.postal_code' => ['nullable', 'digits:8'],
+            'site_address.street' => ['nullable', 'string', 'max:200', 'required_with:site_address.city,site_address.state,site_address.number'],
+            'site_address.number' => ['nullable', 'string', 'max:20'],
+            'site_address.complement' => ['nullable', 'string', 'max:100'],
+            'site_address.district' => ['nullable', 'string', 'max:100'],
+            'site_address.city' => ['nullable', 'string', 'max:100', 'required_with:site_address.street'],
+            'site_address.state' => ['nullable', Rule::in(AddressRequest::UFS), 'required_with:site_address.street'],
             'start_date' => ['nullable', 'date'],
             'expected_end_date' => array_filter(['nullable', 'date', $this->notBefore('start_date', $current?->start_date)]),
             'actual_end_date' => array_filter(['nullable', 'date', $this->notBefore('start_date', $current?->start_date)]),
             'status' => ['prohibited'],
         ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'built_area' => 'área a ser construída', 'duration_months' => 'prazo (meses)', 'cno' => 'CNO', 'social_charges_regime' => 'encargo social',
+            'site_address.postal_code' => 'CEP', 'site_address.street' => 'logradouro', 'site_address.city' => 'cidade', 'site_address.state' => 'UF',
+        ];
+    }
+
+    /** CNO e CEP chegam com máscara da tela: grava só dígitos. */
+    protected function prepareForValidation(): void
+    {
+        $this->digitsOnly('cno');
+        if (is_array($this->input('site_address')) && filled($this->input('site_address.postal_code'))) {
+            $this->merge(['site_address' => ['postal_code' => preg_replace('/\D+/', '', (string) $this->input('site_address.postal_code'))] + $this->input('site_address')]);
+        }
     }
 
     public function messages(): array

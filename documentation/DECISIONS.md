@@ -34,6 +34,12 @@ Formato: ID · data · decisão · justificativa. Decisões de dados: [DB_DECISI
 | A-29 | 2026-11-13 | **Fase 2 iniciada; D-P11…D-P18 aprovadas** (CNPJ no tenant e na 1ª empresa; contatos/endereços em tabelas dedicadas com FK composta; `active_marker` para soft delete × unicidade; unidades por tenant; documentos em disco privado + URL assinada; `user_companies` na Fase 3; clientes/fornecedores por empresa; backend antes das telas) | [FASE2_MODELO.md](FASE2_MODELO.md) |
 | A-30 | 2026-11-13 | CNPJ `61693043000194` gravado em `tenants.document_number` da HighTech (autorizado; auditado como `tenant.updated`). Razão social gravada na sequência (autorizada; `tenant.updated`); o nome de exibição (`name`) não foi alterado | [PROVISIONAMENTO.md](PROVISIONAMENTO.md) |
 | A-31 | 2026-11-13 | **Fase 2 implementada** (etapas 1–5). Banco `obraflow` migrado (33 migrations) e papel `admin` da HighTech com as 10 permissões de cadastros, com autorização expressa; `member` inalterado | [FASE2_RELATORIO.md](FASE2_RELATORIO.md) |
+| A-47 | 2026-11-17 | **Cadastro da obra como o do Brickup** (escolha do responsável):
+- endereço do canteiro no próprio formulário, com busca de CEP;
+- **mapa OpenStreetMap** (Leaflet): "Localizar pelo endereço" envia só o endereço da obra ao Nominatim, quando o usuário pede; o pino arrastável grava as coordenadas no endereço; se o endereço muda, as coordenadas são limpas;
+- **dados técnicos**: área a ser construída, prazo em meses (calcula a entrega) e CNO;
+- **encargo social da obra** (com, sem desoneração ou sem encargo): o orçamento manual herda; a base SINAPI deve ter o mesmo regime (D-P03).
+Migration `410001`. Tipo de contrato, taxa administrativa, telefone, SFObras, ID externo, CNPJs vinculados e SUDECAP ficaram de fora. | [SCREEN_REFERENCES.md](SCREEN_REFERENCES.md) |
 | A-46 | 2026-11-17 | **Painel de obras em cards** (referência Brickup), pedido do responsável:
 - abas Todas/Ativas/Inativas, filtros, indicadores, cards, menu ⋮ e aba **Geral** na obra;
 - indicadores ainda sem dados (financeiro, compras, RDO, atividades) aparecem como "em breve", nunca com valor inventado;

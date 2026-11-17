@@ -5,6 +5,7 @@ use App\Models\Company;
 use App\Models\ProjectStatusHistory;
 use App\Modules\Audit\AuditEvent;
 use App\Modules\Tenancy\TenantContext;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Tests\Support\Browser;
 use Tests\Support\Scenario;
@@ -292,4 +293,47 @@ it('painel de obras (A-46): encarregado da mesma empresa, filtros por situação
     $this->b->get("/api/v1/projects?technical_manager_uuid={$enc}")->assertOk()->assertJsonPath('meta.total', 0);
     $this->b->get("/api/v1/projects/{$outra}")->assertOk()->assertJsonPath('data.elapsed_days', 0)->assertJsonPath('data.active_members', 0); // sem data de início
     $this->b->delete("/api/v1/employees/{$enc}")->assertStatus(409); // encarregado em uso
+});
+
+it('dados técnicos e endereço do canteiro no formulário (A-47): CNO, área, prazo calcula a entrega, coordenadas preservadas', function () {
+    $this->b->put("/api/v1/projects/{$this->obra}", ['cno' => '12.345.67890/1'])->assertUnprocessable()->assertJsonValidationErrors('cno', 'error.details'); // 11 dígitos
+    $this->b->put("/api/v1/projects/{$this->obra}", ['built_area' => '0'])->assertUnprocessable();
+    $this->b->put("/api/v1/projects/{$this->obra}", ['cno' => '12.345.67890/12', 'built_area' => '180.50', 'start_date' => '2026-01-31', 'duration_months' => 1])
+        ->assertOk()->assertJsonPath('data.cno', '123456789012')->assertJsonPath('data.built_area', '180.50')
+        ->assertJsonPath('data.duration_months', 1)->assertJsonPath('data.expected_end_date', '2026-02-28'); // sem transbordar o mês
+    $this->b->put("/api/v1/projects/{$this->obra}", ['duration_months' => 3, 'expected_end_date' => '2026-12-31'])->assertOk()
+        ->assertJsonPath('data.expected_end_date', '2026-12-31'); // entrega informada prevalece
+
+    $this->b->put("/api/v1/projects/{$this->obra}", ['site_address' => ['street' => 'Rua DEMO']])->assertUnprocessable()
+        ->assertJsonValidationErrors(['site_address.city', 'site_address.state'], 'error.details');
+    $addr = ['postal_code' => '78068-727', 'street' => 'Rua DEMO', 'number' => '10', 'district' => 'Centro DEMO', 'city' => 'Cuiabá', 'state' => 'MT'];
+    $this->b->put("/api/v1/projects/{$this->obra}", ['site_address' => $addr])->assertOk()
+        ->assertJsonPath('data.site_address.postal_code', '78068727')->assertJsonPath('data.site_address.kind', 'site');
+    $id = $this->b->get("/api/v1/projects/{$this->obra}")->json('data.site_address.id');
+    $this->b->put("/api/v1/projects/{$this->obra}/addresses/{$id}", ['latitude' => '-15.6', 'longitude' => '-56.1'])->assertOk();
+
+    $this->b->put("/api/v1/projects/{$this->obra}", ['name' => 'DEMO Renomeada', 'site_address' => $addr])->assertOk()
+        ->assertJsonPath('data.site_address.latitude', '-15.6000000'); // endereço igual: mantém o pino
+    $this->b->put("/api/v1/projects/{$this->obra}", ['site_address' => ['number' => '20'] + $addr])->assertOk()
+        ->assertJsonPath('data.site_address.number', '20')->assertJsonPath('data.site_address.latitude', null); // mudou: localizar de novo
+    expect($this->b->get("/api/v1/projects/{$this->obra}")->json('data.addresses'))->toHaveCount(1); // atualiza, não duplica
+
+    $nova = $this->b->post('/api/v1/projects', ['company_uuid' => $this->co, 'name' => 'DEMO Com endereço', 'site_address' => $addr])->assertCreated()->json('data.uuid');
+    $this->b->get('/api/v1/projects?per_page=50')->assertOk()->assertJsonPath('data.0.site_address.city', 'Cuiabá');
+    $this->b->get("/api/v1/projects/{$nova}")->assertJsonPath('data.site_address.street', 'Rua DEMO');
+});
+
+it('encargo social da obra (A-47, D-P03): orçamento manual herda; base SINAPI com outro regime é recusada', function () {
+    $this->b->put("/api/v1/projects/{$this->obra}", ['social_charges_regime' => 'x'])->assertUnprocessable();
+    $this->b->put("/api/v1/projects/{$this->obra}", ['social_charges_regime' => 'with_relief'])->assertOk()->assertJsonPath('data.social_charges_regime', 'with_relief');
+
+    $this->b->post('/api/v1/budgets', ['company_uuid' => $this->co, 'project_uuid' => $this->obra, 'title' => 'DEMO', 'mode' => 'manual'])
+        ->assertCreated()->assertJsonPath('data.social_charges_regime', 'with_relief');
+
+    $src = DB::table('reference_sources')->insertGetId(['code' => 'SINAPI', 'name' => 'SINAPI']);
+    $nao = DB::table('reference_datasets')->insertGetId(['source_id' => $src, 'version' => '2024-12', 'state' => 'MT', 'charges_regime' => 'without_relief', 'status' => 'active']);
+    $des = DB::table('reference_datasets')->insertGetId(['source_id' => $src, 'version' => '2024-12', 'state' => 'MT', 'charges_regime' => 'with_relief', 'status' => 'active']);
+    $ref = ['company_uuid' => $this->co, 'project_uuid' => $this->obra, 'title' => 'DEMO', 'mode' => 'reference'];
+    $this->b->post('/api/v1/budgets', $ref + ['reference_dataset_id' => $nao])->assertUnprocessable()->assertJsonPath('error.code', 'domain_rule');
+    $this->b->post('/api/v1/budgets', $ref + ['reference_dataset_id' => $des])->assertCreated()->assertJsonPath('data.social_charges_regime', 'with_relief');
 });

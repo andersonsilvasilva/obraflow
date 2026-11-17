@@ -3,7 +3,7 @@
  * A máscara é só apresentação: a API grava documentos e CEP SÓ COM DÍGITOS e confere tudo de novo (é a autoridade).
  */
 
-export type MaskKind = 'cpf' | 'cnpj' | 'cpf_cnpj' | 'phone' | 'cep'
+export type MaskKind = 'cpf' | 'cnpj' | 'cpf_cnpj' | 'phone' | 'cep' | 'cno'
 
 const digits = (v: string) => v.replace(/\D/g, '')
 
@@ -23,6 +23,8 @@ function pattern(value: string, mask: string): string {
 export const maskCpf = (v: string) => pattern(v, '000.000.000-00')
 export const maskCnpj = (v: string) => pattern(v, '00.000.000/0000-00')
 export const maskCep = (v: string) => pattern(v, '00000-000')
+/** CNO — Cadastro Nacional de Obras (Receita Federal): 12 dígitos. */
+export const maskCno = (v: string) => pattern(v, '00.000.00000/00')
 
 /** Até 11 dígitos é CPF; mais que isso, CNPJ (quando o tipo de pessoa não é conhecido). */
 export const maskCpfCnpj = (v: string) => (digits(v).length <= 11 ? maskCpf(v) : maskCnpj(v))
@@ -51,6 +53,8 @@ export function applyMask(kind: MaskKind, value: string, personType?: string): s
       return maskPhone(value)
     case 'cep':
       return maskCep(value)
+    case 'cno':
+      return maskCno(value)
   }
 }
 
@@ -95,6 +99,8 @@ export function validateMask(kind: MaskKind, value: string, personType?: string)
       return d.length === 10 || d.length === 11 || 'Telefone deve ter DDD + 8 ou 9 dígitos.'
     case 'cep':
       return d.length === 8 || 'CEP deve ter 8 dígitos.'
+    case 'cno':
+      return d.length === 12 || 'CNO deve ter 12 dígitos.'
   }
 }
 
@@ -104,6 +110,7 @@ export const maskPlaceholder: Record<MaskKind, string> = {
   cpf_cnpj: 'CPF ou CNPJ',
   phone: '(00) 00000-0000',
   cep: '00000-000',
+  cno: '00.000.00000/00',
 }
 
 /** Formatação para exibição em listas (telefone gravado com ou sem máscara). */

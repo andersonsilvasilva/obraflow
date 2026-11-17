@@ -15,7 +15,7 @@ import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { formatDateOrDash } from '@/utils/format'
 import { atLeast, projectsApi, statusName, statusTone, transitions, type Project } from './api'
-import { projectFields, projectToForm, useProjectLookups } from './form'
+import { projectBody, projectFields, projectToForm, useProjectLookups } from './form'
 
 type Situation = '' | 'active' | 'inactive'
 type View = 'grid' | 'list'
@@ -232,8 +232,8 @@ export function ProjectsListPage() {
           initial={form.row ? projectToForm(form.row) : {}}
           onClose={() => setForm(null)}
           onSubmit={async (b) => {
-            if (form.row) return projectsApi.update(form.row.uuid, b)
-            const created = await projectsApi.create(b)
+            if (form.row) return projectsApi.update(form.row.uuid, projectBody(b))
+            const created = await projectsApi.create(projectBody(b))
             navigate(`/obras/${created.uuid}`)
           }}
           onSaved={() => {

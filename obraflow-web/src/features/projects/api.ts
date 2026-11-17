@@ -41,6 +41,12 @@ export interface Project {
   status: ProjectStatus
   progress: number
   contract_value: string | null
+  /** A-47: dados técnicos, encargo social e endereço do canteiro (com coordenadas do mapa). */
+  built_area?: string | null
+  duration_months?: number | null
+  cno?: string | null
+  social_charges_regime?: 'with_relief' | 'without_relief' | 'not_applicable' | null
+  site_address?: (Address & { latitude: string | null; longitude: string | null }) | null
   start_date: string | null
   expected_end_date: string | null
   actual_end_date: string | null

@@ -11,6 +11,7 @@ use App\Models\BudgetIndirectCost;
 use App\Models\BudgetItem;
 use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
+use App\Models\Project;
 use App\Models\ReferenceDataset;
 use App\Models\Resource;
 use App\Models\User;
@@ -39,14 +40,19 @@ final class BudgetService
     public function create(array $data, User $actor): Budget
     {
         return DB::transaction(function () use ($data, $actor) {
+            // encargo social da obra (A-47, D-P03): padrão do orçamento manual; a base escolhida deve ter o mesmo regime
+            $projectRegime = ! empty($data['project_id']) ? Project::query()->whereKey($data['project_id'])->value('social_charges_regime') : null;
             if (($data['mode'] ?? null) === 'reference') {
                 $ds = ReferenceDataset::query()->whereKey($data['reference_dataset_id'] ?? 0)->where('status', 'active')->first()
                     ?? throw new DomainRuleException('Escolha uma base de referência ativa.');
+                if (in_array($projectRegime, ['with_relief', 'without_relief'], true) && $projectRegime !== $ds->charges_regime) {
+                    throw new DomainRuleException('A obra usa '.($projectRegime === 'with_relief' ? 'COM' : 'SEM').' desoneração: escolha uma base com o mesmo regime de encargos.');
+                }
                 $data['state'] = $ds->state;
                 $data['social_charges_regime'] = $ds->charges_regime;
             } else {
                 $data['reference_dataset_id'] = null;
-                $data['social_charges_regime'] ??= 'not_applicable';
+                $data['social_charges_regime'] ??= $projectRegime ?? 'not_applicable';
             }
 
             if (blank($data['code'] ?? null)) { // código automático com o ano da data-base
