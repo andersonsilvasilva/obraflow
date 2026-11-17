@@ -43,3 +43,9 @@
 - Selects carregam até 100 itens ativos (busca incremental fica para depois).
 - O fornecedor principal do equipamento não é filtrado pela empresa no select; a API recusa com 422.
 - Documentos (upload e vínculo) ainda não têm tela.
+
+## Homologação (2026-11-17)
+
+**Etapa das telas homologada pelo responsável** ("eu aprovo, e registre; a homologação é minha"), após o teste no navegador com o banco `obraflow`.
+- Commit `d4fb5b5`, com CI run 43972095774 verde.
+- As limitações conhecidas acima seguem como pendências.
