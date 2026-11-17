@@ -249,3 +249,24 @@ Commit `8c6b862`. CI verde: run 44099384177 (`011041f`) e run 44101062816 (`8c6b
 **Testes:** `Feature/Budgets/BudgetApiTest` (7): totais pela API (preço final 219,74 com BDI do TCU, indiretos e desconto), validação, fluxo completo com nova versão e substituição, aprovador sem edição, acesso por obra, isolamento e token, eventos. Suíte **414/414 (2.795 asserções)**.
 
 **Banco `obraflow`:** sem alterações. As migrations da 4B (11 tabelas) e as permissões de orçamento serão pedidas no fechamento.
+Commit `8387d64`.
+
+### 4B.7 — Telas de orçamento (padrão de layout)
+
+- **Lista** (`/orcamentos`), na base de listagem L1–L6: busca, filtros por status e empresa, preço final da versão atual.
+  - **Criação** em modal: empresa, código, título, tipo (base de referência, manual ou do cliente), base SINAPI (UF e regime vêm dela), obra, cliente.
+  - Ao criar, o orçamento abre direto.
+- **Detalhe** (`/orcamentos/:uuid`):
+  - **Cabeçalho:** status, regime, base, seletor de versão; ações do fluxo conforme o status e as `abilities` (Enviar, Devolver, Aprovar com confirmação sobre o bloqueio, Rejeitar com motivo, Reabrir, Nova versão).
+  - **Indicadores:** custo direto, BDI, indiretos, descontos e preço final.
+  - **Planilha:** EAP com subtotais e itens, com origem (oficial/ajustado, fonte, código, UF, competência); etapa, item manual, edição e exclusão; ícone de pasta para a composição copiada e os insumos finais.
+  - **Da base de referência:** busca composições ou insumos nas bases compatíveis com o regime, com preço publicado; escolha da etapa e da quantidade.
+  - **BDI e indiretos:** BDI global informado ou pela fórmula do TCU (componentes), BDIs por etapa ou item, custos indiretos (valor ou % do direto), desconto global.
+  - **Curva ABC:** serviços e insumos, com faixas A, B e C.
+  - **Histórico:** status e decisões, com o `totals_hash`.
+- **Edição:** só com a versão atual em rascunho e não bloqueada. Versões antigas ficam somente leitura, com aviso.
+- **Valores:** todos vêm da API como texto exato. O navegador só formata, não recalcula (D-P32).
+- **Protótipos substituídos:**
+  - **Removidos:** `BudgetCreatePage`, `BudgetEditorPage`, `BudgetFinalizationPage`, `BudgetWorkspace`, `CompositionPanel` e o cálculo local `calc.ts` (com seus 7 testes).
+  - **Mantido:** o protótipo "Orçamento inteligente (IA)", como **demo** em "Em preparação" (IA fora desta fase).
+- **Testes frontend:** **25/25**, com o novo `budgets.test.ts` (ações do fluxo por status/permissão, árvore de etapas). `tsc`, lint e build ok.

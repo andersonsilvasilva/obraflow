@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/app/layouts/AppLayout'
 import { ErrorState } from '@/components/feedback/states'
 import { AuthRoot } from '@/features/auth/AuthRoot'
@@ -6,12 +6,10 @@ import { GuestOnly, RequireAuth } from '@/features/auth/guards'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { NoPermissionPage } from '@/features/auth/NoPermissionPage'
 import { SelectTenantPage } from '@/features/auth/SelectTenantPage'
-import { BudgetCreatePage } from '@/features/budgets/BudgetCreatePage'
-import { BudgetEditorPage } from '@/features/budgets/BudgetEditorPage'
-import { BudgetFinalizationPage } from '@/features/budgets/BudgetFinalizationPage'
+import { BudgetDetailPage } from '@/features/budgets/BudgetDetailPage'
 import { BudgetsListPage } from '@/features/budgets/BudgetsListPage'
-import { BudgetWorkspace } from '@/features/budgets/BudgetWorkspace'
 import { SmartBudgetPage } from '@/features/budgets/SmartBudgetPage'
+import { RequirePermission } from '@/features/auth/guards'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ModulePage } from '@/features/modules/ModulePage'
 import { ProcurementPage } from '@/features/procurement/ProcurementPage'
@@ -36,22 +34,13 @@ export const router = createBrowserRouter([
               { index: true, element: <DashboardPage /> },
               ...registryRoutes,
               {
-                path: 'orcamentos',
+                element: <RequirePermission permission="budgets.view" />,
                 children: [
-                  { index: true, element: <BudgetsListPage /> },
-                  { path: 'novo', element: <BudgetCreatePage /> },
-                  { path: 'inteligente', element: <SmartBudgetPage /> },
-                  {
-                    path: ':id',
-                    element: <BudgetWorkspace />,
-                    children: [
-                      { index: true, element: <Navigate to="preencher" replace /> },
-                      { path: 'preencher', element: <BudgetEditorPage /> },
-                      { path: 'finalizacao', element: <BudgetFinalizationPage /> },
-                    ],
-                  },
+                  { path: 'orcamentos', element: <BudgetsListPage /> },
+                  { path: 'orcamentos/:uuid', element: <BudgetDetailPage /> },
                 ],
               },
+              { path: 'orcamento-inteligente', element: <SmartBudgetPage /> },
               { path: 'suprimentos', element: <ProcurementPage /> },
               { path: 'contratos', element: m('Contratos', 'Contratos com clientes e fornecedores.') },
               { path: 'planejamento', element: m('Planejamento', 'Cronogramas, dependências e linha de base.') },

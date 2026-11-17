@@ -1,83 +1,111 @@
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Sparkles } from 'lucide-react'
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { DataTable, Panel, TableToolbar, type Column } from '@/components/data-display/DataTable'
-import { DemoBanner, StatusBadge } from '@/components/data-display/indicators'
-import { QueryBoundary } from '@/components/feedback/QueryBoundary'
-import { FormField, SearchInput, SelectInput } from '@/components/forms/fields'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Button } from '@/components/ui/button'
-import { budgetStatusMeta } from '@/features/shared'
-import { budgetsService } from '@/services'
-import type { Budget } from '@/types'
-import { formatCurrency, formatDate } from '@/utils/format'
+import { useNavigate } from 'react-router-dom'
+import { StatusBadge } from '@/components/data-display/indicators'
+import { useAuth } from '@/features/auth/auth-context'
+import type { FieldDef } from '@/features/registry/components/EntityFormModal'
+import { ResourcePage, type ResourceConfig } from '@/features/registry/components/ResourcePage'
+import { useCompanyOptions, useCustomerOptions } from '@/features/registry/lookups'
+import { http } from '@/lib/http'
+import { formatCurrency } from '@/utils/format'
+import { budgetsApi, budgetStatusLabel, budgetStatusOptions, budgetStatusTone, modeOptions, regimeLabel, type Budget } from './api'
 
+const fields: FieldDef[] = [
+  { name: 'company_uuid', label: 'Empresa', type: 'select', options: 'companies', required: true, createOnly: true, full: true },
+  { name: 'code', label: 'Código', required: true, placeholder: 'Ex.: ORC-001' },
+  { name: 'title', label: 'Título', required: true },
+  { name: 'mode', label: 'Tipo de orçamento', type: 'radio', options: modeOptions, required: true, createOnly: true, full: true },
+  {
+    name: 'reference_dataset_id',
+    label: 'Base de referência',
+    type: 'select',
+    options: 'datasets',
+    createOnly: true,
+    full: true,
+    help: 'UF e regime de encargos vêm da base escolhida (D-P03).',
+    visible: (v) => v.mode === 'reference',
+  },
+  { name: 'project_uuid', label: 'Obra', type: 'select', options: 'projects', help: 'Obra da mesma empresa. O acesso ao orçamento segue o acesso à obra.' },
+  { name: 'customer_uuid', label: 'Cliente', type: 'select', options: 'customers' },
+  { name: 'reference_date', label: 'Data-base', type: 'date', more: true },
+  { name: 'notes', label: 'Observações', type: 'textarea', full: true, more: true },
+]
+
+function useLookups() {
+  const { can } = useAuth()
+  const datasets = useQuery({
+    queryKey: ['reference-datasets'],
+    queryFn: () => budgetsApi.references.datasets(),
+    enabled: can('references.view'),
+    staleTime: 300_000,
+  })
+  const projects = useQuery({
+    queryKey: ['projects', 'options'],
+    queryFn: () => http<{ data: { uuid: string; code: string; name: string }[] }>('/projects', { query: { per_page: 100 } }),
+    enabled: can('projects.view'),
+    staleTime: 60_000,
+  })
+  return {
+    companies: useCompanyOptions(),
+    customers: useCustomerOptions(),
+    datasets: (datasets.data ?? []).map((d) => ({
+      value: String(d.id),
+      label: `${d.source?.code ?? ''} ${d.state} ${d.competency.slice(5)}/${d.competency.slice(0, 4)} — ${regimeLabel[d.charges_regime]}`,
+    })),
+    projects: (projects.data?.data ?? []).map((p) => ({ value: p.uuid, label: `${p.code} — ${p.name}` })),
+  }
+}
+
+/** Orçamentos visíveis (sem obra, ou de obras liberadas — D-P24). Criar abre o orçamento. */
 export function BudgetsListPage() {
-  const query = useQuery({ queryKey: ['budgets'], queryFn: budgetsService.list })
   const navigate = useNavigate()
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('')
 
-  const columns: Column<Budget>[] = [
-    { key: 'code', header: 'Código', cell: (b) => <span className="font-medium">{b.code}</span>, sortValue: (b) => b.code },
-    { key: 'desc', header: 'Descrição', cell: (b) => b.description, className: 'max-w-72 truncate' },
-    { key: 'customer', header: 'Cliente', cell: (b) => b.customer },
-    { key: 'project', header: 'Obra', cell: (b) => b.project },
-    { key: 'owner', header: 'Responsável', cell: (b) => b.owner },
-    { key: 'date', header: 'Data', cell: (b) => formatDate(b.date), sortValue: (b) => b.date },
-    { key: 'total', header: 'Valor total', align: 'right', cell: (b) => formatCurrency(b.total), sortValue: (b) => b.total },
-    { key: 'status', header: 'Situação', cell: (b) => <StatusBadge tone={budgetStatusMeta[b.status].tone}>{budgetStatusMeta[b.status].label}</StatusBadge> },
-    {
-      key: 'actions',
-      header: 'Ações',
-      cell: () => (
-        <div className="flex gap-1">
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate('/orcamentos/b1/preencher') }}>Abrir</Button>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate('/orcamentos/b1/finalizacao') }}>Resumo</Button>
-        </div>
-      ),
-    },
-  ]
+  const config: ResourceConfig<Budget> = {
+    title: 'Orçamentos',
+    description: 'Orçamentos com versões, aprovação e base de referência rastreável.',
+    singular: 'orçamento',
+    queryKey: 'budgets',
+    managePermission: 'budgets.manage',
+    fetch: (p) => budgetsApi.list(p),
+    rowKey: (r) => r.uuid,
+    searchPlaceholder: 'Buscar por código ou título',
+    formSize: 'xl',
+    useLookups,
+    filters: [
+      { name: 'status', placeholder: 'Todos os status', options: budgetStatusOptions },
+      { name: 'company_uuid', placeholder: 'Todas as empresas', options: 'companies' },
+    ],
+    columns: [
+      { key: 'code', header: 'Código', cell: (r) => <span className="font-medium">{r.code}</span>, sortValue: (r) => r.code },
+      { key: 'title', header: 'Título', cell: (r) => r.title, sortValue: (r) => r.title },
+      { key: 'project', header: 'Obra', cell: (r) => r.project?.name ?? '—' },
+      { key: 'version', header: 'Versão', cell: (r) => (r.current_version ? `v${r.current_version.number}` : '—') },
+      { key: 'status', header: 'Status', cell: (r) => <StatusBadge tone={budgetStatusTone[r.status]}>{budgetStatusLabel[r.status]}</StatusBadge> },
+      {
+        key: 'price',
+        header: 'Preço final',
+        align: 'right',
+        cell: (r) => (r.current_version?.final_price ? formatCurrency(Number(r.current_version.final_price)) : '—'),
+        sortValue: (r) => Number(r.current_version?.final_price ?? 0),
+      },
+    ],
+    fields,
+    toForm: (r) => ({
+      company_uuid: r.company?.uuid ?? '',
+      code: r.code,
+      title: r.title,
+      mode: r.mode,
+      reference_dataset_id: r.reference_dataset ? String(r.reference_dataset.id) : '',
+      project_uuid: r.project?.uuid ?? '',
+      customer_uuid: r.customer?.uuid ?? '',
+      reference_date: r.reference_date ?? '',
+      notes: r.notes ?? '',
+    }),
+    create: async (b) => navigate(`/orcamentos/${(await budgetsApi.create(b)).uuid}`),
+    update: (r, b) => budgetsApi.update(r.uuid, b),
+    remove: (r) => budgetsApi.remove(r.uuid),
+    canEditRow: (r) => r.abilities?.edit ?? true,
+    onOpen: (r) => navigate(`/orcamentos/${r.uuid}`),
+  }
 
-  return (
-    <>
-      <PageHeader
-        title="Orçamentos"
-        description="Elabore, revise e acompanhe os orçamentos de obras."
-        actions={
-          <>
-            <Button variant="outline" onClick={() => navigate('/orcamentos/inteligente')}><Sparkles className="size-4" /> Orçamento inteligente</Button>
-            <Button onClick={() => navigate('/orcamentos/novo')}><Plus className="size-4" /> Novo orçamento</Button>
-          </>
-        }
-      />
-      <DemoBanner>
-        Nesta demonstração, todo orçamento aberto carrega o mesmo conjunto de itens fictícios. Veja também{' '}
-        <Link to="/orcamentos/b1/preencher" className="text-primary underline">o preenchimento</Link>.
-      </DemoBanner>
-      <QueryBoundary query={query}>
-        {(data) => {
-          const term = search.trim().toLowerCase()
-          const rows = data.filter(
-            (b) => (!term || b.code.toLowerCase().includes(term) || b.description.toLowerCase().includes(term) || b.customer.toLowerCase().includes(term)) && (!status || b.status === status),
-          )
-          return (
-            <Panel>
-              <TableToolbar>
-                <SearchInput className="w-72" placeholder="Pesquisar orçamento…" aria-label="Pesquisar orçamentos" value={search} onChange={(e) => setSearch(e.target.value)} />
-                <FormField label="Situação" className="w-44">
-                  <SelectInput value={status} onChange={(e) => setStatus(e.target.value)}>
-                    <option value="">Todas</option>
-                    {Object.entries(budgetStatusMeta).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
-                  </SelectInput>
-                </FormField>
-              </TableToolbar>
-              <DataTable caption="Lista de orçamentos" columns={columns} rows={rows} rowKey={(b) => b.id} onRowClick={() => navigate('/orcamentos/b1/preencher')} />
-            </Panel>
-          )
-        }}
-      </QueryBoundary>
-    </>
-  )
+  return <ResourcePage config={config} />
 }
