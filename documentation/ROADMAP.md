@@ -12,7 +12,7 @@
 | **Telas (Fases 1–3)** | Login, organização, moldura no padrão de layout, cadastros das Fases 2 e 3, obras | ✅ **Homologada** em 2026-11-17 ([TELAS_PLANO.md](TELAS_PLANO.md)) |
 | **4 — Referências e Orçamentos (prioritário)** | Bases técnicas (SINAPI/SUDECAP) importadas com rastreio; versões, composições, BDI, encargos, Curva ABC, aprovação, importações. **Só após D-P02 e D-P03** | ✅ **Homologada** em 2026-11-17: 4A (referências SINAPI), 4B (orçamentos: versões, BDI, encargos, Curva ABC, aprovação) e 4C (catálogo de insumos com 4.443 insumos copiados da base SINAPI). O banco `obraflow` está migrado (70). Composições próprias (D-P42) ficam adiadas ([FASE4_MODELO.md](FASE4_MODELO.md), [FASE4C_MODELO.md](FASE4C_MODELO.md)) |
 | **5 — Contratos e Medições** | Contratos, aditivos, medições com aprovação | 🟡 **Em andamento** — modelo aprovado (D-P44…D-P56); **5A (Contratos) homologada** em 2026-11-17; 5B (Medições) aguarda autorização — [FASE5_MODELO.md](FASE5_MODELO.md) |
-| **6 — Planejamento e Diário** | Cronograma, dependências, linha de base, diário de obras, ponto, alocações | ⏳ |
+| **6 — Planejamento e Diário** | Cronograma, dependências, linha de base, diário de obras, ponto, alocações | 🟡 **Proposta de modelo** (6A Cronograma, 6B Recursos e orçamento sintético, 6C RDO) aguardando aprovação (D-P65…D-P76) — [FASE6_MODELO.md](FASE6_MODELO.md) |
 | **7 — Estoque e Compras** | Solicitação → Cotação → Pedido → Recebimento; movimentações de estoque | ⏳ |
 | **8 — Financeiro** | Títulos, movimentações, conciliação, fluxo de caixa | ⏳ |
 | **9 — IA assistiva** | Orçamento inteligente com revisão humana, trilha e limites de uso | ⏳ |
