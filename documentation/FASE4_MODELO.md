@@ -283,3 +283,13 @@ Commit `c0f5568`. CI verde: run 44103187515 (`8387d64`) e run 44104212735 (`c0f5
 Nenhum orçamento foi criado. Os servidores foram ligados para teste no navegador.
 
 **Parte 4B aguarda homologação.**
+
+### Ajuste — código automático do orçamento (2026-11-17)
+
+A pedido do responsável, o orçamento segue o mesmo padrão da obra: com o código vazio, o sistema gera **`ORC-NNN/AAAA`**.
+- **Sequência:** por organização e por ano, usando o ano da **data-base** (sem data-base, o ano atual).
+- **Sem reaproveitamento:** orçamentos excluídos contam na sequência.
+- **Código manual:** é mantido.
+- **Sugestão:** `GET /budgets/next-code?reference_date=` (`budgets.manage`).
+- **Implementação:** o gerador virou genérico (`Shared\Support\YearlyCodeGenerator`), usado pela obra (`OB`) e pelo orçamento (`ORC`). Na refatoração, a detecção de soft delete foi corrigida (`withTrashed` é macro, não método), coberta pelo teste da obra.
+- **Testes:** +1 em `BudgetApiTest`. Suíte **417/417 (2.843 asserções)**.

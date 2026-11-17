@@ -11,7 +11,12 @@ import { budgetsApi, budgetStatusLabel, budgetStatusOptions, budgetStatusTone, m
 
 const fields: FieldDef[] = [
   { name: 'company_uuid', label: 'Empresa', type: 'select', options: 'companies', required: true, createOnly: true, full: true },
-  { name: 'code', label: 'Código', required: true, placeholder: 'Ex.: ORC-001' },
+  {
+    name: 'code',
+    label: 'Código',
+    placeholder: `Automático: ORC-001/${new Date().getFullYear()}`,
+    help: 'Deixe em branco para gerar automaticamente no formato ORC-NNN/AAAA: numeração sequencial que recomeça a cada ano, usando o ano da data-base (sem data-base, o ano atual).',
+  },
   { name: 'title', label: 'Título', required: true },
   { name: 'mode', label: 'Tipo de orçamento', type: 'radio', options: modeOptions, required: true, createOnly: true, full: true },
   {

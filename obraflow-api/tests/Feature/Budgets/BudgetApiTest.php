@@ -197,3 +197,17 @@ it('exclusão de rascunho funciona e todos os eventos da Fase 4 são emitidos po
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
     expect(array_values(array_diff(AuditEvent::phase4(), $emitidos)))->toBe([]);
 });
+
+it('código vazio gera ORC-NNN/AAAA com o ano da data-base; numeração por ano; manual é respeitado', function () {
+    $novo = fn (array $x) => $this->b->post('/api/v1/budgets', ['company_uuid' => $this->co, 'title' => 'DEMO', 'mode' => 'manual', ...$x])->assertCreated()->json('data.code');
+    $ano = (int) now()->format('Y');
+
+    expect($novo(['reference_date' => '2026-11-20']))->toBe('ORC-001/2026')
+        ->and($novo(['reference_date' => '2026-12-01', 'code' => '']))->toBe('ORC-002/2026')
+        ->and($novo(['reference_date' => '2027-02-01']))->toBe('ORC-001/2027')
+        ->and($novo([]))->toBe(sprintf('ORC-%03d/%d', $ano === 2026 ? 3 : ($ano === 2027 ? 2 : 1), $ano))
+        ->and($novo(['code' => 'ESPECIAL-1']))->toBe('ESPECIAL-1');
+
+    $this->b->get('/api/v1/budgets/next-code?reference_date=2027-05-05')->assertOk()->assertJsonPath('data.code', 'ORC-002/2027');
+    loginRole($this, 'member')->get('/api/v1/budgets/next-code')->assertForbidden();
+});

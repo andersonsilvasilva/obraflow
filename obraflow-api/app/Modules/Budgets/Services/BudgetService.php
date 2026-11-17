@@ -20,6 +20,7 @@ use App\Modules\Budgets\Support\Dec;
 use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
 use App\Modules\Shared\Exceptions\DomainRuleException;
+use App\Modules\Shared\Support\YearlyCodeGenerator;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -45,6 +46,10 @@ final class BudgetService
             } else {
                 $data['reference_dataset_id'] = null;
                 $data['social_charges_regime'] ??= 'not_applicable';
+            }
+
+            if (blank($data['code'] ?? null)) { // código automático com o ano da data-base
+                $data['code'] = app(YearlyCodeGenerator::class)->next(Budget::class, 'ORC', YearlyCodeGenerator::yearOf($data['reference_date'] ?? null));
             }
 
             $budget = new Budget;

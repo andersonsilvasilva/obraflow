@@ -29,7 +29,7 @@ class BudgetRequest extends TenantRequest
 
         return [
             'company_uuid' => [$creating ? 'required' : 'prohibited', 'uuid', $this->existsInTenant('companies')],
-            'code' => [$creating ? 'required' : 'sometimes', 'string', 'max:30',
+            'code' => [$creating ? 'nullable' : 'sometimes', 'string', 'max:30', // vazio na criação = automático ORC-NNN/AAAA
                 Rule::unique('budgets', 'code')->where('tenant_id', $this->tenantId())->whereNull('deleted_at')->when($current, fn ($r) => $r->ignore($current->id))],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:200'],
             'mode' => [$creating ? 'required' : 'prohibited', Rule::in(Budget::MODES)],

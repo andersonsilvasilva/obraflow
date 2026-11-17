@@ -19,6 +19,7 @@ use App\Modules\Projects\Services\ProjectAccess;
 use App\Modules\Registry\Http\Controllers\Concerns\ListsRecords;
 use App\Modules\Registry\Services\RegistryService;
 use App\Modules\Shared\Exceptions\ApiException;
+use App\Modules\Shared\Support\YearlyCodeGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -38,6 +39,14 @@ class BudgetController extends Controller
         private readonly BudgetAccess $access,
         private readonly RegistryService $registry,
     ) {}
+
+    /** Próximo código automático (ORC-NNN/AAAA) para pré-preencher a tela; `reference_date` define o ano. */
+    public function nextCode(Request $request, YearlyCodeGenerator $codes): JsonResponse
+    {
+        $year = YearlyCodeGenerator::yearOf($request->filled('reference_date') ? (string) $request->query('reference_date') : null);
+
+        return response()->json(['data' => ['code' => $codes->suggest(Budget::class, 'ORC', $year), 'year' => $year]]);
+    }
 
     public function index(Request $request): JsonResponse
     {

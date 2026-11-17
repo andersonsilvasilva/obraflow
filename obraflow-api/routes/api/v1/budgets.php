@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('tenant.required')->group(function (): void {
     Route::get('budgets', [BudgetController::class, 'index'])->middleware('can:budgets.view')->name('budgets.index');
     Route::post('budgets', [BudgetController::class, 'store'])->middleware('can:budgets.manage')->name('budgets.store');
+    Route::get('budgets/next-code', [BudgetController::class, 'nextCode'])->middleware('can:budgets.manage')->name('budgets.next-code');
 
     Route::prefix('budgets/{uuid}')->whereUuid('uuid')->group(function (): void {
         Route::get('/', [BudgetController::class, 'show'])->middleware('can:budgets.view')->name('budgets.show');
