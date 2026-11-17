@@ -274,3 +274,14 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
     $tpl = $this->b->request('POST', "/api/v1/projects/{$obra2}/schedule/import/preview", ['file' => new UploadedFile($file, 'modelo.xlsx', null, null, true)])->assertOk()->json('data.summary');
     expect($tpl)->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0]);
 });
+
+it('importa num planejamento já criado e vazio (mesmo com linha de base); com atividades é recusado', function () {
+    $this->b->post($this->url, ['origin' => 'blank'])->assertCreated();
+    $this->b->post("{$this->url}/baselines", ['name' => 'DEMO vazia'])->assertCreated();
+    $rows = [['A' => 'Etapa', 'B' => '1', 'C' => 'DEMO Fundação', 'D' => '02/03/2026', 'E' => '06/03/2026']];
+    $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertCreated()->assertJsonPath('data.import.created', 1);
+    $data = cronograma($this);
+    expect($data['schedule']['origin'])->toBe('spreadsheet')->and($data['tasks'])->toHaveCount(1)->and($data['baselines'])->toHaveCount(1)
+        ->and(DB::table('schedules')->count())->toBe(1);
+    $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertUnprocessable();
+});

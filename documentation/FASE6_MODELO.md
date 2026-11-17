@@ -189,3 +189,14 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - nenhum dado inserido.
 
 **6A aguarda homologação.**
+
+### 6A — ajuste de layout (pedido do responsável, tela do Brickup)
+
+- **Topo:** "Visualizar recursos" (6B), "Criar linha de base (n/10)", **Exceções** (abre a aba Calendário da obra) e "Planejamento com IA" (Fase 9, desabilitado).
+- **Cartões:** Custo, Com BDI, BDI, Desconto e Valor final, marcados "6B" até os recursos existirem, mais os indicadores do cronograma.
+- **Barra de ações:**
+  - à esquerda: Caminho crítico, Linha de base (comparar), BDI e Desconto (6B);
+  - à direita: + Atividade, + Etapa, + Marco, Importar, Exportar (6B), Configurações, Expandir, Recolher, zoom – e + e Deletar tudo.
+- **O Gantt aparece sempre**, mesmo com o planejamento vazio (antes aparecia "Planejamento vazio").
+- **Configurações de visualização:** colunas visíveis (Início, Término, Dias úteis, Predecessoras, Unidade, Quantidade) e modo (Somente tabela, Layout dividido, Somente Gantt), guardados por obra no navegador.
+- **Importar em planejamento vazio:** o planejamento existente sem atividades é reaproveitado, mesmo com linha de base. Com atividades, a importação é recusada. +1 teste (10 no planejamento).

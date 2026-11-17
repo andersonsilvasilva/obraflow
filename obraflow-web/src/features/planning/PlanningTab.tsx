@@ -2,7 +2,7 @@ import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gan
 import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, Download, FileSpreadsheet, FileStack, Flag, Layers, Plus, Route, Save, Sparkles, Trash2 } from 'lucide-react'
+import { CalendarClock, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Alert } from '@/components/feedback/Alert'
@@ -22,12 +22,31 @@ import { TaskDialog } from './TaskDialog'
 type Mode = 'grid' | 'all' | 'chart'
 type Zoom = 'day' | 'week' | 'month'
 
+/** Colunas opcionais da tabela do Gantt (configurações de visualização — D-P70). */
+const COLUMN_LABELS = {
+  start: 'Início',
+  end: 'Término',
+  duration_days: 'Dias úteis',
+  preds: 'Predecessoras',
+  unit: 'Un. medida',
+  quantity: 'Quantidade',
+} as const
+type ColumnKey = keyof typeof COLUMN_LABELS
+type Pref = { mode: Mode; zoom: Zoom; critical: boolean; columns: Record<ColumnKey, boolean> }
+const DEFAULT_PREF: Pref = {
+  mode: 'all',
+  zoom: 'week',
+  critical: true,
+  columns: { start: true, end: true, duration_days: true, preds: false, unit: false, quantity: false },
+}
+
 const PREF = (uuid: string) => `obraflow.planning.${uuid}`
-function readPref(uuid: string): { mode: Mode; zoom: Zoom; critical: boolean } {
+function readPref(uuid: string): Pref {
   try {
-    return { mode: 'all', zoom: 'day', critical: true, ...JSON.parse(localStorage.getItem(PREF(uuid)) ?? '{}') }
+    const saved = JSON.parse(localStorage.getItem(PREF(uuid)) ?? '{}')
+    return { ...DEFAULT_PREF, ...saved, columns: { ...DEFAULT_PREF.columns, ...(saved.columns ?? {}) } }
   } catch {
-    return { mode: 'all', zoom: 'day', critical: true }
+    return DEFAULT_PREF
   }
 }
 
@@ -54,7 +73,7 @@ const CELL: Record<Zoom, number> = { day: 34, week: 70, month: 90 }
  * pelas dependências e caminho crítico (D-P66/D-P67). O Gantt (SVAR, MIT — D-P69) só desenha e captura as ações
  * (arrastar barra, ligar atividades, abrir edição), que viram chamadas à API.
  */
-export function PlanningTab({ project, canEditProject }: { project: { uuid: string; start_date: string | null }; canEditProject: boolean }) {
+export function PlanningTab({ project, canEditProject, onOpenCalendar }: { project: { uuid: string; start_date: string | null }; canEditProject: boolean; onOpenCalendar: () => void }) {
   const { can } = useAuth()
   const { notify } = useToast()
   const client = useQueryClient()
@@ -64,12 +83,23 @@ export function PlanningTab({ project, canEditProject }: { project: { uuid: stri
   const [editing, setEditing] = useState<{ task?: PlanTask; parent?: PlanTask; kind?: PlanTask['kind'] } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [baselineName, setBaselineName] = useState<string | null>(null)
+  const [settings, setSettings] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const ganttApi = useRef<IApi | null>(null)
   const key = ['schedule', uuid, compare]
 
   const query = useQuery({ queryKey: key, queryFn: () => planningApi.get(uuid, compare), enabled: can('schedules.view') })
   const plan = query.data
   const canEdit = (plan?.abilities.edit ?? false) && canEditProject
 
+  /** Expandir/recolher todas as etapas no Gantt. */
+  const toggleAll = (open: boolean) => {
+    const api = ganttApi.current
+    if (!api) return
+    for (const t of query.data?.tasks ?? []) {
+      if (t.kind === 'summary') void api.exec('open-task', { id: t.id, mode: open })
+    }
+  }
   const setPref = (p: Partial<typeof pref>) => {
     const next = { ...pref, ...p }
     setPrefState(next)
@@ -101,67 +131,105 @@ export function PlanningTab({ project, canEditProject }: { project: { uuid: stri
   const tasks = plan!.tasks ?? []
   const summary = plan!.summary!
   const byId = new Map(tasks.map((t) => [t.id, t]))
+  const baselines = plan!.baselines?.length ?? 0
+  const soon6B = 'Com os recursos das atividades (parte 6B)'
+  const zoomStep = (dir: 1 | -1) => {
+    const order: Zoom[] = ['month', 'week', 'day']
+    setPref({ zoom: order[Math.min(2, Math.max(0, order.indexOf(pref.zoom) + dir))] })
+  }
 
   return (
     <div>
-      <div className="mb-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+      {/* topo: como no Brickup — linha de base, exceções (calendário) e IA (Fase 9) */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <label className="text-muted-foreground inline-flex items-center gap-2 text-sm" title={soon6B}>
+          <input type="checkbox" role="switch" disabled className="accent-(--primary)" /> Visualizar recursos <SoonBadge />
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {canEdit && (
+            <Button size="sm" variant="outline" disabled={baselines >= 10} onClick={() => setBaselineName(`Linha de base ${baselines + 1}`)}>
+              <Save className="size-3.5" /> Criar linha de base ({baselines}/10)
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onOpenCalendar} title="Feriados, paradas e fins de semana da obra (aba Calendário)">
+            <CalendarClock className="size-3.5" /> Exceções
+          </Button>
+          <Button size="sm" variant="outline" disabled title="Fase 9 — IA assistiva, com revisão humana">
+            <Sparkles className="size-3.5" /> Planejamento com IA
+          </Button>
+        </div>
+      </div>
+
+      {/* totais de custo (6B) e indicadores do cronograma */}
+      <div className="mb-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-11">
+        {['Custo', 'Com BDI', 'BDI', 'Desconto', 'Valor final'].map((l) => (
+          <Kpi key={l} label={l} value="—" hint={soon6B} />
+        ))}
         <Kpi label="Início" value={formatDateOrDash(summary.start)} />
         <Kpi label="Término" value={formatDateOrDash(summary.end)} />
         <Kpi label="Executado" value={`${Number(summary.percent).toLocaleString('pt-BR')}%`} />
         <Kpi label="Atividades" value={String(summary.tasks)} />
-        <Kpi label="No caminho crítico" value={String(summary.critical)} tone="danger" />
+        <Kpi label="Caminho crítico" value={String(summary.critical)} tone="danger" />
         <Kpi label="Atrasadas" value={String(summary.late)} tone={summary.late ? 'danger' : undefined} />
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {canEdit && (
-          <>
-            <Button size="sm" onClick={() => setEditing({ kind: 'task' })}>
-              <Plus className="size-3.5" /> Atividade
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing({ kind: 'summary' })}>
-              <Layers className="size-3.5" /> Etapa
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing({ kind: 'milestone' })}>
-              <Flag className="size-3.5" /> Marco
-            </Button>
-          </>
-        )}
+      {/* barra de ações: análise à esquerda; incluir, importar, exibição e zoom à direita */}
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <Button size="sm" variant={pref.critical ? 'default' : 'outline'} aria-pressed={pref.critical} onClick={() => setPref({ critical: !pref.critical })}>
           <Route className="size-3.5" /> Caminho crítico
         </Button>
-        {canEdit && (
-          <Button size="sm" variant="outline" disabled={(plan!.baselines?.length ?? 0) >= 10} onClick={() => setBaselineName(`Linha de base ${(plan!.baselines?.length ?? 0) + 1}`)}>
-            <Save className="size-3.5" /> Criar linha de base ({plan!.baselines?.length ?? 0}/10)
-          </Button>
-        )}
-        <SelectInput className="w-52" aria-label="Comparar com" value={compare ?? ''} onChange={(e) => setCompare(e.target.value ? Number(e.target.value) : null)} disabled={!plan!.baselines?.length}>
-          <option value="">Comparar com: nenhuma</option>
+        <SelectInput className="h-8 w-48 text-sm" aria-label="Linha de base para comparar" value={compare ?? ''} onChange={(e) => setCompare(e.target.value ? Number(e.target.value) : null)} disabled={!baselines}>
+          <option value="">Linha de base: nenhuma</option>
           {plan!.baselines?.map((b) => (
             <option key={b.number} value={b.number}>
               {b.number}. {b.name}
             </option>
           ))}
         </SelectInput>
-        <div className="ml-auto flex flex-wrap gap-1">
-          {(
-            [
-              ['grid', 'Tabela'],
-              ['all', 'Dividido'],
-              ['chart', 'Gantt'],
-            ] as const
-          ).map(([m, label]) => (
-            <Button key={m} size="sm" variant={pref.mode === m ? 'default' : 'outline'} aria-pressed={pref.mode === m} onClick={() => setPref({ mode: m })}>
-              {label}
-            </Button>
-          ))}
-          <SelectInput className="w-28" aria-label="Zoom" value={pref.zoom} onChange={(e) => setPref({ zoom: e.target.value as Zoom })}>
-            <option value="day">Dia</option>
-            <option value="week">Semana</option>
-            <option value="month">Mês</option>
-          </SelectInput>
+        <Button size="sm" variant="outline" disabled title={soon6B}>
+          <Percent className="size-3.5" /> BDI
+        </Button>
+        <Button size="sm" variant="outline" disabled title={soon6B}>
+          <Tag className="size-3.5" /> Desconto
+        </Button>
+
+        <div className="ml-auto flex flex-wrap items-center gap-1">
           {canEdit && (
-            <Button size="sm" variant="outline" onClick={() => setConfirmDelete(true)} title="Deletar tudo">
+            <>
+              <Button size="sm" onClick={() => setEditing({ kind: 'task' })}>
+                <Plus className="size-3.5" /> Atividade
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: 'summary' })}>
+                <Layers className="size-3.5" /> Etapa
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing({ kind: 'milestone' })}>
+                <Flag className="size-3.5" /> Marco
+              </Button>
+              <Button size="sm" variant="outline" disabled={tasks.length > 0} title={tasks.length > 0 ? 'A importação preenche um planejamento vazio (use "Deletar tudo" antes)' : 'Importar planilha'} onClick={() => setImporting(true)}>
+                <Upload className="size-3.5" /> Importar
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="outline" disabled title={soon6B}>
+            <Download className="size-3.5" /> Exportar
+          </Button>
+          <Button size="icon-sm" variant="outline" aria-label="Configurações de visualização" title="Configurações de visualização" onClick={() => setSettings(true)}>
+            <Settings className="size-3.5" />
+          </Button>
+          <Button size="icon-sm" variant="outline" aria-label="Expandir tudo" title="Expandir tudo" onClick={() => toggleAll(true)}>
+            <ChevronsUpDown className="size-3.5" />
+          </Button>
+          <Button size="icon-sm" variant="outline" aria-label="Recolher tudo" title="Recolher tudo" onClick={() => toggleAll(false)}>
+            <ChevronsDownUp className="size-3.5" />
+          </Button>
+          <Button size="icon-sm" variant="outline" aria-label="Diminuir zoom" title="Diminuir zoom" disabled={pref.zoom === 'month'} onClick={() => zoomStep(-1)}>
+            <ZoomOut className="size-3.5" />
+          </Button>
+          <Button size="icon-sm" variant="outline" aria-label="Aumentar zoom" title="Aumentar zoom" disabled={pref.zoom === 'day'} onClick={() => zoomStep(1)}>
+            <ZoomIn className="size-3.5" />
+          </Button>
+          {canEdit && (
+            <Button size="icon-sm" variant="outline" aria-label="Deletar tudo" title="Deletar tudo" onClick={() => setConfirmDelete(true)}>
               <Trash2 className="size-3.5" />
             </Button>
           )}
@@ -169,30 +237,35 @@ export function PlanningTab({ project, canEditProject }: { project: { uuid: stri
       </div>
 
       <p className="text-muted-foreground mb-2 text-xs">
-        <CalendarClock className="mr-1 inline size-3.5" />
-        Duração em <strong>dias úteis</strong> da obra (abas Horários e Calendário). {canEdit && 'Arraste as barras para mudar datas e ligue as bolinhas para criar dependências; clique duas vezes para editar.'}
-        {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base escolhida (+ = atrasou).'}
+        Duração em <strong>dias úteis</strong> da obra (abas Horários e Calendário). {canEdit && (tasks.length === 0 ? 'Comece por "+ Atividade" ou "+ Etapa", ou importe a planilha.' : 'Arraste as barras para mudar datas e ligue as bolinhas para criar dependências; clique duas vezes para editar.')}
+        {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base (+ = atrasou).'}
       </p>
 
-      {tasks.length === 0 ? (
-        <EmptyState title="Planejamento vazio" description="Inclua etapas e atividades." />
-      ) : (
-        <GanttView
+      <GanttView
+        uuid={uuid}
+        tasks={tasks}
+        plan={plan!}
+        mode={pref.mode}
+        zoom={pref.zoom}
+        columns={pref.columns}
+        showCritical={pref.critical}
+        readonly={!canEdit}
+        apiRef={ganttApi}
+        onOpen={(id) => {
+          const t = byId.get(id)
+          if (t) setEditing({ task: t })
+        }}
+        onRun={run}
+      />
+
+      {settings && <SettingsDialog pref={pref} onClose={() => setSettings(false)} onSave={(p) => (setPref(p), setSettings(false))} />}
+      {importing && (
+        <ImportDialog
           uuid={uuid}
-          tasks={tasks}
-          plan={plan!}
-          mode={pref.mode}
-          zoom={pref.zoom}
-          showCritical={pref.critical}
-          readonly={!canEdit}
-          onOpen={(id) => {
-            const t = byId.get(id)
-            if (t) setEditing({ task: t })
-          }}
-          onRun={run}
+          onClose={() => setImporting(false)}
+          onDone={(d) => (apply(d), setImporting(false))}
         />
       )}
-
       {editing && (
         <TaskDialog
           uuid={uuid}
@@ -249,12 +322,74 @@ export function PlanningTab({ project, canEditProject }: { project: { uuid: stri
   )
 }
 
-function Kpi({ label, value, tone }: { label: string; value: string; tone?: 'danger' }) {
+function Kpi({ label, value, tone, hint }: { label: string; value: string; tone?: 'danger'; hint?: string }) {
   return (
-    <div className="bg-card rounded-lg border px-3 py-2">
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive')}>{value}</p>
+    <div className="bg-card rounded-lg border px-3 py-2" title={hint}>
+      <p className="text-muted-foreground flex items-center gap-1 text-xs">
+        {label} {hint && <SoonBadge />}
+      </p>
+      <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive', hint && 'text-muted-foreground')}>{value}</p>
     </div>
+  )
+}
+
+function SoonBadge() {
+  return <span className="bg-muted text-muted-foreground rounded px-1 text-[0.65rem] font-medium">6B</span>
+}
+
+function SettingsDialog({ pref, onClose, onSave }: { pref: Pref; onClose: () => void; onSave: (p: Partial<Pref>) => void }) {
+  const [mode, setMode] = useState(pref.mode)
+  const [columns, setColumns] = useState(pref.columns)
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Configurações de visualização — cronograma"
+      description="Preferência sua, guardada neste navegador para esta obra."
+      size="md"
+      footer={
+        <>
+          <Button variant="outline" size="lg" onClick={() => setColumns(DEFAULT_PREF.columns)}>
+            Restaurar colunas
+          </Button>
+          <Button variant="outline" size="lg" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button size="lg" onClick={() => onSave({ mode, columns })}>
+            Salvar preferências
+          </Button>
+        </>
+      }
+    >
+      <fieldset className="mb-4">
+        <legend className="mb-2 text-sm font-medium">Colunas visíveis</legend>
+        <p className="text-muted-foreground mb-2 text-xs">ID e Atividade aparecem sempre. As colunas de custo e venda chegam com os recursos (6B).</p>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {(Object.keys(COLUMN_LABELS) as ColumnKey[]).map((k) => (
+            <label key={k} className="flex items-center gap-2">
+              <input type="checkbox" className="accent-(--primary) size-4" checked={columns[k]} onChange={(e) => setColumns({ ...columns, [k]: e.target.checked })} />
+              {COLUMN_LABELS[k]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">Modo de visualização</legend>
+        <div className="flex flex-wrap gap-1">
+          {(
+            [
+              ['grid', 'Somente tabela'],
+              ['all', 'Layout dividido'],
+              ['chart', 'Somente Gantt'],
+            ] as const
+          ).map(([m, label]) => (
+            <Button key={m} size="sm" variant={mode === m ? 'default' : 'outline'} aria-pressed={mode === m} onClick={() => setMode(m)}>
+              {label}
+            </Button>
+          ))}
+        </div>
+      </fieldset>
+    </Modal>
   )
 }
 
@@ -264,8 +399,10 @@ function GanttView({
   plan,
   mode,
   zoom,
+  columns: visible,
   showCritical,
   readonly,
+  apiRef,
   onOpen,
   onRun,
 }: {
@@ -274,12 +411,22 @@ function GanttView({
   plan: PlanData
   mode: Mode
   zoom: Zoom
+  columns: Record<ColumnKey, boolean>
+  apiRef: React.MutableRefObject<IApi | null>
   showCritical: boolean
   readonly: boolean
   onOpen: (id: number) => void
   onRun: (p: Promise<PlanData>, ok?: string) => void
 }) {
-  const gTasks = useMemo(() => toGanttTasks(tasks), [tasks])
+  const gTasks = useMemo(() => {
+    const wbsOf = new Map(tasks.map((t) => [t.id, t.wbs]))
+    return toGanttTasks(tasks).map((g, i) => ({
+      ...g,
+      preds: tasks[i].predecessors.map((p) => `${wbsOf.get(p.task_id) ?? '?'}${p.type === 'FS' ? '' : p.type}${p.lag ? (p.lag > 0 ? `+${p.lag}` : p.lag) : ''}`).join('; '),
+      unit: tasks[i].unit_code ?? '',
+      quantity: tasks[i].quantity !== null ? Number(tasks[i].quantity).toLocaleString('pt-BR') : '',
+    }))
+  }, [tasks])
   const links = useMemo(
     () => (plan.dependencies ?? []).map((d) => ({ id: d.id, source: d.predecessor_id, target: d.successor_id, type: toGanttLink[d.type], lag: d.lag_days })),
     [plan.dependencies],
@@ -299,6 +446,7 @@ function GanttView({
 
   const init = useCallback(
     (api: IApi) => {
+      apiRef.current = api
       // tudo que mudaria a estrutura localmente vira chamada à API (o servidor recalcula); o Gantt não muda sozinho
       api.intercept('show-editor', ({ id }) => (handlers.current.onOpen(Number(id)), false))
       api.intercept('add-task', () => false)
@@ -332,11 +480,11 @@ function GanttView({
       })
       api.intercept('delete-link', ({ id }) => (handlers.current.onRun(planningApi.removeDependency(uuid, Number(id)), 'Dependência removida.'), false))
     },
-    [uuid],
+    [uuid, apiRef],
   )
 
   const columns = useMemo<IColumnConfig[]>(
-    () => [
+    () => ([
       { id: 'wbs', header: 'ID', width: 64 },
       { id: 'text', header: 'Atividade', flexgrow: 1 },
       { id: 'start', header: 'Início', width: 92, template: (v: Date) => v.toLocaleDateString('pt-BR') },
@@ -351,11 +499,14 @@ function GanttView({
         },
       },
       { id: 'duration_days', header: 'Dias úteis', width: 80, align: 'center' },
+      { id: 'preds', header: 'Predecessoras', width: 110 },
+      { id: 'unit', header: 'Un. medida', width: 80, align: 'center' },
+      { id: 'quantity', header: 'Quantidade', width: 90, align: 'right' },
       ...(plan.compared_baseline
         ? [{ id: 'delta', header: 'Desvio', width: 70, align: 'center' as const, template: (v: number | null) => (v === null ? '—' : v > 0 ? `+${v}` : String(v)) }]
         : []),
-    ],
-    [plan.compared_baseline],
+    ] as IColumnConfig[]).filter((c) => !(String(c.id) in visible) || visible[c.id as ColumnKey]),
+    [plan.compared_baseline, visible],
   )
 
   const Bar = useCallback(

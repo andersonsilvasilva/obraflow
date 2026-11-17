@@ -127,11 +127,16 @@ final class ScheduleSheetImporter
         }
 
         return DB::transaction(function () use ($preview, $fileName, $project, $actor) {
-            if (Schedule::query()->where('project_id', $project->id)->lockForUpdate()->exists()) {
-                throw new DomainRuleException('A obra já tem planejamento. Para importar, apague o atual ("Deletar tudo").');
+            // planejamento já existente e VAZIO (ex.: criado do zero, talvez com linha de base) é reaproveitado
+            $schedule = Schedule::query()->where('project_id', $project->id)->lockForUpdate()->first();
+            if ($schedule !== null && DB::table('schedule_tasks')->where('schedule_id', $schedule->id)->exists()) {
+                throw new DomainRuleException('A obra já tem planejamento com atividades. Para importar, apague o atual ("Deletar tudo").');
             }
-            $schedule = new Schedule;
-            $schedule->forceFill(['uuid' => (string) Str::uuid7(), 'project_id' => $project->id, 'origin' => 'spreadsheet', 'created_by' => $actor->getKey()])->save();
+            if ($schedule === null) {
+                $schedule = new Schedule;
+                $schedule->forceFill(['uuid' => (string) Str::uuid7(), 'project_id' => $project->id, 'created_by' => $actor->getKey()]);
+            }
+            $schedule->forceFill(['origin' => 'spreadsheet', 'budget_version_id' => null])->save();
             $calendar = WorkingCalendar::for($project);
             $ids = [];
             $order = [];

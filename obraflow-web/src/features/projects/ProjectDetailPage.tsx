@@ -140,7 +140,7 @@ export function ProjectDetailPage() {
       <Panel className="p-4">
         <Tabs tabs={tabs} active={tab} onChange={setTab} label="Seções da obra">
           {tab === 'geral' && <OverviewTab project={project} />}
-          {tab === 'planejamento' && <PlanningTab project={project} canEditProject={canEdit} />}
+          {tab === 'planejamento' && <PlanningTab project={project} canEditProject={canEdit} onOpenCalendar={() => setTab('calendario')} />}
           {tab === 'dados' && (
             <>
               <GeneralTab project={project} />
