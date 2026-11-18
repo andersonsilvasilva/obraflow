@@ -215,3 +215,10 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Arrastar:** a barra acompanha o movimento na hora, e o cronograma recalculado chega em seguida (antes voltava ao lugar até a resposta). Numa etapa, só o nome é editável.
 - **Visual:** escala semanal "Semana 47" (ISO); caminho crítico desligado por padrão, para as barras aparecerem nas cores normais.
 - **Testes:** API 454/454 (+ troca de modo); frontend 50/50 (+ semana ISO).
+
+### 6A — unidades na importação e na janela da atividade
+
+- **Janela da atividade:** a unidade é escolhida das **unidades de medida cadastradas**. Unidade antiga ou importada que não está no cadastro aparece como "(não cadastrada)".
+- **Importação:** a unidade da planilha é reconhecida pelo **código ou pelo nome** cadastrado, ignorando maiúsculas, acentos, pontos, espaços e os sinais ² e ³. Assim "m²" vira M2, "m³" vira M3 e "metro cubico" vira M3. Os **apelidos** und, unid, unidade, pç e peça viram UN; verba vira VB.
+  - A unidade não reconhecida fica como veio, com aviso na pré-visualização.
+  - +1 teste (11 no planejamento).

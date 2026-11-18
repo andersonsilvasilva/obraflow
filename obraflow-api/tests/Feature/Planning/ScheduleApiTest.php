@@ -251,6 +251,7 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
         ['A' => 'Etapa', 'B' => '1-2', 'C' => 'DEMO Concreto', 'D' => '03/25/2026', 'E' => '2026-03-27', 'F' => '25/03/2026'],
         ['A' => 'Etapa', 'B' => '2', 'C' => 'DEMO Acabamento'],
     ];
+    $this->b->post('/api/v1/units', ['code' => 'M2', 'name' => 'Metro quadrado'])->assertCreated(); // "m²" da planilha → M2 cadastrada
     $prev = $this->b->request('POST', "{$this->url}/import/preview", ['file' => planilhaPlanejamento($rows)])->assertOk()->json('data');
     expect($prev['summary'])->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0])
         ->and(collect($prev['rows'])->pluck('task.kind')->all())->toBe(['summary', 'task', null, 'task', 'task'])
@@ -261,7 +262,7 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
     $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertCreated()->assertJsonPath('data.import.created', 4);
     $t = collect(cronograma($this)['tasks']);
     expect($t->pluck('wbs')->all())->toBe(['1', '1.1', '1.2', '2'])
-        ->and($t->firstWhere('name', 'DEMO Formas'))->toMatchArray(['quantity' => '50.0000', 'unit_code' => 'm²', 'end' => '2026-03-04'])
+        ->and($t->firstWhere('name', 'DEMO Formas'))->toMatchArray(['quantity' => '50.0000', 'unit_code' => 'M2', 'end' => '2026-03-04'])
         ->and($t->firstWhere('name', 'DEMO Estrutura'))->toMatchArray(['kind' => 'summary', 'start' => '2026-03-02', 'end' => '2026-03-27'])
         ->and(cronograma($this)['schedule']['origin'])->toBe('spreadsheet');
     $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertUnprocessable(); // já tem planejamento
@@ -292,4 +293,18 @@ it('importa num planejamento já criado e vazio (mesmo com linha de base); com a
     expect($data['schedule']['origin'])->toBe('spreadsheet')->and($data['tasks'])->toHaveCount(1)->and($data['baselines'])->toHaveCount(1)
         ->and(DB::table('schedules')->count())->toBe(1);
     $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertUnprocessable();
+});
+
+it('importação reconhece a unidade cadastrada por código, nome ou apelido; desconhecida fica como está, com aviso', function () {
+    $this->b->post('/api/v1/units', ['code' => 'UN', 'name' => 'Unidade'])->assertCreated();
+    $this->b->post('/api/v1/units', ['code' => 'M3', 'name' => 'Metro cúbico'])->assertCreated();
+    $rows = [
+        ['A' => 'Etapa', 'B' => '1', 'C' => 'DEMO A', 'D' => '02/03/2026', 'E' => '02/03/2026', 'I' => '1', 'J' => 'und'],
+        ['A' => 'Etapa', 'B' => '2', 'C' => 'DEMO B', 'D' => '02/03/2026', 'E' => '02/03/2026', 'I' => '2', 'J' => 'm³'],
+        ['A' => 'Etapa', 'B' => '3', 'C' => 'DEMO C', 'D' => '02/03/2026', 'E' => '02/03/2026', 'I' => '3', 'J' => 'metro cubico'],
+        ['A' => 'Etapa', 'B' => '4', 'C' => 'DEMO D', 'D' => '02/03/2026', 'E' => '02/03/2026', 'I' => '4', 'J' => 'saco'],
+    ];
+    $prev = $this->b->request('POST', "{$this->url}/import/preview", ['file' => planilhaPlanejamento($rows)])->assertOk()->json('data.rows');
+    expect(array_column(array_column($prev, 'task'), 'unit'))->toBe(['UN', 'M3', 'M3', 'saco'])
+        ->and($prev[3]['warnings'][0])->toContain('Unidade "saco" não cadastrada');
 });

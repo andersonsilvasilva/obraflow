@@ -4,6 +4,7 @@ namespace App\Modules\Planning\Import;
 
 use App\Models\Project;
 use App\Models\Schedule;
+use App\Models\UnitOfMeasure;
 use App\Models\User;
 use App\Modules\Audit\AuditEvent;
 use App\Modules\Audit\AuditLogger;
@@ -61,6 +62,7 @@ final class ScheduleSheetImporter
         $calendar = WorkingCalendar::forMode($project, (string) (Schedule::query()->where('project_id', $project->id)->value('duration_mode') ?? 'calendar'));
         $seen = [];
         $out = [];
+        $units = $this->unitIndex();
 
         foreach ($rows as $line => $r) {
             $errors = [];
@@ -100,12 +102,19 @@ final class ScheduleSheetImporter
             if (! isset($dates['start'])) {
                 $warnings[] = 'Sem data de início: usa a data inicial da obra.';
             }
+            $unit = null;
+            if (($r['unit'] ?? '') !== '') {
+                $unit = $units[$this->unitKey($r['unit'])] ?? null;
+                if ($unit === null) {
+                    $warnings[] = "Unidade \"{$r['unit']}\" não cadastrada: fica como está (cadastre em Unidades de medida).";
+                }
+            }
             if ($key !== null) {
                 $seen[$key] = true;
             }
             $out[] = ['line' => $line, 'data' => $r, 'status' => $errors ? 'error' : 'ok', 'errors' => $errors, 'warnings' => $warnings,
                 'task' => $errors ? null : ['wbs' => $key, 'kind' => $summary ? 'summary' : 'task', 'start' => $start->toDateString(),
-                    'duration_days' => $duration, 'actual_start' => ($dates['actual_start'] ?? null)?->toDateString(), 'actual_end' => ($dates['actual_end'] ?? null)?->toDateString()]];
+                    'duration_days' => $duration, 'unit' => $unit ?? ($r['unit'] ?? '' ?: null), 'actual_start' => ($dates['actual_start'] ?? null)?->toDateString(), 'actual_end' => ($dates['actual_end'] ?? null)?->toDateString()]];
         }
 
         return ['rows' => $out, 'summary' => [
@@ -155,7 +164,7 @@ final class ScheduleSheetImporter
                 $ids[$t['wbs']] = DB::table('schedule_tasks')->insertGetId([
                     'tenant_id' => $schedule->tenant_id, 'schedule_id' => $schedule->id, 'parent_id' => $parentKey ? $ids[$parentKey] : null,
                     'wbs_code' => $t['wbs'], 'name' => trim($row['data']['name']), 'kind' => $t['kind'],
-                    'unit_code' => ($row['data']['unit'] ?? '') !== '' ? Str::limit($row['data']['unit'], 20, '') : null,
+                    'unit_code' => $t['unit'] !== null ? Str::limit($t['unit'], 20, '') : null,
                     'quantity' => is_numeric($q = str_replace(',', '.', (string) ($row['data']['quantity'] ?? ''))) ? $q : null,
                     'planned_start' => $start->toDateString(), 'planned_end' => $end->toDateString(), 'duration_days' => $t['kind'] === 'summary' ? 1 : $t['duration_days'],
                     'actual_start' => $t['actual_start'], 'actual_end' => $t['actual_end'] !== null && $t['actual_start'] !== null && $t['actual_end'] < $t['actual_start'] ? null : $t['actual_end'],
@@ -231,6 +240,29 @@ final class ScheduleSheetImporter
         }
 
         return $rows;
+    }
+
+    /** Apelidos comuns → forma normalizada do código cadastrado (o SINAPI usa UN, M2, M3, VB…). */
+    private const UNIT_ALIASES = ['und' => 'un', 'unid' => 'un', 'unidade' => 'un', 'pc' => 'un', 'peca' => 'un', 'verba' => 'vb'];
+
+    /** "m²", "M2", "m 2" → "m2"; "Metro quadrado" → "metroquadrado"; apelidos (und → un). */
+    private function unitKey(string $label): string
+    {
+        $k = Str::lower(preg_replace('/[^A-Za-z0-9]+/', '', Str::ascii(str_replace(['²', '³'], ['2', '3'], trim($label)))));
+
+        return self::UNIT_ALIASES[$k] ?? $k;
+    }
+
+    /** @return array<string, string> chave normalizada (código ou nome) => código cadastrado */
+    private function unitIndex(): array
+    {
+        $index = [];
+        foreach (UnitOfMeasure::query()->where('status', 'active')->get(['code', 'name']) as $u) {
+            $index[$this->unitKey($u->code)] ??= $u->code;
+            $index[$this->unitKey($u->name)] ??= $u->code;
+        }
+
+        return $index;
     }
 
     private function isStage(array $r): bool
