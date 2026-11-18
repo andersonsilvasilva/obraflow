@@ -53,6 +53,8 @@ function readPref(uuid: string): Pref {
 
 /** Protótipo de comparação (A-58), carregado só quando escolhido. */
 const BryntumPreview = lazy(() => import('./BryntumPreview'))
+const DhtmlxPreview = lazy(() => import('./DhtmlxPreview'))
+type Engine = 'svar' | 'bryntum' | 'dhtmlx'
 
 const monthFmt = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
 
@@ -92,14 +94,15 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const [baselineName, setBaselineName] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
   // comparação de bibliotecas de Gantt (A-58): preferência do navegador
-  const [engine, setEngineState] = useState<'svar' | 'bryntum'>(() => {
+  const [engine, setEngineState] = useState<Engine>(() => {
     try {
-      return localStorage.getItem('obraflow.planning.gantt-engine') === 'bryntum' ? 'bryntum' : 'svar'
+      const v = localStorage.getItem('obraflow.planning.gantt-engine')
+      return v === 'bryntum' || v === 'dhtmlx' ? v : 'svar'
     } catch {
       return 'svar'
     }
   })
-  const setEngine = (v: 'svar' | 'bryntum') => {
+  const setEngine = (v: Engine) => {
     setEngineState(v)
     try {
       localStorage.setItem('obraflow.planning.gantt-engine', v)
@@ -292,16 +295,15 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         {([
           ['svar', 'Atual (SVAR)'],
           ['bryntum', 'Bryntum Community (protótipo)'],
+          ['dhtmlx', 'DHTMLX Community (protótipo)'],
         ] as const).map(([v, label]) => (
           <button key={v} type="button" onClick={() => setEngine(v)} className={cn('rounded-md border px-2 py-1', engine === v ? 'border-primary bg-primary/10 text-primary font-medium' : 'text-muted-foreground')}>
             {label}
           </button>
         ))}
       </div>
-      {engine === 'bryntum' ? (
-        <Suspense fallback={<LoadingState />}>
-          <BryntumPreview plan={plan!} />
-        </Suspense>
+      {engine !== 'svar' ? (
+        <Suspense fallback={<LoadingState />}>{engine === 'bryntum' ? <BryntumPreview plan={plan!} /> : <DhtmlxPreview plan={plan!} showCritical={pref.critical} />}</Suspense>
       ) : (
         <GanttView
           uuid={uuid}
