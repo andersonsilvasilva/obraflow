@@ -16,7 +16,7 @@ return [
     // X-Tenant-Hint: dica NÃO autoritativa do tenant exibido (409 se divergir da sessão)
     'allowed_headers' => ['Accept', 'Content-Type', 'Authorization', 'X-Requested-With', 'X-XSRF-TOKEN', 'X-Request-Id', 'X-Tenant-Hint'],
 
-    'exposed_headers' => ['X-Request-Id'],
+    'exposed_headers' => ['X-Request-Id', 'Content-Disposition'], // nome do arquivo nos downloads (relatório 4D)
 
     'max_age' => 600,
 

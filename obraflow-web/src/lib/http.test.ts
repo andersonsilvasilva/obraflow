@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { http, onUnauthorized } from './http'
+import { http, httpDownload, onUnauthorized } from './http'
 
 /** Sessão Sanctum (T-02): escritas levam X-XSRF-TOKEN; GET não; 419 renova o cookie e repete; 401 avisa a aplicação. */
 
@@ -71,5 +71,26 @@ describe('cliente HTTP', () => {
     await expect(http('/auth/login', { method: 'POST', body: {} })).rejects.toMatchObject({ code: 'unauthenticated' })
     expect(listener).toHaveBeenCalledTimes(1)
     off()
+  })
+})
+
+describe('download de arquivo (relatório 4D)', () => {
+  it('devolve o arquivo e o nome do Content-Disposition; escrita leva o token CSRF', async () => {
+    vi.stubGlobal('document', { cookie: 'XSRF-TOKEN=abc' })
+    const spy = vi.fn().mockResolvedValue(new Response('%PDF-1.7', { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename=ORC-007-2026-v1-orcamento.pdf' } }))
+    vi.stubGlobal('fetch', spy)
+
+    const { blob, filename } = await httpDownload('/budgets/x/versions/1/report', { method: 'POST', body: { format: 'pdf' } })
+
+    expect(filename).toBe('ORC-007-2026-v1-orcamento.pdf')
+    expect(await blob.text()).toBe('%PDF-1.7')
+    expect(headersOf(spy.mock.calls[0])['X-XSRF-TOKEN']).toBe('abc')
+  })
+
+  it('erro da API (JSON) vira exceção com a mensagem, sem baixar nada', async () => {
+    vi.stubGlobal('document', { cookie: 'XSRF-TOKEN=abc' })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ code: 'domain_rule', message: 'PDF indisponível: o Chrome não foi encontrado.' }, { status: 422 })))
+
+    await expect(httpDownload('/budgets/x/versions/1/report', { method: 'POST', body: { format: 'pdf' } })).rejects.toMatchObject({ status: 422 })
   })
 })

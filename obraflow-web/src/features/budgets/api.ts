@@ -1,4 +1,4 @@
-import { http, type Query } from '@/lib/http'
+import { http, httpDownload, type Query } from '@/lib/http'
 import type { Option, Page } from '@/features/registry/api'
 
 /** Valores monetários e decimais chegam como TEXTO exato da API (D-P32): nunca recalculados no navegador. */
@@ -155,6 +155,8 @@ export const budgetsApi = {
   newVersion: (uuid: string, label?: string) => http(`${b(uuid)}/versions`, { method: 'POST', body: { label } }),
   version: (uuid: string, n: number) => http<{ data: Version }>(v(uuid, n)).then(data),
   updateVersion: (uuid: string, n: number, body: Body) => http(v(uuid, n), { method: 'PUT', body }),
+  /** Relatório da versão (4D): gera na hora e devolve o arquivo (nada é gravado). */
+  report: (uuid: string, n: number, body: Body) => httpDownload(`${v(uuid, n)}/report`, { method: 'POST', body }),
   abc: (uuid: string, n: number, type: 'services' | 'resources') => http<{ data: AbcRow[] }>(`${v(uuid, n)}/abc`, { query: { type } }).then(data),
   groups: {
     create: (uuid: string, n: number, body: Body) => http(`${v(uuid, n)}/groups`, { method: 'POST', body }),

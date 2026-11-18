@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, CheckCircle2, CopyPlus, Pencil, RotateCcw, Send, Undo2, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, CopyPlus, FileDown, Pencil, RotateCcw, Send, Undo2, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useToast } from '@/app/providers/ToastProvider'
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { EntityFormModal, type FieldDef } from '@/features/registry/components/EntityFormModal'
 import { getErrorMessage } from '@/lib/api-error'
 import { formatCurrency } from '@/utils/format'
+import { ReportDialog } from './ReportDialog'
 import { budgetsApi, budgetStatusLabel, budgetStatusTone, regimeLabel, workflowActions, type Group, type Item, type WorkflowAction } from './api'
 import { AbcTab, BdiTab, CompositionModal, HistoryTab, RejectDialog, SheetTab } from './BudgetTabs'
 import { orderedGroups } from './tree'
@@ -43,6 +44,7 @@ export function BudgetDetailPage() {
   const [tab, setTab] = useState('planilha')
   const [selected, setSelected] = useState<number | null>(null)
   const [dialog, setDialog] = useState<Dialog | null>(null)
+  const [report, setReport] = useState(false)
 
   const budget = useQuery({ queryKey: ['budget', uuid], queryFn: () => budgetsApi.get(uuid) })
   const current = budget.data?.current_version?.number
@@ -140,6 +142,11 @@ export function BudgetDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {v && (
+            <Button variant="outline" size="lg" onClick={() => setReport(true)}>
+              <FileDown className="size-4" /> Relatório
+            </Button>
+          )}
           {actions.map((a) => {
             const { label, icon: Icon, variant } = actionMeta[a]
             return (
@@ -274,6 +281,7 @@ export function BudgetDetailPage() {
         />
       )}
       {dialog?.kind === 'composition' && <CompositionModal uuid={uuid} number={number} item={dialog.row} onClose={() => setDialog(null)} />}
+      {report && v && <ReportDialog uuid={uuid} number={number} code={b.code} approved={v.status === 'approved'} onClose={() => setReport(false)} />}
       {dialog?.kind === 'reject' && <RejectDialog onClose={() => setDialog(null)} onConfirm={(c) => act(() => budgetsApi.workflow(uuid, 'reject', c), 'Versão rejeitada')} />}
       <ConfirmDialog
         open={dialog?.kind === 'confirm'}

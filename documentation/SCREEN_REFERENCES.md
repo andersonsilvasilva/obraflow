@@ -199,3 +199,29 @@ Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os 
   - Ocorrências, Comentários gerais, Visitas e Fotos, cada bloco com botão "Entrada".
   - Entra na **Fase 6** (Diário de obras), com os horários e o calendário da obra já feitos.
 - Colunas da planilha-modelo `planning.xlsx`: Tipo (Etapa/Material/Serviços…), Item (1, 1.1, 1.1.1…), Descrição, Data de início (planejado), Data de entrega (planejado), Início da etapa (executado), Conclusão da etapa (executado), Valor unitário, Quantidade, Unidade, HH prevista, Comentário.
+
+## Referências recebidas no chat em 2026-11-18 (Fases 7 e 8 — ainda não autorizadas)
+
+Capturas enviadas pelo responsável durante a 4D. Registradas só como referência de organização e funcionalidades; nomes de pessoas, contas e e-mails visíveis nas capturas **não** foram registrados. Nenhuma implementação sem proposta de modelo e autorização.
+
+**Fase 8 — Financeiro ("Receitas e Despesas")**
+
+| # | O que mostra | Funcionalidades identificadas |
+|---|---|---|
+| F1 | Categorias | Plano de categorias em árvore (1, 3 › 3.1, 3.2, 3.3), tipo Receita ou Despesa, ações adicionar subcategoria, editar e excluir, paginação |
+| F2 | Novo lançamento (despesa) | Tipo receita/despesa; centro de custo (obra); cliente e fornecedor (com cadastro rápido); etapas (base ou do planejamento); conta; valor; competência, vencimento e data da confirmação; categoria; forma de pagamento; número da NF-e; seções Dividir lançamento, Recorrência, Impostos e taxas, Mais informações; observação; anexos |
+| F3 | Impostos e taxas do lançamento | INSS, ISS, IRRF, retenção técnica, PIS, COFINS e CSLL em %; aviso: "serão criados lançamentos correspondentes aos impostos e retenções" |
+| F4 | Lista de lançamentos | Filtros por confirmação, vencimento ou competência e período; saldo anterior e saldo acumulado por linha; etiquetas (conta, categoria, obra); confirmar, editar, excluir; totais: receita/despesa em aberto, confirmada, resultado, receita e despesa total; exportar |
+| F5 | Confirmação múltipla | Seleção de vários lançamentos e confirmação em lote, com quantidade e valor total |
+| F6 | Relatório gerencial (visualização) | DRE por colunas de período (dia, semana, mês, trimestre, ano), regime de competência, filtros por centro de custo e conta bancária, linhas recolhíveis, exportar XLS e PDF |
+| F7 | Relatório gerencial (montagem) | "Disciplinas" numeradas montadas pelo usuário: cada uma soma categorias ou outras disciplinas (ex.: Receita líquida = Receita bruta + Deduções); ordem por arrastar; configuração do tratamento dos impostos retidos (receita: bruto com retenções detalhadas ou só líquido; despesa: líquido pago ao fornecedor ou bruto) |
+
+**Fase 7 — Requisições e Cotações**
+
+| # | O que mostra | Funcionalidades identificadas |
+|---|---|---|
+| C1 | Menu Requisições da obra | Cotações, Ordens de execução, Histórico de preços |
+| C2 | Cotações | Abas Cotações, Canceladas, Relatório personalizado; listas Rascunhos, Solicitações e Solicitações finalizadas (id, subgrupo, descrição, criação, entrega, duração, gestor, responsável, status); ações por linha |
+| C3 | Alterar status da requisição | Pendente, Concorrência, Solicitação, Cancelada |
+| C4 | Relatório personalizado | Grade com escolha de colunas, agrupamento por coluna (arrastar cabeçalho), busca e exportar Excel |
+| C5 | Painel de requisições | Kanban: Rascunho, Solicitações, Finalizadas, Ordem de execução, OE concluída; filtros por obra, responsável e status; busca por descrição |

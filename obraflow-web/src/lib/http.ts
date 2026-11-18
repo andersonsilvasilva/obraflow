@@ -50,6 +50,36 @@ export function onUnauthorized(listener: () => void): () => void {
  * `tenant_mismatch` sem efeito colateral. Escritas levam o X-XSRF-TOKEN (sessão Sanctum, T-02).
  */
 export async function http<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await request(path, options)
+  if (response.status === 204) return undefined as T
+  return (await response.json()) as T
+}
+
+/**
+ * Download de arquivo gerado pela API (ex.: relatório do orçamento). Mesmas regras do `http` (sessão, CSRF, dica de
+ * tenant e erros em JSON); o nome vem do Content-Disposition.
+ */
+export async function httpDownload(path: string, options: RequestOptions = {}): Promise<{ blob: Blob; filename: string | null }> {
+  const response = await request(path, options)
+  const disposition = response.headers.get('content-disposition') ?? ''
+  const match = /filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i.exec(disposition)
+  const filename = match ? decodeURIComponent(match[1] ?? match[2]) : null
+  return { blob: await response.blob(), filename }
+}
+
+/** Salva o arquivo no computador do usuário (download pelo navegador). */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+async function request(path: string, options: RequestOptions): Promise<Response> {
   const method = options.method ?? 'GET'
   const url = new URL(`${env.apiUrl}${path}`)
   for (const [key, value] of Object.entries(options.query ?? {})) {
@@ -91,6 +121,5 @@ export async function http<T>(path: string, options: RequestOptions = {}): Promi
     if (error.status === 401 && !path.startsWith('/auth/login')) unauthorizedListeners.forEach((l) => l())
     throw error
   }
-  if (response.status === 204) return undefined as T
-  return (await response.json()) as T
+  return response
 }
