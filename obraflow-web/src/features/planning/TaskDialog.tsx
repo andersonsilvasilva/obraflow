@@ -1,10 +1,12 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Alert } from '@/components/feedback/Alert'
 import { Modal } from '@/components/feedback/Modal'
 import { FormField, SelectInput, TextInput } from '@/components/forms/fields'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/features/auth/auth-context'
+import { api } from '@/features/registry/api'
 import { getErrorMessage } from '@/lib/api-error'
 import { depLabel, kindLabel, planningApi, type DepType, type PlanData, type PlanTask, type TaskKind } from './api'
 
@@ -23,8 +25,17 @@ interface Props {
 }
 
 /** Incluir/editar etapa, atividade ou marco; predecessoras; mover e excluir. O servidor recalcula tudo (D-P67). */
+/** Unidades de medida cadastradas (o planejamento guarda o CÓDIGO, como o orçamento). */
+function useUnitCodes(enabled: boolean) {
+  return (
+    useQuery({ queryKey: ['units', 'codes'], queryFn: () => api.units.all({ status: 'active' }), enabled, staleTime: 300_000 }).data?.map((u) => ({ code: u.code, name: u.name })) ?? []
+  )
+}
+
 export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, durationMode = 'calendar', canEdit, onClose, onSaved }: Props) {
   const working = durationMode === 'working'
+  const { can } = useAuth()
+  const units = useUnitCodes(can('units.view'))
   const editing = !!task
   const kind: TaskKind = task?.kind ?? initialKind ?? 'task'
   const [form, setForm] = useState({
@@ -134,8 +145,20 @@ export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, dur
             <FormField label="Quantidade">
               <TextInput inputMode="decimal" value={form.quantity} onChange={(e) => set('quantity', e.target.value.replace(',', '.'))} />
             </FormField>
-            <FormField label="Unidade">
-              <TextInput value={form.unit_code} maxLength={20} onChange={(e) => set('unit_code', e.target.value)} />
+            <FormField label="Unidade" hint={units.length === 0 && can('units.view') ? 'Cadastre em Cadastros → Unidades de medida.' : undefined}>
+              {can('units.view') ? (
+                <SelectInput value={form.unit_code} onChange={(e) => set('unit_code', e.target.value)}>
+                  <option value="">Selecione…</option>
+                  {units.map((u) => (
+                    <option key={u.code} value={u.code}>
+                      {u.code} — {u.name}
+                    </option>
+                  ))}
+                  {form.unit_code && !units.some((u) => u.code === form.unit_code) && <option value={form.unit_code}>{form.unit_code} (não cadastrada)</option>}
+                </SelectInput>
+              ) : (
+                <TextInput value={form.unit_code} maxLength={20} onChange={(e) => set('unit_code', e.target.value)} />
+              )}
             </FormField>
           </>
         )}
