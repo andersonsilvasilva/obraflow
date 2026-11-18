@@ -206,7 +206,7 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Ações por linha** (A-50), coluna à esquerda, só para quem edita: **+ atividade abaixo** (na mesma etapa), **↳ sub atividade** (a linha vira etapa) e **excluir** (com confirmação). Os botões de custo (composição própria, composição pública, recursos) entram na 6B.
 - **Altura:** o Gantt ocupa a área inteira (60% da tela, no mínimo 24rem). Antes, a barra de rolagem cobria a segunda linha.
 
-> **Escopo da 6B atualizado (A-50):** recursos avulsos + composição SINAPI + composição própria simplificada. A proposta detalhada da 6B será apresentada antes de começar.
+> **Escopo da 6B atualizado (A-50):** recursos avulsos + composição SINAPI + composição própria simplificada. **Proposta detalhada em [FASE6B_MODELO.md](FASE6B_MODELO.md)** (D-P87 a D-P98, aguardando aprovação).
 
 ### 6A — ajuste A-51 (comportamento do Gantt como no Brickup)
 
