@@ -1,6 +1,6 @@
 # FASE 4D — RELATÓRIO DO ORÇAMENTO (PDF, XLSX E DOCX): MODELO APROVADO
 
-> **Aprovado em 2026-11-18** (D-P77 a D-P86 conforme a recomendação — A-54). Pedido do responsável: relatório do orçamento da obra em PDF, XLSX e DOCX, com acabamento premium.
+> **Aprovado em 2026-11-18** (D-P77 a D-P86 conforme a recomendação — A-54). **Homologado pelo responsável em 2026-11-18 (A-56).** Pedido do responsável: relatório do orçamento da obra em PDF, XLSX e DOCX, com acabamento premium.
 >
 > **Já decidido pelo responsável (A-53):**
 > - **quando:** agora, antes da 6B;
@@ -122,3 +122,10 @@ Nenhuma etapa grava no banco `obraflow` (sem migrations e sem permissões novas)
 - **Imagens pelo Chrome:** os gráficos da curva ABC (o mesmo SVG do PDF) e a marca d'água "RASCUNHO" em PNG transparente, aplicada no cabeçalho de cada seção em versões não aprovadas. Sem Chrome, o DOCX sai sem essas imagens.
 - Conferido abrindo no Microsoft Word.
 - **Testes:** +1 no relatório (seções, paisagem, campos de página, conteúdo e valor final) e +1 na API (download e imagens).
+
+### Etapa 5 — tela
+
+- **Orçamento → botão Relatório:** formato (PDF, XLSX, DOCX), partes opcionais, ocultar o BDI e os dados do fechamento (só para o arquivo). O download usa `httpDownload` (sessão, CSRF e dica de tenant, como as demais chamadas); `Content-Disposition` exposto no CORS para o nome do arquivo.
+- **Testes:** API 469/469; frontend 52/52 (+2: download e erro).
+
+**4D homologada pelo responsável em 2026-11-18 (A-56).**
