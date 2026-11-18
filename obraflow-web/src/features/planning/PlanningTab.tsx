@@ -17,6 +17,7 @@ import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { formatDateOrDash } from '@/utils/format'
 import { fromGanttLink, planningApi, toGanttLink, toGanttTasks, toYmd, type ImportPreview, type PlanData, type PlanTask } from './api'
+import { PeriodNotice } from './PeriodNotice'
 import { TaskDialog } from './TaskDialog'
 
 type Mode = 'grid' | 'all' | 'chart'
@@ -73,7 +74,7 @@ const CELL: Record<Zoom, number> = { day: 34, week: 70, month: 90 }
  * pelas dependências e caminho crítico (D-P66/D-P67). O Gantt (SVAR, MIT — D-P69) só desenha e captura as ações
  * (arrastar barra, ligar atividades, abrir edição), que viram chamadas à API.
  */
-export function PlanningTab({ project, canEditProject, onOpenCalendar }: { project: { uuid: string; start_date: string | null }; canEditProject: boolean; onOpenCalendar: () => void }) {
+export function PlanningTab({ project, canEditProject, onOpenCalendar }: { project: { uuid: string; start_date: string | null; expected_end_date: string | null }; canEditProject: boolean; onOpenCalendar: () => void }) {
   const { can } = useAuth()
   const { notify } = useToast()
   const client = useQueryClient()
@@ -166,13 +167,27 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         {['Custo', 'Com BDI', 'BDI', 'Desconto', 'Valor final'].map((l) => (
           <Kpi key={l} label={l} value="—" hint={soon6B} />
         ))}
-        <Kpi label="Início" value={formatDateOrDash(summary.start)} />
-        <Kpi label="Término" value={formatDateOrDash(summary.end)} />
+        <Kpi label="Início" value={formatDateOrDash(summary.start)} sub={`Obra: ${formatDateOrDash(project.start_date)}`} />
+        <Kpi
+          label="Término"
+          value={formatDateOrDash(summary.end)}
+          sub={`Entrega prevista: ${formatDateOrDash(project.expected_end_date)}`}
+          tone={summary.end && project.expected_end_date && summary.end > project.expected_end_date ? 'danger' : undefined}
+        />
         <Kpi label="Executado" value={`${Number(summary.percent).toLocaleString('pt-BR')}%`} />
         <Kpi label="Atividades" value={String(summary.tasks)} />
         <Kpi label="Caminho crítico" value={String(summary.critical)} tone="danger" />
         <Kpi label="Atrasadas" value={String(summary.late)} tone={summary.late ? 'danger' : undefined} />
       </div>
+
+      <PeriodNotice
+        uuid={uuid}
+        projectStart={project.start_date}
+        projectEnd={project.expected_end_date}
+        planStart={summary.start}
+        planEnd={summary.end}
+        canEditProject={canEditProject}
+      />
 
       {/* barra de ações: análise à esquerda; incluir, importar, exibição e zoom à direita */}
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -343,13 +358,14 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   )
 }
 
-function Kpi({ label, value, tone, hint }: { label: string; value: string; tone?: 'danger'; hint?: string }) {
+function Kpi({ label, value, tone, hint, sub }: { label: string; value: string; tone?: 'danger'; hint?: string; sub?: string }) {
   return (
     <div className="bg-card rounded-lg border px-3 py-2" title={hint}>
       <p className="text-muted-foreground flex items-center gap-1 text-xs">
         {label} {hint && <SoonBadge />}
       </p>
       <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive', hint && 'text-muted-foreground')}>{value}</p>
+      {sub && <p className="text-muted-foreground text-[0.7rem] tabular-nums">{sub}</p>}
     </div>
   )
 }
