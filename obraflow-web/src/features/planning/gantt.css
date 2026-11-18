@@ -2,7 +2,8 @@
  * SVAR React Gantt (tema Willow) com a identidade do ObraFlow: variáveis do tema apontam para os tokens de
  * src/index.css — nenhuma cor fixa aqui. Escopo: .obraflow-gantt.
  */
-.obraflow-gantt {
+.obraflow-gantt,
+.obraflow-gantt .wx-willow-theme {
     --wx-font-family: var(--font-sans);
     --wx-font-size: 0.8125rem;
     --wx-color-primary: var(--primary);
@@ -26,7 +27,8 @@
     --wx-gantt-marker-color: var(--destructive);
 }
 
-/* o tema (Willow) e o Gantt ocupam toda a altura da área (60vh, mínimo 24rem) */
+/* o tema (Willow) redefine as cores no próprio elemento: por isso as variáveis acima valem também nele.
+   O tema e o Gantt ocupam toda a altura da área (60vh, mínimo 24rem). */
 .obraflow-gantt > .wx-willow-theme {
     height: 100%;
 }
@@ -60,4 +62,13 @@
 /* dia não útil da obra (horário + exceções do calendário — D-P66) */
 .obraflow-gantt .wx-weekend {
     background: var(--muted);
+}
+
+/*
+ * Folga no fim da rolagem vertical: o bloco que dá a altura da rolagem (.wx-pseudo-rows) não conta o cabeçalho
+ * de datas em 2 linhas nem a barra de rolagem horizontal, e as últimas linhas ficavam inalcançáveis.
+ */
+.obraflow-gantt .wx-pseudo-rows {
+    box-sizing: content-box;
+    padding-bottom: 96px;
 }
