@@ -31,7 +31,7 @@ Acesso: na tela do orçamento, botão **Relatório**. Ele abre uma janela para e
 | 3 | **Orçamento sintético** | Etapas e itens: item (EAP), código, fonte (SINAPI, catálogo, próprio), descrição, unidade, quantidade, preço unitário sem BDI, preço unitário com BDI e total. Subtotal por etapa e total geral | Não |
 | 4 | **Orçamento analítico** | Cada item com a sua composição: insumos e composições auxiliares com código, descrição, unidade, coeficiente, preço unitário e total. Item sem composição aparece como "preço direto" | Sim (marcado por padrão) |
 | 5 | **BDI e encargos** | BDI global e os diferenciados por etapa ou item. Quando calculado pela fórmula do TCU, mostra a fórmula e cada parcela: administração central (AC), seguro (S), risco (R), garantia (G), despesas financeiras (DF), lucro (L) e tributos (I). Quando informado, só o percentual. Também os custos indiretos e o regime de encargos sociais | Sim |
-| 6 | **Curva ABC** | Dos serviços e dos insumos: posição, descrição, valor, %, % acumulado e faixa (A, B ou C). No PDF, com gráfico de Pareto | Sim |
+| 6 | **Curva ABC** | Dos serviços e dos insumos: posição, descrição, valor, %, % acumulado e faixa (A, B ou C). **Gráfico de Pareto nos três formatos:** no PDF desenhado pelo Chrome (SVG); no DOCX e no XLSX como imagem PNG do mesmo gráfico | Sim |
 | 7 | **Fechamento** | Observações (texto livre digitado na hora, não é gravado), local e data, e campos de assinatura do responsável técnico (nome, CREA/CAU, ART/RRT) e do cliente | Sim |
 
 **Identidade visual (premium):**
@@ -50,12 +50,12 @@ GET /api/v1/budgets/{uuid}/versions/{n}/report?format=pdf|xlsx|docx&parts=...&no
 BudgetReportBuilder ── lê a versão (BudgetCalculator, BdiResolver, AbcCurve) e monta um ReportData único
         │
         ├── PdfReportRenderer  → Blade (HTML + CSS de impressão + SVG do gráfico) → Chrome headless (printToPDF)
-        ├── XlsxReportRenderer → OpenSpout (abas: Resumo, Sintético, Analítico, BDI, Curva ABC)
+        ├── XlsxReportRenderer → OpenSpout (abas: Resumo, Sintético, Analítico, BDI, Curva ABC; gráfico como imagem PNG)
         └── DocxReportRenderer → PHPWord (mesmas partes; gráfico como imagem PNG gerada pelo Chrome)
 ```
 
 - Os números vêm **todos** do `ReportData`, montado com `Dec` (bcmath). Os renderizadores só formatam, então os três formatos não podem divergir.
-- O gráfico da curva ABC é um **SVG gerado no servidor** (sem JavaScript). No DOCX vai como PNG (captura do mesmo SVG pelo Chrome).
+- O gráfico da curva ABC é um **SVG gerado no servidor** (sem JavaScript). O PDF o desenha direto; no DOCX e no XLSX ele vai como **PNG**, uma captura do mesmo SVG feita pelo Chrome. Assim os três formatos mostram o mesmo gráfico.
 - Geração **na hora** (síncrona), com limite de tempo. O arquivo não fica guardado no servidor.
 - Nome do arquivo: `ORC-003-2026-v2-orcamento.pdf` (sem dados pessoais).
 
@@ -63,14 +63,14 @@ BudgetReportBuilder ── lê a versão (BudgetCalculator, BdiResolver, AbcCurv
 
 | ID | Decisão | Recomendação |
 |---|---|---|
-| **D-P77** | **Biblioteca para comandar o Chrome** | **chrome-php/chrome 1.16.1** (MIT, publicada em 06/07/2026). É PHP puro e fala direto com o Chrome, **sem Node** no servidor. Alternativa: spatie/browsershot (MIT), que exige Node e Puppeteer no servidor |
+| **D-P77** | **Biblioteca para comandar o Chrome** | **chrome-php/chrome 1.16.1** (MIT, publicada em 06/07/2026). É PHP puro e fala direto com o Chrome, **sem Node** no servidor. O resultado visual é o mesmo das alternativas, porque quem desenha é sempre o Chrome: spatie/browsershot (MIT) exige Node e Puppeteer; Gotenberg (MIT) é um serviço Docker à parte |
 | **D-P78** | **Chrome no servidor** | Caminho do executável por configuração (`CHROME_PATH`). Local: o Chrome já instalado. Produção: Chrome ou Chromium instalado no servidor (ou container). Se não houver Chrome, o PDF responde com erro claro e o XLSX e o DOCX continuam funcionando |
 | **D-P79** | **Biblioteca do DOCX** | **phpoffice/phpword 1.4.0** (publicada em 05/06/2025). A licença é **LGPL-3.0**: pode ser usada como dependência sem abrir o código do ObraFlow, desde que a biblioteca não seja modificada. Precisa do seu aceite. Alternativa sem LGPL: DOCX montado pelo próprio ObraFlow (mais trabalho, menos recursos) |
 | **D-P80** | **Permissão** | Quem vê o orçamento (`budgets.view` + acesso à obra) pode gerar o relatório. **Sem permissão nova**, então nada muda no banco |
 | **D-P81** | **Auditoria** | Registrar `budget.report_exported` (formato, partes e versão), porque os dados saem do sistema. Não grava o arquivo |
 | **D-P82** | **Versões permitidas** | Qualquer versão pode ser exportada. As não aprovadas saem com a marca d'água "RASCUNHO" e a situação na capa |
 | **D-P83** | **Valores mostrados** | Padrão: preço unitário sem BDI, com BDI e total com BDI. Opção na janela: "**ocultar o BDI**" (o cliente vê só o preço final) e "ocultar o analítico" |
-| **D-P84** | **XLSX** | Uma aba por parte, com formatação (moedas, % e larguras) e **valores fixos**, sem fórmulas, para que o arquivo mostre exatamente o mesmo que o PDF. A curva ABC vai como tabela (o OpenSpout não desenha gráficos) |
+| **D-P84** | **XLSX** | Uma aba por parte, com formatação (moedas, % e larguras) e **valores fixos**, sem fórmulas, para que o arquivo mostre exatamente o mesmo que o PDF. A curva ABC vai como tabela **e com o gráfico como imagem PNG** (a OpenSpout 5.13 insere imagens). Um gráfico nativo do Excel, editável, exigiria trocar para a PhpSpreadsheet (MIT): não recomendado, porque a imagem já mostra o mesmo gráfico do PDF |
 | **D-P85** | **Observações e assinaturas** | Digitadas na janela do relatório, só para aquele arquivo (não são gravadas). Os dados do responsável técnico podem virar cadastro numa etapa futura |
 | **D-P86** | **Limite de tamanho** | Até 3.000 itens por relatório (o analítico pode passar de 100 páginas). Acima disso, aviso para gerar sem o analítico. Tempo máximo de 60 s |
 
