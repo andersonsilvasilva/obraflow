@@ -296,3 +296,15 @@ it('relatório PDF (4D) pela API; o XLSX leva os gráficos da curva ABC como ima
     $zip->close();
     expect(count($media))->toBe(3); // a marca na aba Resumo + os 2 gráficos
 });
+
+it('relatório DOCX (4D) pela API: gráficos e marca d\'água como imagem quando há Chrome', function () {
+    preencher($this);
+    $res = $this->b->post("{$this->base}/report", ['format' => 'docx'])->assertOk();
+    expect($res->headers->get('content-disposition'))->toContain('ORC-1-v1-orcamento.docx');
+    $zip = new ZipArchive;
+    $zip->open($res->baseResponse->getFile()->getPathname());
+    $media = array_filter(array_map(fn ($i) => $zip->getNameIndex($i), range(0, $zip->numFiles - 1)), fn ($n) => str_starts_with($n, 'word/media/'));
+    $zip->close();
+    $chrome = app(ChromeRenderer::class)->available();
+    expect(count($media))->toBeGreaterThanOrEqual($chrome ? 4 : 1); // marca ObraFlow + 2 gráficos + marca d'água
+});

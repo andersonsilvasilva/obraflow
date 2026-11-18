@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\ReferenceDataset;
 use App\Modules\Budgets\Report\BudgetReportBuilder;
 use App\Modules\Budgets\Report\ChromeRenderer;
+use App\Modules\Budgets\Report\DocxReportRenderer;
 use App\Modules\Budgets\Report\PdfReportRenderer;
 use App\Modules\Budgets\Report\ReportFormat;
 use App\Modules\Budgets\Report\ReportOptions;
@@ -151,6 +152,25 @@ it('PDF pelo Chrome headless: arquivo PDF com várias páginas, marca d\'água e
     expect(substr($pdf, 0, 5))->toBe('%PDF-')->and(preg_match_all('/\/Type\s*\/Page[^s]/', $pdf))->toBeGreaterThanOrEqual(6);
     if ($dir = getenv('REPORT_SAMPLE_DIR')) {
         copy($path, $dir.'/amostra-orcamento.pdf');
+    }
+    @unlink($path);
+});
+
+it('DOCX pelo PHPWord: seções retrato/paisagem, página X de Y, tabelas e imagens dos gráficos e da marca d\'água', function () {
+    $data = ($this->build)(['format' => 'docx', 'notes' => 'DEMO Validade: 30 dias.']);
+    $path = sys_get_temp_dir().'/obraflow-test-'.uniqid().'.docx';
+    app(DocxReportRenderer::class)->render($data, $path);
+
+    $zip = new ZipArchive;
+    expect($zip->open($path))->toBeTrue();
+    $doc = $zip->getFromName('word/document.xml');
+    $footers = implode('', array_map(fn ($i) => str_starts_with($zip->getNameIndex($i), 'word/footer') ? $zip->getFromIndex($i) : '', range(0, $zip->numFiles - 1)));
+    $zip->close();
+    expect($doc)->toContain('Orçamento sintético')->toContain('ASSENTAMENTO DE TUBO')->toContain('DEMO Validade: 30 dias.')->toContain('w:orient="landscape"')
+        ->toContain(ReportFormat::money($data['totals']['final_price']))
+        ->and($footers)->toContain('NUMPAGES');
+    if ($dir = getenv('REPORT_SAMPLE_DIR')) {
+        copy($path, $dir.'/amostra-orcamento.docx');
     }
     @unlink($path);
 });

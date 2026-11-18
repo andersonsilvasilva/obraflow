@@ -14,7 +14,7 @@ use App\Modules\Audit\AuditLogger;
 final class BudgetReportService
 {
     /** Formatos já disponíveis (os demais entram nas próximas etapas da 4D). */
-    public const AVAILABLE = ['pdf', 'xlsx'];
+    public const AVAILABLE = ReportOptions::FORMATS;
 
     public function __construct(private readonly BudgetReportBuilder $builder, private readonly AuditLogger $audit) {}
 
@@ -46,6 +46,32 @@ final class BudgetReportService
         return $out;
     }
 
+    /**
+     * Marca d'água "RASCUNHO" em PNG transparente para o DOCX (versão não aprovada). Sem Chrome, sai sem ela.
+     *
+     * @param  list<string>  $tmp
+     * @return array<string, string>
+     */
+    private function watermark(array $data, array &$tmp): array
+    {
+        $chrome = app(ChromeRenderer::class);
+        if (! $data['meta']['draft'] || ! $chrome->available()) {
+            return [];
+        }
+        $png = self::tempFile('png');
+        $tmp[] = $png;
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="920" height="460"><text x="460" y="260" text-anchor="middle" font-family="Geist, Arial" font-weight="800" font-size="150" letter-spacing="18" fill="rgba(180,83,9,0.10)" transform="rotate(-28 460 230)">RASCUNHO</text></svg>';
+        try {
+            $chrome->png('<!doctype html><html><head><meta charset="utf-8"><style>'.ReportAssets::fontFace().'html,body{margin:0;background:transparent}</style></head><body>'.$svg.'</body></html>', $png, 920, 460, transparent: true);
+
+            return ['watermark' => $png];
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
     /** @return array{path: string, filename: string, mime: string} */
     public function generate(BudgetVersion $version, ReportOptions $options, User $user): array
     {
@@ -57,6 +83,7 @@ final class BudgetReportService
             match ($options->format) {
                 'pdf' => app(PdfReportRenderer::class)->render($data, $path),
                 'xlsx' => app(XlsxReportRenderer::class)->render($data, $path, $this->charts($data, $tmp)),
+                'docx' => app(DocxReportRenderer::class)->render($data, $path, $this->charts($data, $tmp) + $this->watermark($data, $tmp)),
             };
         } finally {
             foreach ($tmp as $file) {

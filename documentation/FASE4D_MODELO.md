@@ -115,3 +115,10 @@ Nenhuma etapa grava no banco `obraflow` (sem migrations e sem permissões novas)
 - **Layout** (`resources/views/reports/budget.blade.php`): capa com a marca e o valor final; cabeçalho e rodapé pelo CSS de impressão (`@page`, caixas de margem do Chrome 131+) com "Página X de Y"; fonte Geist embutida (SIL OFL, `resources/report/fonts`); retrato para capa, resumo, BDI e fechamento e paisagem para sintético, analítico e curva ABC; cabeçalho das tabelas repetido a cada página; marca d'água "RASCUNHO" em todas as páginas de versões não aprovadas (a capa usa as mesmas margens das demais páginas, condição para a marca d'água fixa sair centralizada).
 - **Curva ABC:** `AbcChart` gera o Pareto em SVG (até 25 barras + "Demais", % acumulado, linhas de 80% e 95%). O PDF usa o SVG; o XLSX recebe o PNG capturado pelo Chrome do mesmo SVG (insumos e serviços).
 - **Testes:** +1 no relatório (PDF com várias páginas, marca d'água, gráfico e HTML sem nenhum recurso externo) e +1 na API (PDF e imagens no XLSX). São pulados se o ambiente não tiver Chrome.
+
+### Etapa 4 — DOCX
+
+- **PHPWord 1.4.0** (LGPL-3.0, aceita na D-P79; sem modificações). `DocxReportRenderer`: as mesmas partes do PDF, em seções retrato ou paisagem, com cabeçalho (código, versão e situação), rodapé com "Página X de Y" (campos do Word), tabelas com cabeçalho repetido e linhas que não quebram entre páginas, cores do ObraFlow e fonte Calibri (padrão do Word).
+- **Imagens pelo Chrome:** os gráficos da curva ABC (o mesmo SVG do PDF) e a marca d'água "RASCUNHO" em PNG transparente, aplicada no cabeçalho de cada seção em versões não aprovadas. Sem Chrome, o DOCX sai sem essas imagens.
+- Conferido abrindo no Microsoft Word.
+- **Testes:** +1 no relatório (seções, paisagem, campos de página, conteúdo e valor final) e +1 na API (download e imagens).

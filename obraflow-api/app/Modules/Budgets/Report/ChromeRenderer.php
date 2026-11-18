@@ -21,9 +21,10 @@ final class ChromeRenderer
     }
 
     /** Captura o HTML como PNG (gráfico da curva ABC para o DOCX e o XLSX), em resolução dobrada. */
-    public function png(string $html, string $outPath, int $width, int $height): void
+    public function png(string $html, string $outPath, int $width, int $height, bool $transparent = false): void
     {
-        $this->run($html, ['--screenshot='.$outPath, "--window-size={$width},{$height}", '--force-device-scale-factor=2', '--hide-scrollbars'], $outPath);
+        $this->run($html, array_merge(['--screenshot='.$outPath, "--window-size={$width},{$height}", '--force-device-scale-factor=2', '--hide-scrollbars'],
+            $transparent ? ['--default-background-color=00000000'] : []), $outPath);
     }
 
     public function available(): bool
