@@ -62,7 +62,8 @@ export function AppLayout() {
         <TenantSyncBanner />
         <Topbar onOpenMenu={() => setDrawerOpen(true)} />
         <main id="conteudo" tabIndex={-1} className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="mx-auto max-w-[1400px]">
+          {/* telas de trabalho da obra (planejamento/Gantt, contratos) usam a largura toda; as demais, o padrão */}
+          <div className={cn('mx-auto', /^\/obras\/[^/]+/.test(pathname) ? 'max-w-none' : 'max-w-[1400px]')}>
             <ErrorBoundary key={pathname}>
               <Outlet />
             </ErrorBoundary>

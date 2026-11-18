@@ -667,6 +667,7 @@ function GanttView({
           cellWidth={CELL[zoom]}
           cellHeight={34}
           scaleHeight={34}
+          gridWidth={mode === 'all' ? 600 : undefined}
           displayMode={mode}
           readonly={readonly}
           taskTemplate={Bar}
