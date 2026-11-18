@@ -2,7 +2,7 @@ import { Gantt, Tooltip, Willow, type IApi, type IColumnConfig } from '@svar-ui/
 import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, ChevronsDownUp, ChevronsUpDown, CornerDownRight, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
+import { BookMarked, CalendarClock, ChevronsDownUp, ChevronsUpDown, CornerDownRight, Download, FileSpreadsheet, FileStack, Flag, Landmark, Layers, Package, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Alert } from '@/components/feedback/Alert'
@@ -15,10 +15,13 @@ import { budgetsApi } from '@/features/budgets/api'
 import { calendarApi } from '@/features/projects/calendar/api'
 import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
-import { formatDateOrDash } from '@/utils/format'
-import { fromGanttLink, isoWeek, planningApi, toGanttLink, toGanttTasks, toYmd, type ImportPreview, type PlanData, type PlanTask } from './api'
+import { formatCurrency, formatDateOrDash } from '@/utils/format'
+import { fromGanttLink, isoWeek, planningApi, toGanttLink, toGanttTasks, toYmd, type ImportPreview, type PlanData, type PlanItem, type PlanTask } from './api'
 import { PeriodNotice } from './PeriodNotice'
 import { TaskDialog } from './TaskDialog'
+import { AddItemDialog, type AddMode } from './costs/AddItemDialog'
+import { PricingDialog } from './costs/PricingDialog'
+import { ResourcesView } from './costs/ResourcesView'
 
 type Mode = 'grid' | 'all' | 'chart'
 type Zoom = 'day' | 'week' | 'month'
@@ -31,6 +34,9 @@ const COLUMN_LABELS = {
   preds: 'Predecessoras',
   unit: 'Un. medida',
   quantity: 'Quantidade',
+  unit_cost: 'Custo unit.',
+  total_cost: 'Total de custo',
+  total_sale: 'Total de venda',
 } as const
 type ColumnKey = keyof typeof COLUMN_LABELS
 type Pref = { mode: Mode; zoom: Zoom; critical: boolean; columns: Record<ColumnKey, boolean> }
@@ -38,7 +44,7 @@ const DEFAULT_PREF: Pref = {
   mode: 'all',
   zoom: 'week',
   critical: false,
-  columns: { start: true, end: true, duration_days: true, preds: false, unit: false, quantity: false },
+  columns: { start: true, end: true, duration_days: true, preds: false, unit: false, quantity: false, unit_cost: false, total_cost: false, total_sale: false },
 }
 
 const PREF = (uuid: string) => `obraflow.planning.${uuid}`
@@ -90,6 +96,11 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const [baselineName, setBaselineName] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
   const [importing, setImporting] = useState(false)
+  // 6B — custos
+  const [showResources, setShowResources] = useState(false)
+  const [pricing, setPricing] = useState<'bdi' | 'discount' | null>(null)
+  const [adding, setAdding] = useState<{ task: PlanTask; mode: AddMode } | null>(null)
+  const [removingItem, setRemovingItem] = useState<PlanItem | null>(null)
   const ganttApi = useRef<IApi | null>(null)
   const key = ['schedule', uuid, compare]
 
@@ -137,7 +148,9 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const summary = plan!.summary!
   const byId = new Map(tasks.map((t) => [t.id, t]))
   const baselines = plan!.baselines?.length ?? 0
-  const soon6B = 'Com os recursos das atividades (parte 6B)'
+  const costs = plan!.costs
+  const sched = plan!.schedule!
+  const pct = (v: string | undefined) => `${Number(v ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`
   const zoomStep = (dir: 1 | -1) => {
     const order: Zoom[] = ['month', 'week', 'day']
     setPref({ zoom: order[Math.min(2, Math.max(0, order.indexOf(pref.zoom) + dir))] })
@@ -147,8 +160,8 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
     <div>
       {/* topo: como no Brickup — linha de base, exceções (calendário) e IA (Fase 9) */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <label className="text-muted-foreground inline-flex items-center gap-2 text-sm" title={soon6B}>
-          <input type="checkbox" role="switch" disabled className="accent-(--primary)" /> Visualizar recursos <SoonBadge />
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input type="checkbox" role="switch" className="accent-(--primary) size-4" checked={showResources} onChange={(e) => setShowResources(e.target.checked)} /> Visualizar recursos
         </label>
         <div className="flex flex-wrap gap-2">
           {canEdit && (
@@ -167,9 +180,11 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
 
       {/* totais de custo (6B) e indicadores do cronograma */}
       <div className="mb-3 grid gap-2 sm:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-11">
-        {['Custo', 'Com BDI', 'BDI', 'Desconto', 'Valor final'].map((l) => (
-          <Kpi key={l} label={l} value="—" hint={soon6B} />
-        ))}
+        <Kpi label="Custo" value={formatCurrency(Number(costs?.cost ?? 0))} sub={`${costs?.item_count ?? 0} recurso(s)`} />
+        <Kpi label="Com BDI" value={formatCurrency(Number(costs?.with_bdi ?? 0))} />
+        <Kpi label="BDI" value={formatCurrency(Number(costs?.bdi_amount ?? 0))} sub={pct(sched.bdi_percent)} />
+        <Kpi label="Desconto" value={formatCurrency(Number(costs?.discount_amount ?? 0))} sub={pct(sched.discount_percent)} />
+        <Kpi label="Valor final" value={formatCurrency(Number(costs?.sale ?? 0))} tone="success" />
         <Kpi label="Início" value={formatDateOrDash(summary.start)} sub={`Obra: ${formatDateOrDash(project.start_date)}`} />
         <Kpi
           label="Término"
@@ -209,12 +224,17 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
           ))}
           </SelectInput>
         </label>
-        <Button size="sm" variant="outline" disabled title={soon6B}>
-          <Percent className="size-3.5" /> BDI
+        <Button size="sm" variant="outline" onClick={() => setPricing('bdi')}>
+          <Percent className="size-3.5" /> BDI {Number(sched.bdi_percent) ? `(${pct(sched.bdi_percent)})` : ''}
         </Button>
-        <Button size="sm" variant="outline" disabled title={soon6B}>
-          <Tag className="size-3.5" /> Desconto
+        <Button size="sm" variant="outline" onClick={() => setPricing('discount')}>
+          <Tag className="size-3.5" /> Desconto {Number(sched.discount_percent) ? `(${pct(sched.discount_percent)})` : ''}
         </Button>
+        {canEdit && sched.origin === 'budget' && (
+          <Button size="sm" variant="outline" title="Traz o item do orçamento como recurso das atividades que ainda não têm recursos" onClick={() => run(planningApi.itemsFromBudget(uuid), 'Custos do orçamento trazidos.')}>
+            <FileStack className="size-3.5" /> Trazer custos do orçamento
+          </Button>
+        )}
 
         <div className="ml-auto flex flex-wrap items-center gap-1">
           {canEdit && (
@@ -233,7 +253,7 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
               </Button>
             </>
           )}
-          <Button size="sm" variant="outline" disabled title={soon6B}>
+          <Button size="sm" variant="outline" disabled title="Orçamento sintético em XLSX e PDF (próxima etapa da 6B)">
             <Download className="size-3.5" /> Exportar
           </Button>
           <Button size="icon-sm" variant="outline" aria-label="Configurações de visualização" title="Configurações de visualização" onClick={() => setSettings(true)}>
@@ -269,6 +289,17 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base (+ = atrasou).'}
       </p>
 
+      {showResources ? (
+        <ResourcesView
+          tasks={tasks}
+          items={plan!.items ?? []}
+          canEdit={canEdit}
+          onAdd={(t) => setAdding({ task: t, mode: 'resources' })}
+          onUpdateItem={(id, body) => run(planningApi.updateItem(uuid, id, body))}
+          onRemoveItem={(i) => setRemovingItem(i)}
+          onUpdateTask={(t, body) => run(planningApi.updateTask(uuid, t.id, body))}
+        />
+      ) : (
       <GanttView
         uuid={uuid}
         tasks={tasks}
@@ -288,9 +319,33 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
           if (!t) return
           if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
           else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
-          else setRemoving(t)
+          else if (action === 'delete') setRemoving(t)
+          else setAdding({ task: t, mode: action })
         }}
         onRun={run}
+      />
+      )}
+
+      {pricing && (
+        <PricingDialog
+          mode={pricing}
+          bdiPercent={sched.bdi_percent}
+          bdiComponents={sched.bdi_components}
+          discountPercent={sched.discount_percent}
+          canEdit={canEdit}
+          onClose={() => setPricing(null)}
+          onSave={(body) => (run(planningApi.pricing(uuid, body), pricing === 'bdi' ? 'BDI atualizado.' : 'Desconto atualizado.'), setPricing(null))}
+        />
+      )}
+      {adding && <AddItemDialog uuid={uuid} task={adding.task} mode={adding.mode} regime={sched.regime} onClose={() => setAdding(null)} onDone={(d) => (apply(d), notify('success', 'Recurso adicionado.'), setAdding(null))} />}
+      <ConfirmDialog
+        open={removingItem !== null}
+        title={`Excluir o recurso "${removingItem?.description ?? ''}"?`}
+        description="O custo sai da atividade. Os cadastros (catálogo, composições) não mudam."
+        confirmLabel="Excluir"
+        destructive
+        onCancel={() => setRemovingItem(null)}
+        onConfirm={() => removingItem && (run(planningApi.removeItem(uuid, removingItem.id), 'Recurso excluído.'), setRemovingItem(null))}
       />
 
       {settings && (
@@ -377,13 +432,11 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   )
 }
 
-function Kpi({ label, value, tone, hint, sub }: { label: string; value: string; tone?: 'danger'; hint?: string; sub?: string }) {
+function Kpi({ label, value, tone, sub }: { label: string; value: string; tone?: 'danger' | 'success'; sub?: string }) {
   return (
-    <div className="bg-card rounded-lg border px-3 py-2" title={hint}>
-      <p className="text-muted-foreground flex items-center gap-1 text-xs">
-        {label} {hint && <SoonBadge />}
-      </p>
-      <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive', hint && 'text-muted-foreground')}>{value}</p>
+    <div className="bg-card rounded-lg border px-3 py-2">
+      <p className="text-muted-foreground flex items-center gap-1 text-xs">{label}</p>
+      <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive', tone === 'success' && 'text-success')}>{value}</p>
       {sub && <p className="text-muted-foreground text-[0.7rem] tabular-nums">{sub}</p>}
     </div>
   )
@@ -401,10 +454,6 @@ function RowButton({ label, danger, onClick, children }: { label: string; danger
       {children}
     </button>
   )
-}
-
-function SoonBadge() {
-  return <span className="bg-muted text-muted-foreground rounded px-1 text-[0.65rem] font-medium">6B</span>
 }
 
 function SettingsDialog({
@@ -464,7 +513,7 @@ function SettingsDialog({
       </fieldset>
       <fieldset className="mb-4">
         <legend className="mb-2 text-sm font-medium">Colunas visíveis</legend>
-        <p className="text-muted-foreground mb-2 text-xs">ID e Atividade aparecem sempre. As colunas de custo e venda chegam com os recursos (6B).</p>
+        <p className="text-muted-foreground mb-2 text-xs">ID e Atividade aparecem sempre. Custo e venda vêm dos recursos de cada atividade.</p>
         <div className="grid grid-cols-2 gap-2 text-sm">
           {(Object.keys(COLUMN_LABELS) as ColumnKey[]).map((k) => (
             <label key={k} className="flex items-center gap-2">
@@ -518,7 +567,7 @@ function GanttView({
   showCritical: boolean
   readonly: boolean
   onOpen: (id: number) => void
-  onRowAction: (action: 'below' | 'child' | 'delete', id: number) => void
+  onRowAction: (action: 'below' | 'child' | 'delete' | 'own' | 'public' | 'resources', id: number) => void
   onRun: (p: Promise<PlanData>, ok?: string) => void
 }) {
   const durationLabel = plan.schedule?.duration_mode === 'working' ? 'Dias úteis' : 'Duração (dias)'
@@ -529,6 +578,10 @@ function GanttView({
       preds: tasks[i].predecessors.map((p) => `${wbsOf.get(p.task_id) ?? '?'}${p.type === 'FS' ? '' : p.type}${p.lag ? (p.lag > 0 ? `+${p.lag}` : p.lag) : ''}`).join('; '),
       unit: tasks[i].unit_code ?? '',
       quantity: tasks[i].quantity !== null ? Number(tasks[i].quantity).toLocaleString('pt-BR') : '',
+      // 6B: custo e venda (do servidor)
+      unit_cost: tasks[i].cost?.unit_cost ? formatCurrency(Number(tasks[i].cost!.unit_cost)) : '',
+      total_cost: tasks[i].cost && tasks[i].cost!.item_count > 0 ? formatCurrency(Number(tasks[i].cost!.cost)) : '',
+      total_sale: tasks[i].cost && tasks[i].cost!.item_count > 0 ? formatCurrency(Number(tasks[i].cost!.sale)) : '',
     }))
   }, [tasks])
   const links = useMemo(
@@ -648,8 +701,8 @@ function GanttView({
             {
               id: 'actions',
               header: '',
-              width: 84,
-              cell: ({ row }: { row: { id?: unknown } }) => (
+              width: 162,
+              cell: ({ row }: { row: { id?: unknown; type?: string } }) => (
                 <span className="flex items-center gap-0.5" onDoubleClick={(e) => e.stopPropagation()}>
                   <RowButton label="Atividade abaixo" onClick={() => handlers.current.onRowAction('below', Number(row.id))}>
                     <Plus className="size-3.5" />
@@ -657,6 +710,19 @@ function GanttView({
                   <RowButton label="Sub atividade" onClick={() => handlers.current.onRowAction('child', Number(row.id))}>
                     <CornerDownRight className="size-3.5" />
                   </RowButton>
+                  {row.type === 'task' && (
+                    <>
+                      <RowButton label="Comp. própria" onClick={() => handlers.current.onRowAction('own', Number(row.id))}>
+                        <BookMarked className="size-3.5" />
+                      </RowButton>
+                      <RowButton label="Comp. pública (SINAPI)" onClick={() => handlers.current.onRowAction('public', Number(row.id))}>
+                        <Landmark className="size-3.5" />
+                      </RowButton>
+                      <RowButton label="Recursos" onClick={() => handlers.current.onRowAction('resources', Number(row.id))}>
+                        <Package className="size-3.5" />
+                      </RowButton>
+                    </>
+                  )}
                   <RowButton label="Excluir" danger onClick={() => handlers.current.onRowAction('delete', Number(row.id))}>
                     <Trash2 className="size-3.5" />
                   </RowButton>
@@ -681,6 +747,9 @@ function GanttView({
       { id: 'preds', header: 'Predecessoras', width: 110 },
       { id: 'unit', header: 'Un. medida', width: 80, align: 'center' },
       { id: 'quantity', header: 'Quantidade', width: 90, align: 'right' },
+      { id: 'unit_cost', header: 'Custo unit.', width: 100, align: 'right' },
+      { id: 'total_cost', header: 'Total de custo', width: 110, align: 'right' },
+      { id: 'total_sale', header: 'Total de venda', width: 110, align: 'right' },
       ...(plan.compared_baseline
         ? [{ id: 'delta', header: 'Desvio', width: 70, align: 'center' as const, template: (v: number | null) => (v === null ? '—' : v > 0 ? `+${v}` : String(v)) }]
         : []),
@@ -910,7 +979,7 @@ function ImportDialog({ uuid, onClose, onDone }: { uuid: string; onClose: () => 
       open
       onClose={onClose}
       title="Importar planilha do planejamento"
-      description="Colunas: Tipo, Item (1, 1.1, 1.1.1…), Descrição, datas planejadas e executadas, quantidade e unidade. Linhas de recurso (Material, Serviços…) entram na 6B."
+      description="Colunas: Tipo, Item (1, 1.1, 1.1.1…), Descrição, datas planejadas e executadas, quantidade e unidade. Linhas de recurso (Material, Serviços, Equipamento, Mão de obra, Outros) entram como recursos da atividade acima: Valor unit. é o custo unitário e Quantidade, o consumo por unidade."
       size="xl"
       footer={
         <>
@@ -949,7 +1018,7 @@ function ImportDialog({ uuid, onClose, onDone }: { uuid: string; onClose: () => 
       {preview && (
         <>
           <p className="mb-2 text-sm">
-            {preview.summary.ok} para importar · {preview.summary.skip} ignorada(s) · <span className={preview.summary.error ? 'text-destructive font-medium' : ''}>{preview.summary.error} com erro</span>
+            {preview.summary.ok - (preview.summary.resources ?? 0)} etapa(s)/atividade(s) · {preview.summary.resources ?? 0} recurso(s) · {preview.summary.skip} ignorada(s) · <span className={preview.summary.error ? 'text-destructive font-medium' : ''}>{preview.summary.error} com erro</span>
           </p>
           <div className="max-h-80 overflow-auto rounded-lg border">
             <table className="w-full text-sm">
@@ -969,7 +1038,7 @@ function ImportDialog({ uuid, onClose, onDone }: { uuid: string; onClose: () => 
                     <td className="px-2 py-1 font-mono text-xs">{r.task?.wbs ?? r.data.item}</td>
                     <td className="px-2 py-1">{r.data.name}</td>
                     <td className="px-2 py-1 text-xs">
-                      {r.status === 'ok' ? (r.task?.kind === 'summary' ? 'Etapa' : 'Atividade') : r.status === 'skip' ? 'Ignorada' : 'Erro'}
+                      {r.status === 'ok' ? (r.resource ? `Recurso da atividade ${r.resource.task}` : r.task?.kind === 'summary' ? 'Etapa' : 'Atividade') : r.status === 'skip' ? 'Ignorada' : 'Erro'}
                       {[...r.errors, ...r.warnings].map((m) => (
                         <span key={m} className="block">
                           {m}

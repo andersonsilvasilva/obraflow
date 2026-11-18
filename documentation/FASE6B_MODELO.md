@@ -111,3 +111,13 @@ A lista exata será apresentada antes de executar, como sempre.
 - **Planilha (D-P94):** linhas Material, Serviços, Equipamento, Mão de obra e Outros/Indiretos entram como recursos da atividade acima (ou da indicada pelo item); Valor unit. = custo unitário; Quantidade = consumo por unidade. Recurso em etapa com sub atividades é erro.
 - **Resposta do planejamento:** custos de cada atividade/etapa (`cost`), a lista de recursos com os valores calculados (`items`), os totais do sintético (`costs`), BDI, desconto e regime da obra.
 - **Testes:** `Feature/Planning/ScheduleItemsTest` (4) e importação atualizada; suíte 479/479.
+
+### Etapa 4 — telas do planejamento
+
+- **Cartões de custo** com valores: Custo (com a quantidade de recursos), Com BDI, BDI (valor e %), Desconto (valor e %) e Valor final.
+- **Botões BDI e Desconto:** janela com BDI informado ou pela fórmula do TCU (parcelas e prévia do resultado) e desconto. **Trazer custos do orçamento** aparece em planejamentos criados do orçamento.
+- **Ações da linha** (atividades): **Comp. própria**, **Comp. pública** (SINAPI) e **Recursos**, ao lado de atividade abaixo, sub atividade e excluir.
+- **Janela de lançar recursos:** abas Materiais, Cargo/Função, Equipamentos, Serviços (catálogo, com seleção de vários) e Outros (digitado); SINAPI com a base do regime da obra (composições ou insumos); composições próprias com o valor do regime da obra; consumo por unidade da atividade.
+- **"Visualizar recursos":** troca o Gantt pela árvore de etapas, atividades e recursos (Nome, Tipo, Un., Qtd. unit., Qtd. total, venda e custo unitários e totais), com edição em linha do consumo e da quantidade da atividade, "+" por atividade, excluir recurso, expandir/recolher e "Exibir apenas atividades".
+- **Colunas opcionais** no Gantt (Configurações): Custo unit., Total de custo e Total de venda.
+- **Importação:** a pré-visualização mostra os recursos e a atividade de cada um.
