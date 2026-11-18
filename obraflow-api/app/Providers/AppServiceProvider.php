@@ -35,6 +35,7 @@ use App\Models\Employee;
 use App\Models\EmployeeCertification;
 use App\Models\Equipment;
 use App\Models\JobTitle;
+use App\Models\OwnComposition;
 use App\Models\PersonalAccessToken;
 use App\Models\Project;
 use App\Models\ProjectAddress;
@@ -50,6 +51,7 @@ use App\Models\Role;
 use App\Models\Schedule;
 use App\Models\ScheduleDependency;
 use App\Models\ScheduleTask;
+use App\Models\ScheduleTaskItem;
 use App\Models\Supplier;
 use App\Models\SupplierAddress;
 use App\Models\SupplierContact;
@@ -164,6 +166,9 @@ class AppServiceProvider extends ServiceProvider
             'schedule' => Schedule::class,
             'schedule_task' => ScheduleTask::class,
             'schedule_dependency' => ScheduleDependency::class,
+            // 6B — recursos do planejamento e composições próprias
+            'schedule_task_item' => ScheduleTaskItem::class,
+            'own_composition' => OwnComposition::class,
             'budget_version' => BudgetVersion::class,
             'budget_group' => BudgetGroup::class,
             'budget_item' => BudgetItem::class,

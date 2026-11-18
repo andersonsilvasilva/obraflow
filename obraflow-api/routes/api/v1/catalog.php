@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Catalog\Http\Controllers\OwnCompositionController;
 use App\Modules\Catalog\Http\Controllers\ResourceController;
 use App\Modules\Teams\Http\Controllers\ResourceGroupController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,13 @@ Route::middleware('tenant.required')->group(function (): void {
     Route::get('resources/{uuid}/labor-costs', [ResourceController::class, 'laborCosts'])->whereUuid('uuid')->middleware('can:resources.view')->name('resources.labor.index');
     Route::post('resources/{uuid}/labor-costs', [ResourceController::class, 'storeLaborCost'])->whereUuid('uuid')->middleware('can:resources.manage')->name('resources.labor.store');
     Route::delete('resources/{uuid}/labor-costs/{id}', [ResourceController::class, 'destroyLaborCost'])->whereUuid('uuid')->whereNumber('id')->middleware('can:resources.manage')->name('resources.labor.destroy');
+
+    // 6B — composições próprias simplificadas (D-P87), com as permissões do catálogo (D-P97)
+    Route::get('own-compositions', [OwnCompositionController::class, 'index'])->middleware('can:resources.view')->name('own-compositions.index');
+    Route::post('own-compositions', [OwnCompositionController::class, 'store'])->middleware('can:resources.manage')->name('own-compositions.store');
+    Route::get('own-compositions/{uuid}', [OwnCompositionController::class, 'show'])->whereUuid('uuid')->middleware('can:resources.view')->name('own-compositions.show');
+    Route::put('own-compositions/{uuid}', [OwnCompositionController::class, 'update'])->whereUuid('uuid')->middleware('can:resources.manage')->name('own-compositions.update');
+    Route::delete('own-compositions/{uuid}', [OwnCompositionController::class, 'destroy'])->whereUuid('uuid')->middleware('can:resources.manage')->name('own-compositions.destroy');
 
     // grupos do catálogo (material, labor, service) — mesmo controller dos grupos de equipamento, outro escopo de tipos
     $kinds = ['kinds' => ['material', 'labor', 'service']];

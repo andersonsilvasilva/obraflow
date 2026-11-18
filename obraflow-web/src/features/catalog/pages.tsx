@@ -7,7 +7,7 @@ import { ResourcePage, type ResourceConfig } from '@/features/registry/component
 import { useJobTitleOptions, useSupplierOptions, useUnitOptions } from '@/features/registry/lookups'
 import { clientPaged } from '@/features/registry/paging'
 import { formatCurrency, formatDateOrDash } from '@/utils/format'
-import { catalogApi, catalogKindOptions, kindLabel, kindSingular, type CatalogGroup, type CatalogResource, type ResourceKind } from './api'
+import { catalogApi, catalogKindOptions, kindLabel, kindSingular, OWN_VALUES, ownCompositionsApi, UF_OPTIONS, type CatalogGroup, type CatalogResource, type OwnComposition, type ResourceKind } from './api'
 import { ImportButton } from './ImportModal'
 import { LaborCostButton } from './LaborCostModal'
 
@@ -165,6 +165,63 @@ const groupsConfig: ResourceConfig<CatalogGroup & { path: string }> = {
   remove: (r) => catalogApi.groups.remove(r.id),
 }
 
+/** Composições próprias simplificadas (6B, D-P87): um valor por tipo; equipamento e mão de obra por regime (D-P88). */
+const money = (name: string, label: string, help?: string): FieldDef => ({ name, label, type: 'number', step: '0.01', help })
+const ownConfig: ResourceConfig<OwnComposition> = {
+  title: 'Composições próprias',
+  description: 'Composições simplificadas da empresa: o custo de uma unidade do serviço, separado por tipo. Usadas no planejamento das obras (botão "Comp. própria").',
+  singular: 'composição',
+  queryKey: 'own-compositions',
+  managePermission: 'resources.manage',
+  fetch: (p) => ownCompositionsApi.list(p),
+  rowKey: (r) => r.uuid,
+  searchPlaceholder: 'Buscar por nome ou código',
+  formSize: 'xl',
+  useLookups: () => ({ units: useUnitOptions() }),
+  filters: [{ name: 'status', placeholder: 'Todas as situações', options: statusOptions }],
+  columns: [
+    { key: 'code', header: 'Código', cell: (r) => r.code ?? '' },
+    { key: 'name', header: 'Nome', cell: (r) => <span className="font-medium">{r.name}</span>, sortValue: (r) => r.name },
+    { key: 'unit', header: 'Unidade', cell: (r) => r.unit?.code ?? '' },
+    { key: 'date', header: 'Referência', cell: (r) => [formatDateOrDash(r.reference_date), r.state].filter(Boolean).join(' · ') },
+    { key: 't_none', header: 'Sem encargos', align: 'right', cell: (r) => formatCurrency(Number(r.totals.not_applicable)), sortValue: (r) => Number(r.totals.not_applicable) },
+    { key: 't_relief', header: 'Desonerado', align: 'right', cell: (r) => formatCurrency(Number(r.totals.with_relief)), sortValue: (r) => Number(r.totals.with_relief) },
+    { key: 't_no_relief', header: 'Não desonerado', align: 'right', cell: (r) => formatCurrency(Number(r.totals.without_relief)), sortValue: (r) => Number(r.totals.without_relief) },
+    { key: 'status', header: 'Situação', cell: (r) => (r.status === 'active' ? '' : <StatusBadge tone="neutral">{statusLabel(r.status)}</StatusBadge>) },
+  ],
+  fields: [
+    { name: 'name', label: 'Nome', required: true, full: true },
+    { name: 'unit_id', label: 'Unidade de medida', type: 'select', options: 'units', required: true },
+    { name: 'code', label: 'Código' },
+    { name: 'reference_date', label: 'Data de referência', type: 'date', required: true },
+    { name: 'state', label: 'Estado (UF)', type: 'select', options: UF_OPTIONS, placeholder: 'Opcional' },
+    money('material_value', 'Materiais (R$)'),
+    money('service_value', 'Serviços (R$)'),
+    money('other_value', 'Outros (R$)'),
+    money('equipment_value_none', 'Equipamentos — sem encargos (R$)', 'Equipamento e mão de obra têm um valor por regime de encargos. No planejamento vale o regime da obra.'),
+    money('equipment_value_relief', 'Equipamentos — desonerado (R$)'),
+    money('equipment_value_no_relief', 'Equipamentos — não desonerado (R$)'),
+    money('labor_value_none', 'Cargo/Função — sem encargos (R$)'),
+    money('labor_value_relief', 'Cargo/Função — desonerado (R$)'),
+    money('labor_value_no_relief', 'Cargo/Função — não desonerado (R$)'),
+    { name: 'status', label: 'Situação', type: 'select', options: statusOptions, placeholder: 'Ativo (padrão)', more: true },
+    { name: 'notes', label: 'Observações', type: 'textarea', full: true, more: true },
+  ],
+  toForm: (r) => ({
+    name: r.name,
+    unit_id: str(r.unit?.id),
+    code: str(r.code),
+    reference_date: str(r.reference_date),
+    state: str(r.state),
+    ...Object.fromEntries(OWN_VALUES.map((k) => [k, str(r[k])])),
+    status: r.status,
+    notes: str(r.notes),
+  }),
+  create: (b) => ownCompositionsApi.create(b),
+  update: (r, b) => ownCompositionsApi.update(r.uuid, b),
+  remove: (r) => ownCompositionsApi.remove(r.uuid),
+}
+
 const configs = { material: resourceConfig('material'), labor: resourceConfig('labor'), equipment: resourceConfig('equipment'), service: resourceConfig('service') }
 
 export const MaterialsPage = () => <ResourcePage config={configs.material} />
@@ -172,3 +229,4 @@ export const LaborPage = () => <ResourcePage config={configs.labor} />
 export const EquipmentCostPage = () => <ResourcePage config={configs.equipment} />
 export const ServicesPage = () => <ResourcePage config={configs.service} />
 export const CatalogGroupsPage = () => <ResourcePage config={groupsConfig} />
+export const OwnCompositionsPage = () => <ResourcePage config={ownConfig} />

@@ -91,3 +91,9 @@ A lista exata será apresentada antes de executar, como sempre.
 - **Testes:** `Feature/Planning/ScheduleCostTest` (3), com valores conferidos à mão; suíte 472/472.
 
 > Referência recebida durante a etapa: aba **Recursos** do Brickup (árvore de atividades com os recursos, Qtd. unit. editável, "+" por atividade, "Expandir todos", "Exibir apenas atividades", totais de venda e custo) — é a tela "Visualizar recursos" da D-P95 (etapa 4).
+
+### Etapa 2 — composições próprias
+
+- **API** `/own-compositions` (listar com busca e situação, ver, criar, alterar, excluir — exclusão lógica), com `resources.view` / `resources.manage` (D-P97); auditoria `registry.*` (`own_composition`). A resposta traz o **total por regime** (sem encargos, desonerado, não desonerado), calculado.
+- **Tela** Cadastros → Recursos → **Composições próprias**: lista com os três totais e formulário com nome, unidade, código, data de referência, UF e os valores por tipo.
+- **Testes:** `Feature/Catalog/OwnCompositionTest` (3): totais por regime, validação, código único entre as ativas, permissões e isolamento.

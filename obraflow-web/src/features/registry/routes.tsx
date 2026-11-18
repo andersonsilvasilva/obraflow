@@ -1,7 +1,7 @@
 import { Outlet, type RouteObject } from 'react-router-dom'
 import { RequirePermission } from '@/features/auth/guards'
 import { ContractDetailPage } from '@/features/contracts/ContractDetailPage'
-import { CatalogGroupsPage, EquipmentCostPage, LaborPage, MaterialsPage, ServicesPage } from '@/features/catalog/pages'
+import { CatalogGroupsPage, EquipmentCostPage, LaborPage, MaterialsPage, OwnCompositionsPage, ServicesPage } from '@/features/catalog/pages'
 import { ProjectDetailPage } from '@/features/projects/ProjectDetailPage'
 import { ProjectsListPage } from '@/features/projects/ProjectsListPage'
 import { CompaniesPage, CustomersPage, DepartmentsPage, EmployeesPage, EquipmentPage, GroupsPage, JobTitlesPage, SuppliersPage, UnitsPage } from './pages'
@@ -27,6 +27,7 @@ export const registryRoutes: RouteObject[] = [
       p('equipment.view', 'equipamentos', <EquipmentPage />),
       p('equipment.view', 'grupos', <GroupsPage />),
       p('resources.view', 'materiais', <MaterialsPage />),
+      p('resources.view', 'composicoes-proprias', <OwnCompositionsPage />),
       p('resources.view', 'mao-de-obra', <LaborPage />),
       p('resources.view', 'equipamentos-custo', <EquipmentCostPage />),
       p('resources.view', 'servicos', <ServicesPage />),

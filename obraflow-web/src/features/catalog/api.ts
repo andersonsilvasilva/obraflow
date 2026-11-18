@@ -109,3 +109,42 @@ export function laborPreview(salary: string, charges: string, admin: string, hou
   if (!salary || !hours || n(hours) <= 0) return null
   return (n(salary) * (1 + n(charges || '0') / 100) * (1 + n(admin || '0') / 100)) / n(hours)
 }
+
+// ------------------------------------------------------------------ 6B — composições próprias (D-P87)
+
+/** Colunas de valor da composição própria (equipamento e mão de obra conforme o regime — D-P88). */
+export const OWN_VALUES = [
+  'material_value',
+  'service_value',
+  'other_value',
+  'equipment_value_none',
+  'equipment_value_relief',
+  'equipment_value_no_relief',
+  'labor_value_none',
+  'labor_value_relief',
+  'labor_value_no_relief',
+] as const
+export type OwnValue = (typeof OWN_VALUES)[number]
+
+export type OwnComposition = {
+  uuid: string
+  code: string | null
+  name: string
+  unit: { id: number; code: string; name: string } | null
+  reference_date: string | null
+  state: string | null
+  /** Total por regime: sem encargos, desonerado, não desonerado. */
+  totals: { not_applicable: string; with_relief: string; without_relief: string }
+  notes: string | null
+  status: 'active' | 'inactive'
+} & Record<OwnValue, string>
+
+export const ownCompositionsApi = {
+  list: (query?: Query) => http<Page<OwnComposition>>('/own-compositions', { query }),
+  get: (uuid: string) => http<{ data: OwnComposition }>(`/own-compositions/${uuid}`).then(data),
+  create: (body: Record<string, unknown>) => http<{ data: OwnComposition }>('/own-compositions', { method: 'POST', body }).then(data),
+  update: (uuid: string, body: Record<string, unknown>) => http<{ data: OwnComposition }>(`/own-compositions/${uuid}`, { method: 'PUT', body }).then(data),
+  remove: (uuid: string) => http<void>(`/own-compositions/${uuid}`, { method: 'DELETE' }),
+}
+
+export const UF_OPTIONS: Option[] = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO'].map((uf) => ({ value: uf, label: uf }))
