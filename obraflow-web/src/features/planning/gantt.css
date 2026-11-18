@@ -131,21 +131,21 @@
     box-sizing: border-box;
 }
 
-/* tela flutuante da faixa (Tooltip do SVAR, com a seta): cartão nas cores do ObraFlow */
-.obraflow-gantt .wx-willow-theme {
-    --wx-tooltip-background: var(--popover, var(--card));
-    --wx-tooltip-font-color: var(--popover-foreground, var(--foreground));
+/* tela flutuante da faixa (Tooltip do SVAR, com a seta): cartão claro nas cores do ObraFlow. As variáveis vão no
+   próprio tooltip (o tema Willow as define escuras na raiz do tema). */
+.wx-tooltip:has(.of-gantt-tip) {
+    --wx-tooltip-background: var(--popover);
+    --wx-tooltip-font-color: var(--popover-foreground);
     --wx-tooltip-border: var(--border);
-}
-
-.obraflow-gantt .wx-tooltip {
     z-index: 30;
+    color: var(--popover-foreground);
     box-shadow: 0 8px 24px color-mix(in oklab, var(--foreground) 15%, transparent);
 }
 
-.obraflow-gantt .of-gantt-tip {
+.of-gantt-tip {
     max-width: 22rem;
     padding: 0.5rem 0.75rem;
+    color: var(--popover-foreground);
     font-size: 0.8125rem;
     white-space: normal;
 }
