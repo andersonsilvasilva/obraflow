@@ -225,3 +225,4 @@ Capturas enviadas pelo responsável durante a 4D. Registradas só como referênc
 | C3 | Alterar status da requisição | Pendente, Concorrência, Solicitação, Cancelada |
 | C4 | Relatório personalizado | Grade com escolha de colunas, agrupamento por coluna (arrastar cabeçalho), busca e exportar Excel |
 | C5 | Painel de requisições | Kanban: Rascunho, Solicitações, Finalizadas, Ordem de execução, OE concluída; filtros por obra, responsável e status; busca por descrição |
+| C6 | Configurações → Automação (complementa o nº 24) | Avisos por e-mail com interruptor: cotação criada, mudou de status, responsável definido, cotação aprovada (inclui o fornecedor), com destinatários por papel (responsável, gestor) ou usuários escolhidos; lembretes de aniversário do cliente, vencimento de boleto e de transações financeiras (X dias antes) |
