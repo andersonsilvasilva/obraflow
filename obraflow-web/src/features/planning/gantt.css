@@ -72,3 +72,54 @@
     box-sizing: content-box;
     padding-bottom: 96px;
 }
+
+/*
+ * Barras de rolagem sempre visíveis e fora do conteúdo: no Windows 11 o Chrome/Edge usa barras sobrepostas (finas,
+ * só ao passar o mouse) — a vertical "sumia" e a horizontal cobria a barra da última linha. Com ::-webkit-scrollbar
+ * a barra volta a ser clássica (ocupa espaço próprio). A vertical fica fixa (overflow-y: scroll).
+ */
+.obraflow-gantt {
+    --wx-scrollbar-width: 12px;
+}
+
+.obraflow-gantt .wx-gantt {
+    overflow-y: scroll;
+}
+
+.obraflow-gantt .wx-gantt::-webkit-scrollbar,
+.obraflow-gantt .wx-chart::-webkit-scrollbar,
+.obraflow-gantt .wx-grid-container ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.obraflow-gantt .wx-gantt::-webkit-scrollbar-track,
+.obraflow-gantt .wx-chart::-webkit-scrollbar-track {
+    background: var(--muted);
+}
+
+.obraflow-gantt .wx-gantt::-webkit-scrollbar-thumb,
+.obraflow-gantt .wx-chart::-webkit-scrollbar-thumb {
+    border: 3px solid var(--muted);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+.obraflow-gantt .wx-gantt::-webkit-scrollbar-thumb:hover,
+.obraflow-gantt .wx-chart::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+}
+
+.obraflow-gantt .wx-gantt::-webkit-scrollbar-corner,
+.obraflow-gantt .wx-chart::-webkit-scrollbar-corner {
+    background: var(--muted);
+}
+
+/* Firefox (sem ::-webkit-scrollbar): barra padrão, nas cores do tema */
+@supports not selector(::-webkit-scrollbar) {
+    .obraflow-gantt .wx-gantt,
+    .obraflow-gantt .wx-chart {
+        scrollbar-width: auto;
+        scrollbar-color: var(--muted-foreground) var(--muted);
+    }
+}
