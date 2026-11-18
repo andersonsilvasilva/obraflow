@@ -97,3 +97,17 @@ A lista exata será apresentada antes de executar, como sempre.
 - **API** `/own-compositions` (listar com busca e situação, ver, criar, alterar, excluir — exclusão lógica), com `resources.view` / `resources.manage` (D-P97); auditoria `registry.*` (`own_composition`). A resposta traz o **total por regime** (sem encargos, desonerado, não desonerado), calculado.
 - **Tela** Cadastros → Recursos → **Composições próprias**: lista com os três totais e formulário com nome, unidade, código, data de referência, UF e os valores por tipo.
 - **Testes:** `Feature/Catalog/OwnCompositionTest` (3): totais por regime, validação, código único entre as ativas, permissões e isolamento.
+
+### Etapa 3 — recursos da atividade (API)
+
+- **Rotas** (em `/projects/{uuid}/schedule`, `schedules.manage` + nível `edit` na obra):
+  - `PUT pricing`: BDI informado ou pela fórmula do TCU (parcelas guardadas) e desconto (D-P92);
+  - `POST tasks/{id}/items`: lança recursos por origem — `catalog` (vários insumos de uma vez, preço vigente), `sinapi_composition` (uma linha com o custo publicado por tipo e os insumos para consulta), `sinapi_resource`, `own_composition` (valores do regime da obra, D-P88) ou `manual`; consumo por unidade (D-P91). Catálogo e composição própria exigem `resources.view`; SINAPI, `references.view` (D-P97);
+  - `PUT items/{id}`: consumo e BDI/desconto próprios; descrição e custo só nos digitados (os demais são cópia);
+  - `DELETE items/{id}`;
+  - `POST items/from-budget`: "Trazer custos do orçamento" (só atividades vinculadas e sem recursos).
+- **Regras:** só em atividade (etapa e marco recusam); atividade com recursos não vira etapa; excluir a atividade (ou "Deletar tudo") leva os recursos; SINAPI só com base ativa do **mesmo regime** da obra, e obra "sem encargos" não usa SINAPI (D-P89).
+- **Do orçamento (D-P93):** ao criar o planejamento do orçamento aprovado, cada atividade recebe o item como recurso (origem `budget`, custo unitário e divisão por tipo pelos insumos do item; sem insumos = "outros") e o BDI do planejamento começa igual ao global do orçamento. Auditoria `schedule.costs_imported`.
+- **Planilha (D-P94):** linhas Material, Serviços, Equipamento, Mão de obra e Outros/Indiretos entram como recursos da atividade acima (ou da indicada pelo item); Valor unit. = custo unitário; Quantidade = consumo por unidade. Recurso em etapa com sub atividades é erro.
+- **Resposta do planejamento:** custos de cada atividade/etapa (`cost`), a lista de recursos com os valores calculados (`items`), os totais do sintético (`costs`), BDI, desconto e regime da obra.
+- **Testes:** `Feature/Planning/ScheduleItemsTest` (4) e importação atualizada; suíte 479/479.

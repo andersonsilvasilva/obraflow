@@ -10,6 +10,7 @@ use App\Models\ScheduleBaseline;
 use App\Models\ScheduleDependency;
 use App\Models\ScheduleProgress;
 use App\Models\ScheduleTask;
+use App\Models\ScheduleTaskItem;
 use App\Models\User;
 use App\Modules\Audit\AuditEvent;
 use App\Modules\Audit\AuditLogger;
@@ -93,6 +94,7 @@ final class ScheduleService
                 DB::table('schedule_tasks')->insert($chunk);
             }
             $this->scheduler->recompute($schedule);
+            app(ScheduleItemService::class)->fromBudget($schedule, $actor, copyBdi: true); // 6B (D-P93): custos dos itens
 
             return $schedule;
         });
@@ -110,6 +112,7 @@ final class ScheduleService
                 throw new DomainRuleException('O planejamento tem linha de base: não pode ser apagado (a linha de base é histórico).');
             }
             ScheduleDependency::query()->where('schedule_id', $schedule->id)->delete();
+            ScheduleTaskItem::query()->where('schedule_id', $schedule->id)->delete(); // recursos (6B)
             // filhos antes dos pais (FK RESTRICT)
             while (($ids = ScheduleTask::query()->where('schedule_id', $schedule->id)
                 ->whereNotIn('id', ScheduleTask::query()->select('parent_id')->where('schedule_id', $schedule->id)->whereNotNull('parent_id'))
@@ -223,6 +226,9 @@ final class ScheduleService
             }
             ScheduleDependency::query()->where('schedule_id', $schedule->id)
                 ->where(fn ($q) => $q->whereIn('predecessor_id', $ids)->orWhereIn('successor_id', $ids))->delete();
+            foreach (ScheduleTaskItem::query()->where('schedule_id', $schedule->id)->whereIn('task_id', $ids)->get() as $item) {
+                $this->registry->delete($item, $actor); // recursos da atividade (6B)
+            }
             foreach (array_reverse($ids) as $id) {
                 $this->registry->delete(ScheduleTask::query()->findOrFail($id), $actor);
             }
@@ -338,6 +344,9 @@ final class ScheduleService
         }
         if (ScheduleProgress::query()->where('task_id', $task->id)->exists()) {
             throw new DomainRuleException("\"{$task->name}\" tem avanço registrado: não pode virar etapa.");
+        }
+        if (ScheduleTaskItem::query()->where('task_id', $task->id)->exists()) {
+            throw new DomainRuleException("\"{$task->name}\" tem recursos lançados: remova-os antes de criar sub atividades nela (a etapa soma as filhas).");
         }
         DB::table('schedule_tasks')->where('id', $task->id)->update(['kind' => 'summary', 'percent_complete' => 0, 'updated_at' => now()]);
         $task->kind = 'summary';

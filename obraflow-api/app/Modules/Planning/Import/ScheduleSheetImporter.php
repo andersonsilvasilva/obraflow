@@ -64,11 +64,12 @@ final class ScheduleSheetImporter
         $out = [];
         $units = $this->unitIndex();
 
+        $lastTask = null; // última etapa/atividade válida (dona dos recursos logo abaixo)
         foreach ($rows as $line => $r) {
             $errors = [];
             $warnings = [];
             if (! $this->isStage($r)) {
-                $out[] = ['line' => $line, 'data' => $r, 'status' => 'skip', 'errors' => [], 'warnings' => ['Recurso ('.($r['type'] ?? '—').'): entra com a parte 6B.']];
+                $out[] = $this->resourceRow($line, $r, $lastTask, $seen, $codes, $units);
 
                 continue;
             }
@@ -111,6 +112,7 @@ final class ScheduleSheetImporter
             }
             if ($key !== null) {
                 $seen[$key] = true;
+                $lastTask = $errors ? null : $key;
             }
             $out[] = ['line' => $line, 'data' => $r, 'status' => $errors ? 'error' : 'ok', 'errors' => $errors, 'warnings' => $warnings,
                 'task' => $errors ? null : ['wbs' => $key, 'kind' => $summary ? 'summary' : 'task', 'start' => $start->toDateString(),
@@ -121,6 +123,7 @@ final class ScheduleSheetImporter
             'total' => count($out),
             'ok' => count(array_filter($out, fn ($r) => $r['status'] === 'ok')),
             'skip' => count(array_filter($out, fn ($r) => $r['status'] === 'skip')),
+            'resources' => count(array_filter($out, fn ($r) => $r['status'] === 'ok' && isset($r['resource']))),
             'error' => count(array_filter($out, fn ($r) => $r['status'] === 'error')),
         ]];
     }
@@ -153,7 +156,7 @@ final class ScheduleSheetImporter
             $now = now();
 
             foreach ($preview['rows'] as $row) {
-                if ($row['status'] !== 'ok') {
+                if ($row['status'] !== 'ok' || ! isset($row['task'])) {
                     continue;
                 }
                 $t = $row['task'];
@@ -171,9 +174,30 @@ final class ScheduleSheetImporter
                     'sort_order' => $order[$parentKey ?? ''], 'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
+            // recursos das atividades (6B, D-P94): cópia do valor da planilha, todo no tipo da linha
+            $items = [];
+            $sort = [];
+            foreach ($preview['rows'] as $row) {
+                if ($row['status'] !== 'ok' || ! isset($row['resource'])) {
+                    continue;
+                }
+                $res = $row['resource'];
+                $taskId = $ids[$res['task']];
+                $sort[$taskId] = ($sort[$taskId] ?? 0) + 1;
+                $items[] = [
+                    'tenant_id' => $schedule->tenant_id, 'schedule_id' => $schedule->id, 'task_id' => $taskId, 'source' => 'manual',
+                    'source_ref' => json_encode(['spreadsheet' => $fileName, 'line' => $row['line']]), 'kind' => $res['kind'], 'code' => null,
+                    'description' => Str::limit($res['description'], 500, ''), 'unit_code' => Str::limit($res['unit'], 20, ''), 'quantity_per_unit' => $res['quantity_per_unit'],
+                    'unit_cost' => $res['unit_cost'], 'cost_material' => 0, 'cost_labor' => 0, 'cost_equipment' => 0, 'cost_service' => 0, 'cost_other' => 0,
+                    "cost_{$res['kind']}" => $res['unit_cost'], 'sort_order' => $sort[$taskId], 'created_at' => $now, 'updated_at' => $now,
+                ];
+            }
+            foreach (array_chunk($items, 500) as $chunk) {
+                DB::table('schedule_task_items')->insert($chunk);
+            }
             $this->scheduler->recompute($schedule);
 
-            $summary = $preview['summary'] + ['created' => count($ids)];
+            $summary = $preview['summary'] + ['created' => count($ids), 'resources_created' => count($items)];
             $this->audit->record(AuditEvent::SCHEDULE_CREATED, tenantId: $this->context->idOrFail(), userId: $actor->getKey(),
                 entityType: 'project', entityId: $project->id, metadata: ['origin' => 'spreadsheet', 'file' => $fileName] + $summary);
 
@@ -263,6 +287,62 @@ final class ScheduleSheetImporter
         }
 
         return $index;
+    }
+
+    /** Tipo da linha da planilha → tipo de custo (como no planning.xlsx: Material, Serviços, Equipamento, Mão de obra, Indiretos…). */
+    private const RESOURCE_KINDS = [
+        'MATERIAL' => 'material', 'MATERIAIS' => 'material', 'SERVICO' => 'service', 'SERVICOS' => 'service',
+        'EQUIPAMENTO' => 'equipment', 'EQUIPAMENTOS' => 'equipment', 'MAO DE OBRA' => 'labor', 'CARGO/FUNCAO' => 'labor', 'CARGO' => 'labor',
+        'INDIRETOS' => 'other', 'INDIRETO' => 'other', 'OUTROS' => 'other', 'OUTRO' => 'other',
+    ];
+
+    /**
+     * Linha de recurso (D-P94): fica na atividade indicada pelo item (pai do número) ou na etapa/atividade logo acima.
+     * Valor unit. = custo unitário; Quantidade = consumo por unidade da atividade (vazio = 1).
+     *
+     * @param  array<string, true>  $seen
+     * @param  array<string, true>  $codes
+     */
+    private function resourceRow(int $line, array $r, ?string $lastTask, array $seen, array $codes, array $units): array
+    {
+        $errors = [];
+        $warnings = [];
+        $type = Str::upper(Str::ascii(trim($r['type'] ?? '')));
+        $kind = self::RESOURCE_KINDS[$type] ?? null;
+        if ($kind === null) {
+            $errors[] = "Tipo \"{$r['type']}\" não reconhecido (use Etapa, Material, Serviços, Equipamento, Mão de obra ou Outros).";
+        }
+        $owner = $lastTask;
+        if (($key = $this->key($r['item'] ?? '')) !== null && str_contains($key, '.') && isset($seen[Str::beforeLast($key, '.')])) {
+            $owner = Str::beforeLast($key, '.');
+        }
+        if ($owner === null) {
+            $errors[] = 'Recurso sem etapa/atividade acima dele.';
+        } elseif ($this->hasChildren($owner, $codes)) {
+            $errors[] = "O recurso precisa ficar numa atividade, não na etapa {$owner} (que tem sub atividades).";
+        }
+        if (trim($r['name'] ?? '') === '') {
+            $errors[] = 'Descrição obrigatória.';
+        }
+        $price = str_replace(',', '.', trim((string) ($r['unit_price'] ?? '')));
+        if ($price === '' || ! is_numeric($price) || (float) $price < 0) {
+            $errors[] = 'Valor unitário inválido ou vazio.';
+        }
+        $qty = str_replace(',', '.', trim((string) ($r['quantity'] ?? '')));
+        if ($qty !== '' && (! is_numeric($qty) || (float) $qty < 0)) {
+            $errors[] = "Quantidade inválida: \"{$r['quantity']}\".";
+        }
+        $unit = null;
+        if (($r['unit'] ?? '') !== '') {
+            $unit = $units[$this->unitKey($r['unit'])] ?? null;
+            if ($unit === null) {
+                $warnings[] = "Unidade \"{$r['unit']}\" não cadastrada: fica como está.";
+            }
+        }
+
+        return ['line' => $line, 'data' => $r, 'status' => $errors ? 'error' : 'ok', 'errors' => $errors, 'warnings' => $warnings,
+            'resource' => $errors ? null : ['task' => $owner, 'kind' => $kind, 'description' => trim($r['name']), 'unit' => $unit ?? (trim($r['unit'] ?? '') ?: 'UN'),
+                'unit_cost' => number_format((float) $price, 2, '.', ''), 'quantity_per_unit' => $qty === '' ? '1' : $qty]];
     }
 
     private function isStage(array $r): bool

@@ -4,6 +4,7 @@ namespace App\Modules\Planning\Http\Requests;
 
 use App\Models\ScheduleDependency;
 use App\Models\ScheduleTask;
+use App\Models\ScheduleTaskItem;
 use App\Modules\Teams\Http\Requests\TenantRequest;
 use Illuminate\Validation\Rule;
 
@@ -45,7 +46,34 @@ class ScheduleRequest extends TenantRequest
             ],
             'schedules.baselines.store' => ['name' => ['required', 'string', 'max:100']],
             'schedules.update' => ['duration_mode' => ['required', Rule::in(['calendar', 'working'])]],
-            'schedules.import.preview', 'schedules.import' => ['file' => ['required', 'file', 'mimes:xlsx', 'max:5120']],
+            'schedules.pricing' => [
+                'bdi_method' => ['sometimes', Rule::in(['informed', 'tcu'])],
+                'bdi_percent' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999.9999', 'decimal:0,4'],
+                'bdi_components' => ['required_if:bdi_method,tcu', 'nullable', 'array'],
+                'bdi_components.*' => ['numeric', 'min:0', 'max:99.9999', 'decimal:0,4'],
+                'discount_percent' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99.9999', 'decimal:0,4'],
+            ],
+            'schedules.items.store' => [
+                'source' => ['required', Rule::in(['catalog', 'sinapi_composition', 'sinapi_resource', 'own_composition', 'manual'])],
+                'quantity_per_unit' => ['sometimes', 'numeric', 'min:0', 'max:99999999999.9999999', 'decimal:0,7'],
+                'resource_uuids' => ['required_if:source,catalog', 'array', 'max:100'],
+                'resource_uuids.*' => ['uuid', $this->existsInTenant('resources')],
+                'reference_dataset_id' => ['required_if:source,sinapi_composition,sinapi_resource', 'integer'],
+                'code' => ['required_if:source,sinapi_composition,sinapi_resource', 'nullable', 'string', 'max:30'],
+                'own_composition_uuid' => ['required_if:source,own_composition', 'uuid', $this->existsInTenant('own_compositions')],
+                'kind' => ['required_if:source,manual', Rule::in(ScheduleTaskItem::COST_KINDS)],
+                'description' => ['required_if:source,manual', 'string', 'max:500'],
+                'unit_code' => ['required_if:source,manual', 'string', 'max:20'],
+                'unit_cost' => ['required_if:source,manual', 'numeric', 'min:0', 'max:9999999999999.99', 'decimal:0,2'],
+            ],
+            'schedules.items.update' => [
+                'quantity_per_unit' => ['sometimes', 'numeric', 'min:0', 'max:99999999999.9999999', 'decimal:0,7'],
+                'bdi_percent' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999.9999', 'decimal:0,4'],
+                'discount_percent' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99.9999', 'decimal:0,4'],
+                'description' => ['sometimes', 'string', 'max:500'],
+                'unit_code' => ['sometimes', 'string', 'max:20'],
+                'unit_cost' => ['sometimes', 'numeric', 'min:0', 'max:9999999999999.99', 'decimal:0,2'],
+            ],            'schedules.import.preview', 'schedules.import' => ['file' => ['required', 'file', 'mimes:xlsx', 'max:5120']],
             default => [],
         };
     }
@@ -54,7 +82,7 @@ class ScheduleRequest extends TenantRequest
     {
         return [
             'name' => 'atividade', 'planned_start' => 'início', 'planned_end' => 'término', 'duration_days' => 'duração (dias úteis)',
-            'percent_complete' => 'avanço (%)', 'predecessor_id' => 'predecessora', 'successor_id' => 'sucessora', 'lag_days' => 'atraso (dias)',
+            'percent_complete' => 'avanço (%)', 'predecessor_id' => 'predecessora', 'successor_id' => 'sucessora', 'lag_days' => 'atraso (dias)', 'quantity_per_unit' => 'consumo por unidade', 'unit_cost' => 'custo unitário', 'bdi_percent' => 'BDI (%)', 'discount_percent' => 'desconto (%)',
         ];
     }
 }

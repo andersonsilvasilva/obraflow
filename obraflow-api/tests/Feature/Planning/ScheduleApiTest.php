@@ -203,7 +203,8 @@ it('banco: marco com duração 0, dependência sem auto-ligação e % entre 0 e 
     $this->b->delete("/api/v1/projects/{$obra2}/schedule")->assertNoContent();
 
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
-    expect(array_values(array_diff(AuditEvent::phase6(), $emitidos)))->toBe([])
+    // schedule.costs_imported é coberto em Feature/Planning/ScheduleItemsTest (6B)
+    expect(array_values(array_diff(AuditEvent::phase6(), [AuditEvent::SCHEDULE_COSTS_IMPORTED], $emitidos)))->toBe([])
         ->and(AuditLog::query()->whereIn('event', AuditEvent::phase6())->pluck('tenant_id')->unique()->all())->toBe([$this->A->id])
         ->and(AuditLog::query()->where('event', AuditEvent::REGISTRY_CREATED)->where('entity_type', 'schedule_task')->exists())->toBeTrue();
 });
@@ -243,7 +244,7 @@ function planilhaPlanejamento(array $rows): UploadedFile
     return new UploadedFile($path, 'planning.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
 }
 
-it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela numeração; recursos ficam para a 6B; datas DD/MM e MM/DD', function () {
+it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela numeração; recursos na atividade (D-P94); datas DD/MM e MM/DD', function () {
     $rows = [
         ['A' => 'Etapa', 'B' => '1', 'C' => 'DEMO Estrutura', 'D' => '02/03/2026', 'E' => '13/03/2026'],
         ['A' => 'Etapa', 'B' => '1.1', 'C' => 'DEMO Formas', 'D' => '02/03/2026', 'E' => '04/03/2026', 'I' => '50', 'J' => 'm²'],
@@ -253,8 +254,9 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
     ];
     $this->b->post('/api/v1/units', ['code' => 'M2', 'name' => 'Metro quadrado'])->assertCreated(); // "m²" da planilha → M2 cadastrada
     $prev = $this->b->request('POST', "{$this->url}/import/preview", ['file' => planilhaPlanejamento($rows)])->assertOk()->json('data');
-    expect($prev['summary'])->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0])
+    expect($prev['summary'])->toBe(['total' => 5, 'ok' => 5, 'skip' => 0, 'resources' => 1, 'error' => 0])
         ->and(collect($prev['rows'])->pluck('task.kind')->all())->toBe(['summary', 'task', null, 'task', 'task'])
+        ->and($prev['rows'][2]['resource'])->toMatchArray(['task' => '1.1', 'kind' => 'material', 'unit' => 'M2', 'unit_cost' => '30.00', 'quantity_per_unit' => '10'])
         ->and($prev['rows'][3]['task'])->toMatchArray(['wbs' => '1.2', 'start' => '2026-03-25', 'duration_days' => 3, 'actual_start' => '2026-03-25']) // 03/25 = MM/DD
         ->and($prev['rows'][4]['warnings'])->toContain('Sem data de início: usa a data inicial da obra.')
         ->and(DB::table('schedules')->count())->toBe(0); // nada gravado
@@ -265,6 +267,10 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
         ->and($t->firstWhere('name', 'DEMO Formas'))->toMatchArray(['quantity' => '50.0000', 'unit_code' => 'M2', 'end' => '2026-03-04'])
         ->and($t->firstWhere('name', 'DEMO Estrutura'))->toMatchArray(['kind' => 'summary', 'start' => '2026-03-02', 'end' => '2026-03-27'])
         ->and(cronograma($this)['schedule']['origin'])->toBe('spreadsheet');
+    // o recurso entrou na atividade 1.1: 50 m² × 10 × 30,00
+    $item = cronograma($this)['items'][0];
+    expect($item)->toMatchArray(['description' => 'DEMO Madeira', 'kind' => 'material', 'unit_cost' => '30.00', 'task_id' => $t->firstWhere('name', 'DEMO Formas')['id']])
+        ->and($item['computed']['cost'])->toBe('15000.00');
     $this->b->request('POST', "{$this->url}/import", ['file' => planilhaPlanejamento($rows)])->assertUnprocessable(); // já tem planejamento
 
     // erros: item sem a mãe antes, data inválida, descrição vazia → nada é importado
@@ -281,7 +287,7 @@ it('importa a planilha (D-P68b): pré-visualização sem gravar; etapas pela num
     $resp = $this->b->get("{$this->url}/import/template")->assertOk();
     $file = $resp->baseResponse->getFile()->getPathname();
     $tpl = $this->b->request('POST', "/api/v1/projects/{$obra2}/schedule/import/preview", ['file' => new UploadedFile($file, 'modelo.xlsx', null, null, true)])->assertOk()->json('data.summary');
-    expect($tpl)->toBe(['total' => 5, 'ok' => 4, 'skip' => 1, 'error' => 0]);
+    expect($tpl)->toBe(['total' => 5, 'ok' => 5, 'skip' => 0, 'resources' => 1, 'error' => 0]); // o recurso do exemplo entra na atividade
 });
 
 it('importa num planejamento já criado e vazio (mesmo com linha de base); com atividades é recusado', function () {

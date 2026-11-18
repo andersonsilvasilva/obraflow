@@ -24,6 +24,13 @@ Route::middleware('tenant.required')->prefix('projects/{uuid}/schedule')->whereU
 
     Route::post('baselines', [ScheduleController::class, 'storeBaseline'])->middleware('can:schedules.manage')->name('schedules.baselines.store');
 
+    // 6B — BDI e desconto do planejamento; recursos das atividades (catálogo, SINAPI, composição própria, digitado, orçamento)
+    Route::put('pricing', [ScheduleController::class, 'pricing'])->middleware('can:schedules.manage')->name('schedules.pricing');
+    Route::post('tasks/{id}/items', [ScheduleController::class, 'storeItems'])->whereNumber('id')->middleware('can:schedules.manage')->name('schedules.items.store');
+    Route::put('items/{id}', [ScheduleController::class, 'updateItem'])->whereNumber('id')->middleware('can:schedules.manage')->name('schedules.items.update');
+    Route::delete('items/{id}', [ScheduleController::class, 'destroyItem'])->whereNumber('id')->middleware('can:schedules.manage')->name('schedules.items.destroy');
+    Route::post('items/from-budget', [ScheduleController::class, 'itemsFromBudget'])->middleware('can:schedules.manage')->name('schedules.items.from-budget');
+
     // importação por planilha (D-P68b): modelo, pré-visualização (nada gravado) e importação
     Route::get('import/template', [ScheduleController::class, 'importTemplate'])->middleware('can:schedules.view')->name('schedules.import.template');
     Route::post('import/preview', [ScheduleController::class, 'importPreview'])->middleware('can:schedules.manage')->name('schedules.import.preview');
