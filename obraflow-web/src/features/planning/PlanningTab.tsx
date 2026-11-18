@@ -178,14 +178,17 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         <Button size="sm" variant={pref.critical ? 'default' : 'outline'} aria-pressed={pref.critical} onClick={() => setPref({ critical: !pref.critical })}>
           <Route className="size-3.5" /> Caminho crítico
         </Button>
-        <SelectInput className="h-8 w-48 text-sm" aria-label="Linha de base para comparar" value={compare ?? ''} onChange={(e) => setCompare(e.target.value ? Number(e.target.value) : null)} disabled={!baselines}>
-          <option value="">Linha de base: nenhuma</option>
+        <label className="text-muted-foreground inline-flex items-center gap-2 text-sm">
+          Comparar com
+          <SelectInput className="h-8 w-56 py-0 text-sm" value={compare ?? ''} onChange={(e) => setCompare(e.target.value ? Number(e.target.value) : null)} disabled={!baselines}>
+          <option value="">{baselines ? 'Nenhuma linha de base' : 'Sem linha de base'}</option>
           {plan!.baselines?.map((b) => (
             <option key={b.number} value={b.number}>
               {b.number}. {b.name}
             </option>
           ))}
-        </SelectInput>
+          </SelectInput>
+        </label>
         <Button size="sm" variant="outline" disabled title={soon6B}>
           <Percent className="size-3.5" /> BDI
         </Button>
@@ -498,7 +501,7 @@ function GanttView({
           return d.toLocaleDateString('pt-BR')
         },
       },
-      { id: 'duration_days', header: 'Dias úteis', width: 80, align: 'center' },
+      { id: 'duration_days', header: 'Dias úteis', width: 96, align: 'center' },
       { id: 'preds', header: 'Predecessoras', width: 110 },
       { id: 'unit', header: 'Un. medida', width: 80, align: 'center' },
       { id: 'quantity', header: 'Quantidade', width: 90, align: 'right' },
@@ -531,6 +534,7 @@ function GanttView({
           scales={SCALES[zoom]}
           cellWidth={CELL[zoom]}
           cellHeight={34}
+          scaleHeight={34}
           displayMode={mode}
           readonly={readonly}
           taskTemplate={Bar}
