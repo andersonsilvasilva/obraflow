@@ -31,12 +31,6 @@
     height: 100%;
 }
 
-/* a área das barras ocupa a altura toda (a rolagem horizontal fica embaixo, não colada na última linha) */
-.obraflow-gantt .wx-chart,
-.obraflow-gantt .wx-area {
-    min-height: 100%;
-}
-
 /* barra de atividade crítica (caminho crítico calculado no servidor — D-P67) */
 .obraflow-gantt .of-bar-critical {
     position: absolute;

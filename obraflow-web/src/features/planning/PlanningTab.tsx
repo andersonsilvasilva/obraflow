@@ -188,6 +188,7 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         planStart={summary.start}
         planEnd={summary.end}
         canEditProject={canEditProject}
+        durationMode={plan!.schedule!.duration_mode}
       />
 
       {/* barra de ações: análise à esquerda; incluir, importar, exibição e zoom à direita */}

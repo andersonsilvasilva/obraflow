@@ -16,6 +16,8 @@ interface Props {
   planStart: string | null
   planEnd: string | null
   canEditProject: boolean
+  /** Como o planejamento conta a duração (A-51): só em dias úteis o início é "o primeiro dia útil". */
+  durationMode: 'calendar' | 'working'
 }
 
 const short = (ymd: string) => formatDate(ymd).slice(0, 5)
@@ -26,7 +28,8 @@ const daysBetween = (a: string, b: string) => Math.round((+toDate(b) - +toDate(a
  * planejamento é o primeiro DIA ÚTIL (D-P66) — feriados e dias sem horário são mostrados um a um. Se o planejamento
  * termina depois da entrega prevista, oferece levar o término para a obra (como a "Projeção de término" do Brickup).
  */
-export function PeriodNotice({ uuid, projectStart, projectEnd, planStart, planEnd, canEditProject }: Props) {
+export function PeriodNotice({ uuid, projectStart, projectEnd, planStart, planEnd, canEditProject, durationMode }: Props) {
+  const working = durationMode === 'working'
   const { notify } = useToast()
   const client = useQueryClient()
   const startShift = !!(projectStart && planStart && planStart > projectStart)
@@ -37,7 +40,7 @@ export function PeriodNotice({ uuid, projectStart, projectEnd, planStart, planEn
   const cal = useQuery({
     queryKey: ['project-calendar-range', uuid, projectStart, before ? toYmd(before) : null],
     queryFn: () => calendarApi.range(uuid, projectStart!, toYmd(before!)),
-    enabled: startShift && daysBetween(projectStart!, planStart!) <= 60,
+    enabled: working && startShift && daysBetween(projectStart!, planStart!) <= 60,
   })
   const update = useMutation({
     mutationFn: () => projectsApi.update(uuid, { expected_end_date: planEnd }),
@@ -67,8 +70,14 @@ export function PeriodNotice({ uuid, projectStart, projectEnd, planStart, planEn
       <div className="flex flex-col gap-1.5 text-sm">
         {startShift && (
           <p>
-            A obra começa em <strong>{formatDate(projectStart!)}</strong>, mas o planejamento começa em <strong>{formatDate(planStart!)}</strong>, o primeiro dia útil
-            {reasons.length > 0 ? <> ({reasons.join('; ')}).</> : '.'} Os dias úteis vêm das abas Horários e Calendário.
+            A obra começa em <strong>{formatDate(projectStart!)}</strong>, mas o planejamento começa em <strong>{formatDate(planStart!)}</strong>
+            {working ? (
+              <>
+                , o primeiro dia útil{reasons.length > 0 ? <> ({reasons.join('; ')}).</> : '.'} Os dias úteis vêm das abas Horários e Calendário.
+              </>
+            ) : (
+              <>, data da primeira atividade. Para começar junto com a obra, ajuste o início das primeiras atividades.</>
+            )}
           </p>
         )}
         {lateBy > 0 && (
