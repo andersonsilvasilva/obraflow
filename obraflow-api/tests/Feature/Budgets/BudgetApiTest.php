@@ -4,6 +4,7 @@ use App\Models\AuditLog;
 use App\Models\ReferenceDataset;
 use App\Models\Role;
 use App\Modules\Audit\AuditEvent;
+use App\Modules\Budgets\Report\ChromeRenderer;
 use App\Modules\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\RateLimiter;
@@ -277,4 +278,21 @@ it('relatório (4D): member com budgets.view gera; outro tenant → 404; sem ace
     $o = new Browser($this);
     $o->login($u->email)->assertOk();
     $o->post("{$this->base}/report", ['format' => 'xlsx'])->assertForbidden();
+});
+
+it('relatório PDF (4D) pela API; o XLSX leva os gráficos da curva ABC como imagem', function () {
+    if (! app(ChromeRenderer::class)->available()) {
+        $this->markTestSkipped('Chrome não instalado neste ambiente.');
+    }
+    preencher($this);
+    $pdf = $this->b->post("{$this->base}/report", ['format' => 'pdf', 'parts' => ['abc']])->assertOk();
+    expect($pdf->headers->get('content-type'))->toBe('application/pdf')
+        ->and(substr(file_get_contents($pdf->baseResponse->getFile()->getPathname()), 0, 5))->toBe('%PDF-');
+
+    $xlsx = $this->b->post("{$this->base}/report", ['format' => 'xlsx', 'parts' => ['abc']])->assertOk();
+    $zip = new ZipArchive;
+    $zip->open($xlsx->baseResponse->getFile()->getPathname());
+    $media = array_filter(array_map(fn ($i) => $zip->getNameIndex($i), range(0, $zip->numFiles - 1)), fn ($n) => str_starts_with($n, 'xl/media/'));
+    $zip->close();
+    expect(count($media))->toBe(3); // a marca na aba Resumo + os 2 gráficos
 });

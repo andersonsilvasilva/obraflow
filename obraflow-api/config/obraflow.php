@@ -30,4 +30,15 @@ return [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ],
     ],
+
+    /*
+    | Relatório do orçamento (4D): PDF e imagens pelo Chrome headless chamado pela linha de comando (sem Node e sem
+    | biblioteca). CHROME_PATH vazio: procura o Chrome/Chromium/Edge nos caminhos usuais. CHROME_NO_SANDBOX=true só
+    | em container rodando como root.
+    */
+    'reports' => [
+        'chrome_path' => env('CHROME_PATH'),
+        'chrome_no_sandbox' => (bool) env('CHROME_NO_SANDBOX', false),
+        'timeout' => (int) env('REPORT_TIMEOUT', 60),
+    ],
 ];

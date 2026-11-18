@@ -3,6 +3,8 @@
 use App\Models\Company;
 use App\Models\ReferenceDataset;
 use App\Modules\Budgets\Report\BudgetReportBuilder;
+use App\Modules\Budgets\Report\ChromeRenderer;
+use App\Modules\Budgets\Report\PdfReportRenderer;
 use App\Modules\Budgets\Report\ReportFormat;
 use App\Modules\Budgets\Report\ReportOptions;
 use App\Modules\Budgets\Services\BudgetService;
@@ -129,4 +131,26 @@ it('formatação brasileira sem float: moeda, quantidade, coeficiente, percentua
         ->and(ReportFormat::percent('22.1200'))->toBe('22,12%')
         ->and(ReportFormat::cnpj('11222333000181'))->toBe('11.222.333/0001-81')
         ->and(ReportFormat::money('99999999999.99'))->toBe('R$ 99.999.999.999,99');
+});
+
+it('PDF pelo Chrome headless: arquivo PDF com várias páginas, marca d\'água e gráfico; HTML sem nenhum recurso externo', function () {
+    $chrome = app(ChromeRenderer::class);
+    if (! $chrome->available()) {
+        $this->markTestSkipped('Chrome não instalado neste ambiente.');
+    }
+    $data = ($this->build)(['format' => 'pdf', 'notes' => "DEMO Validade: 30 dias.\nDEMO Pagamento por medição."]);
+    $renderer = app(PdfReportRenderer::class);
+    $html = $renderer->html($data);
+    expect($html)->toContain('RASCUNHO')->toContain('<svg')->toContain('counter(pages)')
+        ->and(preg_match('/(src|href)=["\']https?:/i', $html))->toBe(0)
+        ->and(preg_match('/url\(["\']?https?:/i', $html))->toBe(0);
+
+    $path = sys_get_temp_dir().'/obraflow-test-'.uniqid().'.pdf';
+    $renderer->render($data, $path);
+    $pdf = file_get_contents($path);
+    expect(substr($pdf, 0, 5))->toBe('%PDF-')->and(preg_match_all('/\/Type\s*\/Page[^s]/', $pdf))->toBeGreaterThanOrEqual(6);
+    if ($dir = getenv('REPORT_SAMPLE_DIR')) {
+        copy($path, $dir.'/amostra-orcamento.pdf');
+    }
+    @unlink($path);
 });

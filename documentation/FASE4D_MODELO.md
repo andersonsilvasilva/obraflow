@@ -63,7 +63,7 @@ BudgetReportBuilder ── lê a versão (BudgetCalculator, BdiResolver, AbcCurv
 
 | ID | Decisão | Recomendação |
 |---|---|---|
-| **D-P77** | **Biblioteca para comandar o Chrome** | **chrome-php/chrome 1.16.1** (MIT, publicada em 06/07/2026). É PHP puro e fala direto com o Chrome, **sem Node** no servidor. O resultado visual é o mesmo das alternativas, porque quem desenha é sempre o Chrome: spatie/browsershot (MIT) exige Node e Puppeteer; Gotenberg (MIT) é um serviço Docker à parte |
+| **D-P77** | **Biblioteca para comandar o Chrome** | ~~chrome-php/chrome 1.16.1~~ **Substituída pela A-55:** o Chrome é chamado direto pela linha de comando (symfony/process, já instalado), porque a chrome-php exige a extensão `sockets` do PHP. Texto original: **chrome-php/chrome 1.16.1** (MIT, publicada em 06/07/2026). É PHP puro e fala direto com o Chrome, **sem Node** no servidor. O resultado visual é o mesmo das alternativas, porque quem desenha é sempre o Chrome: spatie/browsershot (MIT) exige Node e Puppeteer; Gotenberg (MIT) é um serviço Docker à parte |
 | **D-P78** | **Chrome no servidor** | Caminho do executável por configuração (`CHROME_PATH`). Local: o Chrome já instalado. Produção: Chrome ou Chromium instalado no servidor (ou container). Se não houver Chrome, o PDF responde com erro claro e o XLSX e o DOCX continuam funcionando |
 | **D-P79** | **Biblioteca do DOCX** | **phpoffice/phpword 1.4.0** (publicada em 05/06/2025). A licença é **LGPL-3.0**: pode ser usada como dependência sem abrir o código do ObraFlow, desde que a biblioteca não seja modificada. Precisa do seu aceite. Alternativa sem LGPL: DOCX montado pelo próprio ObraFlow (mais trabalho, menos recursos) |
 | **D-P80** | **Permissão** | Quem vê o orçamento (`budgets.view` + acesso à obra) pode gerar o relatório. **Sem permissão nova**, então nada muda no banco |
@@ -108,3 +108,10 @@ Nenhuma etapa grava no banco `obraflow` (sem migrations e sem permissões novas)
 - **Auditoria:** `budget.report_exported` com versão, formato, partes e `hide_bdi`.
 - **XLSX** (`XlsxReportRenderer`, OpenSpout): abas Resumo (com a marca), Sintético, Analítico, BDI, Curva ABC e Fechamento; valores numéricos com formato de moeda e %, sem fórmulas; etapas destacadas nas cores do ObraFlow; A4 paisagem, ajustado à largura. O gráfico da curva ABC entra na etapa 3 (gerado pelo Chrome).
 - **Testes:** +2 na API (conteúdo, opções, auditoria, validação, permissões e isolamento).
+
+### Etapa 3 — PDF (Chrome headless)
+
+- **A-55:** sem biblioteca. `ChromeRenderer` chama o Chrome/Chromium/Edge pela linha de comando (`--headless=new --print-to-pdf`), com perfil temporário próprio, sem extensões e sem rede (o HTML é autossuficiente). Caminho por `CHROME_PATH` (vazio: procura nos caminhos usuais); `CHROME_NO_SANDBOX` só em container como root; limite de `REPORT_TIMEOUT` (60 s). Sem Chrome, o PDF responde 422 com mensagem clara e o XLSX sai sem o gráfico (D-P78).
+- **Layout** (`resources/views/reports/budget.blade.php`): capa com a marca e o valor final; cabeçalho e rodapé pelo CSS de impressão (`@page`, caixas de margem do Chrome 131+) com "Página X de Y"; fonte Geist embutida (SIL OFL, `resources/report/fonts`); retrato para capa, resumo, BDI e fechamento e paisagem para sintético, analítico e curva ABC; cabeçalho das tabelas repetido a cada página; marca d'água "RASCUNHO" em todas as páginas de versões não aprovadas (a capa usa as mesmas margens das demais páginas, condição para a marca d'água fixa sair centralizada).
+- **Curva ABC:** `AbcChart` gera o Pareto em SVG (até 25 barras + "Demais", % acumulado, linhas de 80% e 95%). O PDF usa o SVG; o XLSX recebe o PNG capturado pelo Chrome do mesmo SVG (insumos e serviços).
+- **Testes:** +1 no relatório (PDF com várias páginas, marca d'água, gráfico e HTML sem nenhum recurso externo) e +1 na API (PDF e imagens no XLSX). São pulados se o ambiente não tiver Chrome.

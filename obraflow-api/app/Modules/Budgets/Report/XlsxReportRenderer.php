@@ -49,7 +49,7 @@ final class XlsxReportRenderer
 
     private Options $options;
 
-    /** @param array<string, string> $assets caminhos de imagens: `abc_chart` (PNG) */
+    /** @param array<string, string> $assets gráficos da curva ABC em PNG: `resources` e `services` */
     public function render(array $data, string $path, array $assets = []): void
     {
         $this->options = new Options(pageSetup: new PageSetup(PageOrientation::LANDSCAPE, PaperSize::A4, fitToHeight: 0, fitToWidth: 1));
@@ -65,7 +65,7 @@ final class XlsxReportRenderer
             $this->bdiSheet($data);
         }
         if (isset($data['abc'])) {
-            $this->abcSheet($data, $assets['abc_chart'] ?? null);
+            $this->abcSheet($data, $assets);
         }
         if (isset($data['closing'])) {
             $this->closingSheet($data);
@@ -250,18 +250,17 @@ final class XlsxReportRenderer
         $this->row([$this->text('Encargos sociais', $this->style(bold: true)), $this->text($b['regime'])]);
     }
 
-    private function abcSheet(array $d, ?string $chart): void
+    private function abcSheet(array $d, array $charts): void
     {
         $sheet = $this->newSheet('Curva ABC');
         $this->widths($sheet, [7, 11, 54, 7, 14, 16, 10, 12, 8]);
         $this->title('Curva ABC', $d);
-        if ($chart !== null && is_file($chart)) {
-            $this->row([new ImageCell($chart, 760, 300)], height: 230);
-            $this->row([]);
-        }
 
-        foreach (['services' => 'Serviços (pelo custo)', 'resources' => 'Insumos (das composições)'] as $key => $label) {
+        foreach (['resources' => 'Insumos (das composições)', 'services' => 'Serviços (pelo custo)'] as $key => $label) {
             $this->sectionTitle($label);
+            if (isset($charts[$key]) && is_file($charts[$key])) {
+                $this->row([new ImageCell($charts[$key], AbcChart::WIDTH, AbcChart::HEIGHT)], height: 230);
+            }
             $this->header(['Pos.', 'Código', 'Descrição', 'Un.', 'Quantidade', 'Valor', '%', '% acum.', 'Faixa']);
             foreach ($d['abc'][$key] as $i => $r) {
                 $bg = ['A' => 'DCFCE7', 'B' => 'FEF3C7', 'C' => self::GRAY][$r['class']];

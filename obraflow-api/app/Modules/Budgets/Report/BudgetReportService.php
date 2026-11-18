@@ -14,19 +14,55 @@ use App\Modules\Audit\AuditLogger;
 final class BudgetReportService
 {
     /** Formatos já disponíveis (os demais entram nas próximas etapas da 4D). */
-    public const AVAILABLE = ['xlsx'];
+    public const AVAILABLE = ['pdf', 'xlsx'];
 
     public function __construct(private readonly BudgetReportBuilder $builder, private readonly AuditLogger $audit) {}
+
+    /**
+     * Gráficos da curva ABC em PNG (capturados do mesmo SVG do PDF) para o XLSX e o DOCX. Sem Chrome no servidor, o
+     * arquivo sai sem o gráfico (as tabelas continuam) — D-P78.
+     *
+     * @param  list<string>  $tmp  arquivos temporários criados (apagados por quem chama)
+     * @return array<string, string>
+     */
+    private function charts(array $data, array &$tmp): array
+    {
+        $chrome = app(ChromeRenderer::class);
+        if (! isset($data['abc']) || ! $chrome->available()) {
+            return [];
+        }
+        $out = [];
+        foreach (['resources' => 'Curva ABC de insumos', 'services' => 'Curva ABC de serviços'] as $key => $title) {
+            $png = self::tempFile('png');
+            $tmp[] = $png;
+            try {
+                $chrome->png(AbcChart::page(AbcChart::svg($data['abc'][$key], $title)), $png, AbcChart::WIDTH, AbcChart::HEIGHT);
+                $out[$key] = $png;
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $out;
+    }
 
     /** @return array{path: string, filename: string, mime: string} */
     public function generate(BudgetVersion $version, ReportOptions $options, User $user): array
     {
         $data = $this->builder->build($version, $options, $user);
-        $path = tempnam(sys_get_temp_dir(), 'orc').'.'.$options->format;
+        $path = self::tempFile($options->format);
+        $tmp = [];
 
-        match ($options->format) {
-            'xlsx' => app(XlsxReportRenderer::class)->render($data, $path),
-        };
+        try {
+            match ($options->format) {
+                'pdf' => app(PdfReportRenderer::class)->render($data, $path),
+                'xlsx' => app(XlsxReportRenderer::class)->render($data, $path, $this->charts($data, $tmp)),
+            };
+        } finally {
+            foreach ($tmp as $file) {
+                @unlink($file);
+            }
+        }
 
         $budget = $version->budget;
         $this->audit->record(AuditEvent::BUDGET_REPORT_EXPORTED, tenantId: $budget->tenant_id, userId: $user->getKey(), entityType: 'budget', entityId: $budget->id,
@@ -37,5 +73,11 @@ final class BudgetReportService
             'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         }];
+    }
+
+    /** Caminho temporário único com a extensão (sem deixar o arquivo-base do tempnam para trás). */
+    private static function tempFile(string $ext): string
+    {
+        return sys_get_temp_dir().DIRECTORY_SEPARATOR.'obraflow-'.bin2hex(random_bytes(8)).'.'.$ext;
     }
 }
