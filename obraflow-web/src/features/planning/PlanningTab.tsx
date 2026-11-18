@@ -2,7 +2,7 @@ import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gan
 import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, ChevronsDownUp, ChevronsUpDown, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
+import { CalendarClock, ChevronsDownUp, ChevronsUpDown, CornerDownRight, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Alert } from '@/components/feedback/Alert'
@@ -80,7 +80,8 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const uuid = project.uuid
   const [pref, setPrefState] = useState(() => readPref(uuid))
   const [compare, setCompare] = useState<number | null>(null)
-  const [editing, setEditing] = useState<{ task?: PlanTask; parent?: PlanTask; kind?: PlanTask['kind'] } | null>(null)
+  const [editing, setEditing] = useState<{ task?: PlanTask; parentId?: number | null; kind?: PlanTask['kind'] } | null>(null)
+  const [removing, setRemoving] = useState<PlanTask | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [baselineName, setBaselineName] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
@@ -258,6 +259,13 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
           const t = byId.get(id)
           if (t) setEditing({ task: t })
         }}
+        onRowAction={(action, id) => {
+          const t = byId.get(id)
+          if (!t) return
+          if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
+          else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
+          else setRemoving(t)
+        }}
         onRun={run}
       />
 
@@ -275,6 +283,7 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
           tasks={tasks}
           task={editing.task}
           kind={editing.kind}
+          parentId={editing.parentId}
           canEdit={canEdit}
           onClose={() => setEditing(null)}
           onSaved={(d, msg) => {
@@ -308,6 +317,15 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         </Modal>
       )}
       <ConfirmDialog
+        open={removing !== null}
+        title={`Excluir "${removing?.wbs ?? ''} ${removing?.name ?? ''}"?`}
+        description={removing?.kind === 'summary' ? 'A etapa sai com tudo o que está dentro dela, e as dependências também.' : 'A atividade e as dependências dela serão excluídas.'}
+        confirmLabel="Excluir"
+        destructive
+        onConfirm={() => removing && (run(planningApi.removeTask(uuid, removing.id), 'Excluída.'), setRemoving(null))}
+        onCancel={() => setRemoving(null)}
+      />
+      <ConfirmDialog
         open={confirmDelete}
         title="Apagar todo o planejamento?"
         description="Todas as etapas, atividades e dependências serão apagadas. Não é possível se houver linha de base ou avanço registrado."
@@ -333,6 +351,20 @@ function Kpi({ label, value, tone, hint }: { label: string; value: string; tone?
       </p>
       <p className={cn('text-base font-semibold tabular-nums', tone === 'danger' && value !== '0' && 'text-destructive', hint && 'text-muted-foreground')}>{value}</p>
     </div>
+  )
+}
+
+function RowButton({ label, danger, onClick, children }: { label: string; danger?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={(e) => (e.stopPropagation(), onClick())}
+      className={cn('hover:bg-primary-soft rounded p-1', danger ? 'text-destructive' : 'text-muted-foreground hover:text-primary')}
+    >
+      {children}
+    </button>
   )
 }
 
@@ -407,6 +439,7 @@ function GanttView({
   readonly,
   apiRef,
   onOpen,
+  onRowAction,
   onRun,
 }: {
   uuid: string
@@ -419,6 +452,7 @@ function GanttView({
   showCritical: boolean
   readonly: boolean
   onOpen: (id: number) => void
+  onRowAction: (action: 'below' | 'child' | 'delete', id: number) => void
   onRun: (p: Promise<PlanData>, ok?: string) => void
 }) {
   const gTasks = useMemo(() => {
@@ -435,10 +469,10 @@ function GanttView({
     [plan.dependencies],
   )
   const byId = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks])
-  const handlers = useRef({ onOpen, onRun, byId })
+  const handlers = useRef({ onOpen, onRun, byId, onRowAction })
   useEffect(() => {
-    handlers.current = { onOpen, onRun, byId }
-  }, [onOpen, onRun, byId])
+    handlers.current = { onOpen, onRun, byId, onRowAction }
+  }, [onOpen, onRun, byId, onRowAction])
   const [markers] = useState(() => [{ start: new Date(), text: 'Hoje' }])
 
   // dias não úteis da obra no período (horário + exceções) para destacar no Gantt
@@ -488,6 +522,29 @@ function GanttView({
 
   const columns = useMemo<IColumnConfig[]>(
     () => ([
+      // ações da linha (como no Brickup): atividade abaixo, sub atividade, excluir — só para quem edita
+      ...(readonly
+        ? []
+        : [
+            {
+              id: 'actions',
+              header: '',
+              width: 84,
+              cell: ({ row }: { row: { id?: unknown } }) => (
+                <span className="flex items-center gap-0.5" onDoubleClick={(e) => e.stopPropagation()}>
+                  <RowButton label="Atividade abaixo" onClick={() => handlers.current.onRowAction('below', Number(row.id))}>
+                    <Plus className="size-3.5" />
+                  </RowButton>
+                  <RowButton label="Sub atividade" onClick={() => handlers.current.onRowAction('child', Number(row.id))}>
+                    <CornerDownRight className="size-3.5" />
+                  </RowButton>
+                  <RowButton label="Excluir" danger onClick={() => handlers.current.onRowAction('delete', Number(row.id))}>
+                    <Trash2 className="size-3.5" />
+                  </RowButton>
+                </span>
+              ),
+            },
+          ]),
       { id: 'wbs', header: 'ID', width: 64 },
       { id: 'text', header: 'Atividade', flexgrow: 1 },
       { id: 'start', header: 'Início', width: 92, template: (v: Date) => v.toLocaleDateString('pt-BR') },
@@ -509,7 +566,7 @@ function GanttView({
         ? [{ id: 'delta', header: 'Desvio', width: 70, align: 'center' as const, template: (v: number | null) => (v === null ? '—' : v > 0 ? `+${v}` : String(v)) }]
         : []),
     ] as IColumnConfig[]).filter((c) => !(String(c.id) in visible) || visible[c.id as ColumnKey]),
-    [plan.compared_baseline, visible],
+    [plan.compared_baseline, visible, readonly],
   )
 
   const Bar = useCallback(

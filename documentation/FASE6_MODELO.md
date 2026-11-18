@@ -200,3 +200,10 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **O Gantt aparece sempre**, mesmo com o planejamento vazio (antes aparecia "Planejamento vazio").
 - **Configurações de visualização:** colunas visíveis (Início, Término, Dias úteis, Predecessoras, Unidade, Quantidade) e modo (Somente tabela, Layout dividido, Somente Gantt), guardados por obra no navegador.
 - **Importar em planejamento vazio:** o planejamento existente sem atividades é reaproveitado, mesmo com linha de base. Com atividades, a importação é recusada. +1 teste (10 no planejamento).
+
+### 6A — ações por linha e altura do Gantt
+
+- **Ações por linha** (A-50), coluna à esquerda, só para quem edita: **+ atividade abaixo** (na mesma etapa), **↳ sub atividade** (a linha vira etapa) e **excluir** (com confirmação). Os botões de custo (composição própria, composição pública, recursos) entram na 6B.
+- **Altura:** o Gantt ocupa a área inteira (60% da tela, no mínimo 24rem). Antes, a barra de rolagem cobria a segunda linha.
+
+> **Escopo da 6B atualizado (A-50):** recursos avulsos + composição SINAPI + composição própria simplificada. A proposta detalhada da 6B será apresentada antes de começar.

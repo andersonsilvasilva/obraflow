@@ -13,18 +13,20 @@ interface Props {
   tasks: PlanTask[]
   task?: PlanTask
   kind?: TaskKind
+  /** Etapa onde a nova atividade nasce (ações da linha: abaixo / sub atividade). */
+  parentId?: number | null
   canEdit: boolean
   onClose: () => void
   onSaved: (d: PlanData, msg: string) => void
 }
 
 /** Incluir/editar etapa, atividade ou marco; predecessoras; mover e excluir. O servidor recalcula tudo (D-P67). */
-export function TaskDialog({ uuid, tasks, task, kind: initialKind, canEdit, onClose, onSaved }: Props) {
+export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, canEdit, onClose, onSaved }: Props) {
   const editing = !!task
   const kind: TaskKind = task?.kind ?? initialKind ?? 'task'
   const [form, setForm] = useState({
     name: task?.name ?? '',
-    parent_id: task?.parent_id ? String(task.parent_id) : '',
+    parent_id: task?.parent_id ? String(task.parent_id) : parentId ? String(parentId) : '',
     planned_start: task?.start ?? '',
     duration_days: task ? String(task.duration_days) : '1',
     unit_code: task?.unit_code ?? '',

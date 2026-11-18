@@ -24,6 +24,10 @@
     --wx-gantt-holiday-background: var(--muted);
     --wx-gantt-link-color: var(--muted-foreground);
     --wx-gantt-marker-color: var(--destructive);
+}
+
+/* o tema (Willow) e o Gantt ocupam toda a altura da área (60vh, mínimo 24rem) */
+.obraflow-gantt > .wx-willow-theme {
     height: 100%;
 }
 
