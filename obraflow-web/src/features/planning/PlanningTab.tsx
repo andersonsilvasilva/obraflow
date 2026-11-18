@@ -3,7 +3,7 @@ import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, ChevronsDownUp, ChevronsUpDown, CornerDownRight, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Alert } from '@/components/feedback/Alert'
 import { ConfirmDialog, Modal } from '@/components/feedback/Modal'
@@ -51,10 +51,6 @@ function readPref(uuid: string): Pref {
   }
 }
 
-/** Protótipo de comparação (A-58), carregado só quando escolhido. */
-const BryntumPreview = lazy(() => import('./BryntumPreview'))
-const DhtmlxPreview = lazy(() => import('./DhtmlxPreview'))
-type Engine = 'svar' | 'bryntum' | 'dhtmlx'
 
 const monthFmt = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
 
@@ -93,23 +89,6 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [baselineName, setBaselineName] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
-  // comparação de bibliotecas de Gantt (A-58): preferência do navegador
-  const [engine, setEngineState] = useState<Engine>(() => {
-    try {
-      const v = localStorage.getItem('obraflow.planning.gantt-engine')
-      return v === 'bryntum' || v === 'dhtmlx' ? v : 'svar'
-    } catch {
-      return 'svar'
-    }
-  })
-  const setEngine = (v: Engine) => {
-    setEngineState(v)
-    try {
-      localStorage.setItem('obraflow.planning.gantt-engine', v)
-    } catch {
-      /* sem armazenamento: só nesta tela */
-    }
-  }
   const [importing, setImporting] = useState(false)
   const ganttApi = useRef<IApi | null>(null)
   const key = ['schedule', uuid, compare]
@@ -290,45 +269,29 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base (+ = atrasou).'}
       </p>
 
-      <div className="mb-2 flex items-center justify-end gap-1 text-xs" role="group" aria-label="Visual do Gantt (comparação)">
-        <span className="text-muted-foreground mr-1">Visual do Gantt:</span>
-        {([
-          ['svar', 'Atual (SVAR)'],
-          ['bryntum', 'Bryntum Community (protótipo)'],
-          ['dhtmlx', 'DHTMLX Community (protótipo)'],
-        ] as const).map(([v, label]) => (
-          <button key={v} type="button" onClick={() => setEngine(v)} className={cn('rounded-md border px-2 py-1', engine === v ? 'border-primary bg-primary/10 text-primary font-medium' : 'text-muted-foreground')}>
-            {label}
-          </button>
-        ))}
-      </div>
-      {engine !== 'svar' ? (
-        <Suspense fallback={<LoadingState />}>{engine === 'bryntum' ? <BryntumPreview plan={plan!} /> : <DhtmlxPreview plan={plan!} showCritical={pref.critical} />}</Suspense>
-      ) : (
-        <GanttView
-          uuid={uuid}
-          tasks={tasks}
-          plan={plan!}
-          mode={pref.mode}
-          zoom={pref.zoom}
-          columns={pref.columns}
-          showCritical={pref.critical}
-          readonly={!canEdit}
-          apiRef={ganttApi}
-          onOpen={(id) => {
-            const t = byId.get(id)
-            if (t) setEditing({ task: t })
-          }}
-          onRowAction={(action, id) => {
-            const t = byId.get(id)
-            if (!t) return
-            if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
-            else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
-            else setRemoving(t)
-          }}
-          onRun={run}
-        />
-      )}
+      <GanttView
+        uuid={uuid}
+        tasks={tasks}
+        plan={plan!}
+        mode={pref.mode}
+        zoom={pref.zoom}
+        columns={pref.columns}
+        showCritical={pref.critical}
+        readonly={!canEdit}
+        apiRef={ganttApi}
+        onOpen={(id) => {
+          const t = byId.get(id)
+          if (t) setEditing({ task: t })
+        }}
+        onRowAction={(action, id) => {
+          const t = byId.get(id)
+          if (!t) return
+          if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
+          else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
+          else setRemoving(t)
+        }}
+        onRun={run}
+      />
 
       {settings && (
         <SettingsDialog
@@ -586,6 +549,46 @@ function GanttView({
   const off = useMemo(() => ({ days: new Set((cal.data?.days ?? []).map((d) => d.date)), weekdays: new Set(cal.data?.non_working_weekdays ?? []) }), [cal.data])
   const highlight = useCallback((date: Date, unit: string) => (unit === 'day' && (off.weekdays.has(date.getDay()) || off.days.has(toYmd(date))) ? 'wx-weekend' : ''), [off])
 
+  // arrastar o gráfico com o mouse (fora das barras) para mover para os lados e para cima/baixo — como pegar o papel
+  const boxRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+    let drag: { x: number; y: number; left: number; top: number; h: HTMLElement; v: HTMLElement | null; moved: boolean } | null = null
+    const horizontal = () => Array.from(box.querySelectorAll<HTMLElement>('.wx-chart')).find((el) => el.scrollWidth > el.clientWidth) ?? null
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (e.button !== 0 || !target.closest('.wx-chart') || target.closest('.wx-bar, .wx-link, [class*="wx-link"], button, input, .wx-scale')) return
+      const h = horizontal()
+      if (!h) return
+      const v = box.querySelector<HTMLElement>('.wx-gantt')
+      drag = { x: e.clientX, y: e.clientY, left: h.scrollLeft, top: v?.scrollTop ?? 0, h, v, moved: false }
+    }
+    const onMove = (e: PointerEvent) => {
+      if (!drag) return
+      const dx = e.clientX - drag.x
+      const dy = e.clientY - drag.y
+      if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return // clique comum não vira arraste
+      if (!drag.moved) box.classList.add('of-panning')
+      drag.moved = true
+      drag.h.scrollLeft = drag.left - dx
+      if (drag.v) drag.v.scrollTop = drag.top - dy
+      e.preventDefault()
+    }
+    const onUp = () => {
+      if (drag?.moved) box.classList.remove('of-panning')
+      drag = null
+    }
+    box.addEventListener('pointerdown', onDown)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      box.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [])
+
   const init = useCallback(
     (api: IApi) => {
       apiRef.current = api
@@ -711,7 +714,7 @@ function GanttView({
   )
 
   return (
-    <div className="obraflow-gantt h-[60vh] min-h-96 overflow-hidden rounded-lg border">
+    <div ref={boxRef} className="obraflow-gantt h-[60vh] min-h-96 overflow-hidden rounded-lg border">
       <Willow fonts={false}>
         <Tooltip api={ganttApi ?? undefined} content={TipContent}>
           <Gantt

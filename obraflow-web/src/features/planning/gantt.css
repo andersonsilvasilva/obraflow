@@ -194,3 +194,18 @@
     color: var(--foreground);
     text-transform: capitalize;
 }
+
+/* arrastar o gráfico com o mouse (fora das barras): cursor de "mão" */
+.obraflow-gantt .wx-chart {
+    cursor: grab;
+}
+
+.obraflow-gantt .wx-chart .wx-bar {
+    cursor: pointer;
+}
+
+.obraflow-gantt.of-panning,
+.obraflow-gantt.of-panning * {
+    cursor: grabbing !important;
+    user-select: none;
+}
