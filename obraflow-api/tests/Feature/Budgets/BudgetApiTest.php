@@ -7,6 +7,8 @@ use App\Modules\Audit\AuditEvent;
 use App\Modules\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Testing\TestResponse;
+use OpenSpout\Reader\XLSX\Reader;
 use Tests\Support\Browser;
 use Tests\Support\Scenario;
 use Tests\Support\SinapiFixture;
@@ -193,6 +195,7 @@ it('exclusão de rascunho funciona e todos os eventos da Fase 4 são emitidos po
     $this->b->post("/api/v1/budgets/{$this->orc}/workflow/submit")->assertOk();
     $this->b->post("/api/v1/budgets/{$this->orc}/workflow/approve")->assertOk();
     $this->b->post("/api/v1/budgets/{$this->orc}/versions")->assertCreated();
+    $this->b->post("{$this->base}/report", ['format' => 'xlsx'])->assertOk();
 
     $emitidos = AuditLog::query()->distinct()->pluck('event')->all();
     // resource.imported é coberto em Feature/Catalog/ResourceCatalogTest
@@ -211,4 +214,67 @@ it('código vazio gera ORC-NNN/AAAA com o ano da data-base; numeração por ano;
 
     $this->b->get('/api/v1/budgets/next-code?reference_date=2027-05-05')->assertOk()->assertJsonPath('data.code', 'ORC-002/2027');
     loginRole($this, 'member')->get('/api/v1/budgets/next-code')->assertForbidden();
+});
+
+/** Lê o .xlsx baixado: [nome da aba => linhas]. */
+function lerXlsx(TestResponse $res): array
+{
+    $tmp = tempnam(sys_get_temp_dir(), 'xt').'.xlsx';
+    copy($res->baseResponse->getFile()->getPathname(), $tmp);
+    $reader = new Reader;
+    $reader->open($tmp);
+    $out = [];
+    foreach ($reader->getSheetIterator() as $sheet) {
+        foreach ($sheet->getRowIterator() as $row) {
+            $out[$sheet->getName()][] = $row->toArray();
+        }
+    }
+    $reader->close();
+    @unlink($tmp);
+
+    return $out;
+}
+
+it('relatório XLSX (4D): baixa com uma aba por parte, valores numéricos iguais à tela, opções e auditoria', function () {
+    preencher($this);
+    $totals = $this->b->get($this->base)->json('data.totals');
+
+    $res = $this->b->post("{$this->base}/report", ['format' => 'xlsx', 'notes' => 'DEMO validade 30 dias'])->assertOk();
+    expect($res->headers->get('content-disposition'))->toContain('ORC-1-v1-orcamento.xlsx')
+        ->and($res->headers->get('cache-control'))->toContain('no-store');
+    $x = lerXlsx($res);
+    expect(array_keys($x))->toBe(['Resumo', 'Sintético', 'Analítico', 'BDI', 'Curva ABC', 'Fechamento']);
+
+    $final = collect($x['Sintético'])->first(fn ($r) => ($r[0] ?? null) === 'VALOR FINAL');
+    expect(number_format((float) end($final), 2, '.', ''))->toBe($totals['final_price'])
+        ->and(collect($x['Sintético'])->pluck(0)->all())->toContain('1.99')
+        ->and(collect($x['Analítico'])->pluck(2)->all())->toContain('88316')
+        ->and(collect($x['Fechamento'])->flatten()->all())->toContain('DEMO validade 30 dias');
+
+    // ocultar o BDI: sem a coluna e sem a aba de BDI; só as partes pedidas
+    $y = lerXlsx($this->b->post("{$this->base}/report", ['format' => 'xlsx', 'hide_bdi' => true, 'parts' => ['bdi', 'abc']])->assertOk());
+    expect(array_keys($y))->toBe(['Resumo', 'Sintético', 'Curva ABC'])
+        ->and(collect($y['Sintético'])->first(fn ($r) => ($r[0] ?? null) === 'Item'))->not->toContain('BDI');
+
+    $log = AuditLog::query()->where('event', AuditEvent::BUDGET_REPORT_EXPORTED)->latest('id')->first();
+    expect($log->metadata)->toMatchArray(['version' => 1, 'format' => 'xlsx', 'parts' => ['abc'], 'hide_bdi' => true]);
+
+    // validação: formato ainda indisponível, parte desconhecida
+    $this->b->post("{$this->base}/report", ['format' => 'odt'])->assertUnprocessable();
+    $this->b->post("{$this->base}/report", ['format' => 'xlsx', 'parts' => ['tudo']])->assertUnprocessable();
+});
+
+it('relatório (4D): member com budgets.view gera; outro tenant → 404; sem acesso à obra → 404', function () {
+    preencher($this);
+    loginRole($this, 'member')->post("{$this->base}/report", ['format' => 'xlsx'])->assertOk();
+
+    $bb = new Browser($this);
+    $bb->login(Scenario::member(Scenario::tenant(), 'admin')->email)->assertOk();
+    $bb->post("{$this->base}/report", ['format' => 'xlsx'])->assertNotFound();
+
+    roleWith($this, 'sem-orc', ['projects.view']);
+    $u = Scenario::member($this->A, 'sem-orc');
+    $o = new Browser($this);
+    $o->login($u->email)->assertOk();
+    $o->post("{$this->base}/report", ['format' => 'xlsx'])->assertForbidden();
 });

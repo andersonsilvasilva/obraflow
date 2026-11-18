@@ -12,12 +12,16 @@ use App\Models\BudgetItem;
 use App\Models\BudgetItemResource;
 use App\Models\BudgetVersion;
 use App\Modules\Budgets\Http\Requests\BudgetContentRequest;
+use App\Modules\Budgets\Http\Requests\BudgetReportRequest;
+use App\Modules\Budgets\Report\BudgetReportService;
+use App\Modules\Budgets\Report\ReportOptions;
 use App\Modules\Budgets\Services\AbcCurve;
 use App\Modules\Budgets\Services\BudgetAccess;
 use App\Modules\Budgets\Services\BudgetService;
 use App\Modules\Shared\Exceptions\ApiException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Conteúdo de uma versão (endereçada por orçamento + número): leitura completa, etapas, itens, BDI, custos indiretos,
@@ -171,6 +175,17 @@ class BudgetContentController extends Controller
         $v = $this->version($request, $uuid, $number, 'view');
 
         return response()->json(['data' => $request->query('type') === 'resources' ? $this->abc->resources($v) : $this->abc->services($v)]);
+    }
+
+    // ------------------------------------------------------------ relatório (4D)
+
+    /** Relatório da versão em PDF, XLSX ou DOCX (FASE4D_MODELO): quem vê o orçamento pode gerar (D-P80). */
+    public function report(BudgetReportRequest $request, string $uuid, int $number, BudgetReportService $reports): BinaryFileResponse
+    {
+        $v = $this->version($request, $uuid, $number, 'view');
+        $file = $reports->generate($v, ReportOptions::from($request->validated()), $request->user());
+
+        return response()->download($file['path'], $file['filename'], ['Content-Type' => $file['mime'], 'Cache-Control' => 'no-store, private'])->deleteFileAfterSend();
     }
 
     // ------------------------------------------------------------ apoio

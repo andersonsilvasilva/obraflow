@@ -126,6 +126,9 @@ final class AuditEvent
 
     public const BUDGET_VERSION_CREATED = 'budget.version_created';
 
+    // Fase 4D — relatório do orçamento (os dados saem do sistema: formato, partes e versão; o arquivo não é guardado)
+    public const BUDGET_REPORT_EXPORTED = 'budget.report_exported';
+
     // Fase 4C — catálogo de insumos (CRUD em registry.*, entity_type resource)
     public const RESOURCE_IMPORTED = 'resource.imported';
 

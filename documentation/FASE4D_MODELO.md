@@ -101,3 +101,10 @@ Nenhuma etapa grava no banco `obraflow` (sem migrations e sem permissões novas)
 - **`ReportOptions`:** partes opcionais, ocultar o BDI (tira também o detalhamento do BDI) e textos do fechamento, sem gravar. Limite de 3.000 itens com o analítico (D-P86).
 - **`ReportFormat`:** moeda, quantidade, coeficiente, % e CNPJ no formato brasileiro, sem float.
 - **Testes:** `Feature/Budgets/BudgetReportTest` (8): totais iguais ao snapshot da tela, ordem e subtotais, capa, analítico, BDI, opções, fechamento e formatação.
+
+### Etapa 2 — XLSX e rota de download
+
+- **Rota:** `POST /api/v1/budgets/{uuid}/versions/{n}/report` (`budgets.view` + acesso à obra; o mesmo 404 do orçamento para quem não vê). Corpo: `format`, `parts[]` (analytic, bdi, abc, closing), `hide_bdi`, `notes`, `place`, `technician_name`, `technician_registry`, `technician_art`. Resposta: o arquivo, com `Cache-Control: no-store`; o arquivo temporário é apagado após o envio.
+- **Auditoria:** `budget.report_exported` com versão, formato, partes e `hide_bdi`.
+- **XLSX** (`XlsxReportRenderer`, OpenSpout): abas Resumo (com a marca), Sintético, Analítico, BDI, Curva ABC e Fechamento; valores numéricos com formato de moeda e %, sem fórmulas; etapas destacadas nas cores do ObraFlow; A4 paisagem, ajustado à largura. O gráfico da curva ABC entra na etapa 3 (gerado pelo Chrome).
+- **Testes:** +2 na API (conteúdo, opções, auditoria, validação, permissões e isolamento).

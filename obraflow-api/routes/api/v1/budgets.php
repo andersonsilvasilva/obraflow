@@ -26,6 +26,7 @@ Route::middleware('tenant.required')->group(function (): void {
         Route::prefix('versions/{number}')->whereNumber('number')->group(function (): void {
             Route::get('/', [BudgetContentController::class, 'show'])->middleware('can:budgets.view')->name('budgets.versions.show');
             Route::put('/', [BudgetController::class, 'updateVersion'])->middleware('can:budgets.manage')->name('budgets.versions.update');
+            Route::post('report', [BudgetContentController::class, 'report'])->middleware('can:budgets.view')->name('budgets.report'); // 4D: gera e baixa (nada é gravado)
             Route::get('abc', [BudgetContentController::class, 'abc'])->middleware('can:budgets.view')->name('budgets.abc');
 
             Route::post('groups', [BudgetContentController::class, 'storeGroup'])->middleware('can:budgets.manage')->name('budgets.groups.store');
