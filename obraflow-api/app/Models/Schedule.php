@@ -17,6 +17,11 @@ class Schedule extends Model
 
     protected $guarded = ['*'];
 
+    protected function casts(): array
+    {
+        return ['bdi_percent' => 'decimal:4', 'discount_percent' => 'decimal:4', 'bdi_components' => 'array'];
+    }
+
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
@@ -35,6 +40,12 @@ class Schedule extends Model
     public function dependencies(): HasMany
     {
         return $this->hasMany(ScheduleDependency::class);
+    }
+
+    /** Recursos das atividades (6B). */
+    public function items(): HasMany
+    {
+        return $this->hasMany(ScheduleTaskItem::class);
     }
 
     public function baselines(): HasMany

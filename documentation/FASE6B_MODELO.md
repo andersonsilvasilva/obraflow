@@ -1,6 +1,6 @@
-# FASE 6B — RECURSOS E ORÇAMENTO SINTÉTICO DO PLANEJAMENTO: PROPOSTA DE MODELO
+# FASE 6B — RECURSOS E ORÇAMENTO SINTÉTICO DO PLANEJAMENTO: MODELO APROVADO
 
-> **Proposta de 2026-11-18, aguardando aprovação.** Nada será implementado antes disso.
+> **Aprovado em 2026-11-18** (D-P87 a D-P98 conforme a recomendação — A-57).
 >
 > **Base:**
 > - Fase 6 aprovada (D-P65…D-P76), em especial a D-P72 (custo e venda) e a D-P73 (exportação);
@@ -38,7 +38,7 @@ atividade = soma dos recursos · etapa = soma das filhas · por tipo = soma das 
 
 O cálculo roda no servidor (classe única, como o `BudgetCalculator`), e a tela só exibe.
 
-## 3. Decisões para aprovação (D-P87 a D-P98)
+## 3. Decisões (aprovadas conforme a recomendação, 2026-11-18)
 
 | ID | Decisão | Recomendação |
 |---|---|---|
@@ -77,3 +77,17 @@ A lista exata será apresentada antes de executar, como sempre.
 - **Desempenho:** planejamentos com centenas de atividades e milhares de recursos. O cálculo é feito numa passada só (como o orçamento); testo com 500 atividades e 3.000 recursos.
 - **Composição SINAPI como uma linha:** a divisão por tipo é a publicada pelo SINAPI. Se a soma publicada divergir do total por arredondamento, a diferença vai para "outros" (registrado no recurso).
 - **Planejamento × orçamento:** depois de criado, o planejamento é independente (cópia, D-08). Mudanças numa nova versão do orçamento não chegam sozinhas ao planejamento.
+
+## 7. Andamento
+
+### Etapa 1 — banco e cálculo
+
+- **Migrations** `2026_11_18_510001` a `510003` (ainda **não** aplicadas no `obraflow`):
+  - `own_compositions`: valores ≥ 0, UF válida, código único entre as ativas, exclusão lógica;
+  - `schedules`: `bdi_percent`, `bdi_components` (parcelas do TCU) e `discount_percent`, com faixas válidas;
+  - `schedule_task_items`: origem e tipo no domínio, **soma dos tipos = custo unitário** (CHECK), percentuais válidos, atividade do mesmo planejamento (FK composta), RESTRICT.
+- **Modelos:** `OwnComposition` (custo por tipo conforme o regime da obra, D-P88) e `ScheduleTaskItem`.
+- **`ScheduleCostCalculator`:** custo, com BDI e venda por recurso, arredondados por recurso; parcelas por tipo com o centavo de diferença na maior parcela (os tipos somam exatamente o total); atividade, etapa e planejamento; unitários da atividade para as colunas do sintético. Só leitura.
+- **Testes:** `Feature/Planning/ScheduleCostTest` (3), com valores conferidos à mão; suíte 472/472.
+
+> Referência recebida durante a etapa: aba **Recursos** do Brickup (árvore de atividades com os recursos, Qtd. unit. editável, "+" por atividade, "Expandir todos", "Exibir apenas atividades", totais de venda e custo) — é a tela "Visualizar recursos" da D-P95 (etapa 4).
