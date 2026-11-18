@@ -1,6 +1,6 @@
-# FASE 4D — RELATÓRIO DO ORÇAMENTO (PDF, XLSX E DOCX): PROPOSTA DE MODELO
+# FASE 4D — RELATÓRIO DO ORÇAMENTO (PDF, XLSX E DOCX): MODELO APROVADO
 
-> **Proposta de 2026-11-18, aguardando aprovação.** Pedido do responsável: relatório do orçamento da obra em PDF, XLSX e DOCX, com acabamento premium.
+> **Aprovado em 2026-11-18** (D-P77 a D-P86 conforme a recomendação — A-54). Pedido do responsável: relatório do orçamento da obra em PDF, XLSX e DOCX, com acabamento premium.
 >
 > **Já decidido pelo responsável (A-53):**
 > - **quando:** agora, antes da 6B;
@@ -8,7 +8,7 @@
 > - **marca:** a do ObraFlow, sem logo por empresa;
 > - **analítico:** as composições entram já na primeira versão.
 >
-> As decisões D-P77 a D-P86 abaixo ainda precisam de aprovação. Nada será implementado antes disso.
+> As decisões D-P77 a D-P86 foram aprovadas em 2026-11-18.
 
 ## 1. Objetivo
 
@@ -59,7 +59,7 @@ BudgetReportBuilder ── lê a versão (BudgetCalculator, BdiResolver, AbcCurv
 - Geração **na hora** (síncrona), com limite de tempo. O arquivo não fica guardado no servidor.
 - Nome do arquivo: `ORC-003-2026-v2-orcamento.pdf` (sem dados pessoais).
 
-## 4. Decisões propostas (D-P77 a D-P86)
+## 4. Decisões (aprovadas conforme a recomendação, 2026-11-18)
 
 | ID | Decisão | Recomendação |
 |---|---|---|
@@ -91,3 +91,13 @@ Nenhuma etapa grava no banco `obraflow` (sem migrations e sem permissões novas)
 - **Orçamentos muito grandes:** o analítico pode gerar centenas de páginas. A D-P86 limita o tamanho e o tempo.
 - **DOCX:** o Word não repete fielmente o layout do PDF (fontes e quebras de página variam). O DOCX é para edição; o documento final é o PDF.
 - **Licença LGPL (PHPWord):** é aceitável como dependência, mas não pode ser modificada sem publicar a modificação.
+
+## 7. Andamento
+
+### Etapa 1 — dados do relatório
+
+- **`BudgetCalculator::compute`:** o cálculo do orçamento separado da gravação, só leitura (vale também para versão aprovada). O `recalculate` passou a usá-lo; os 34 testes de orçamento seguem passando.
+- **`Budgets/Report/BudgetReportBuilder`:** monta o ReportData único com capa, resumo (etapas com % e insumos por tipo), sintético na ordem da árvore (subtotais, BDI efetivo, preço unitário com BDI), analítico (composição copiada; item sem composição = preço direto), BDI (global, por etapa e no item; parcelas do TCU), custos indiretos, curva ABC e fechamento.
+- **`ReportOptions`:** partes opcionais, ocultar o BDI (tira também o detalhamento do BDI) e textos do fechamento, sem gravar. Limite de 3.000 itens com o analítico (D-P86).
+- **`ReportFormat`:** moeda, quantidade, coeficiente, % e CNPJ no formato brasileiro, sem float.
+- **Testes:** `Feature/Budgets/BudgetReportTest` (8): totais iguais ao snapshot da tela, ordem e subtotais, capa, analítico, BDI, opções, fechamento e formatação.

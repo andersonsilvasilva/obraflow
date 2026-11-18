@@ -6,6 +6,7 @@ use App\Models\BudgetItem;
 use App\Models\BudgetVersion;
 use App\Modules\Budgets\Exceptions\VersionLockedException;
 use App\Modules\Budgets\Support\Dec;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,57 +33,75 @@ final class BudgetCalculator
         }
 
         return DB::transaction(function () use ($version) {
-            $items = BudgetItem::query()->where('budget_version_id', $version->id)->get();
-            $resolve = $this->bdi->for($version);
-
-            $direct = '0';
-            $beforeDiscount = '0';
-            $itemsSale = '0';
-            $byGroup = [];
+            ['snapshot' => $snapshot, 'items' => $lines, 'models' => $items] = $this->compute($version);
 
             foreach ($items as $item) {
-                $bdi = $resolve($item);
-                $cost = Dec::round(Dec::mul((string) $item->quantity, (string) $item->unit_cost));
-                $withBdi = Dec::round(Dec::mul($cost, Dec::factor($bdi)));
-                $sale = Dec::round(Dec::mul($withBdi, Dec::factor((string) $item->discount_percent, minus: true)));
-
-                if (Dec::cmp($cost, (string) $item->total_cost) !== 0 || Dec::cmp($sale, (string) $item->total_sale) !== 0) {
+                $line = $lines[$item->id];
+                if (Dec::cmp($line['total_cost'], (string) $item->total_cost) !== 0 || Dec::cmp($line['total_sale'], (string) $item->total_sale) !== 0) {
                     // escrita direta: o bloqueio da versão já foi conferido acima
-                    DB::table('budget_items')->where('id', $item->id)->update(['total_cost' => $cost, 'total_sale' => $sale, 'updated_at' => now()]);
+                    DB::table('budget_items')->where('id', $item->id)->update(['total_cost' => $line['total_cost'], 'total_sale' => $line['total_sale'], 'updated_at' => now()]);
                 }
-
-                $direct = Dec::add($direct, $cost);
-                $beforeDiscount = Dec::add($beforeDiscount, $withBdi);
-                $itemsSale = Dec::add($itemsSale, $sale);
-                $byGroup[$item->group_id]['cost'] = Dec::add($byGroup[$item->group_id]['cost'] ?? '0', $cost);
-                $byGroup[$item->group_id]['sale'] = Dec::add($byGroup[$item->group_id]['sale'] ?? '0', $sale);
             }
-
-            $indirect = $this->indirect($version, $direct);
-            $price = Dec::add($itemsSale, $indirect);
-            $globalDiscount = Dec::round(Dec::mul($price, Dec::div((string) $version->discount_percent, '100')));
-            $final = Dec::sub($price, $globalDiscount);
-
-            $snapshot = [
-                'direct_cost' => Dec::round($direct),
-                'indirect_cost' => Dec::round($indirect),
-                'total_cost' => Dec::round(Dec::add($direct, $indirect)),
-                'bdi_amount' => Dec::round(Dec::sub($beforeDiscount, $direct)),
-                'items_discount' => Dec::round(Dec::sub($beforeDiscount, $itemsSale)),
-                'items_sale' => Dec::round($itemsSale),
-                'global_discount_percent' => (string) $version->discount_percent,
-                'global_discount' => $globalDiscount,
-                'final_price' => Dec::round($final),
-                'groups' => $this->rollUp($version, $byGroup),
-                'item_count' => $items->count(),
-                'calculated_at' => now()->toIso8601String(),
-            ];
 
             DB::table('budget_versions')->where('id', $version->id)->update(['totals_snapshot' => json_encode($snapshot), 'updated_at' => now()]);
             $version->setRawAttributes(array_merge($version->getAttributes(), ['totals_snapshot' => json_encode($snapshot)]), true);
 
             return $snapshot;
         });
+    }
+
+    /**
+     * O mesmo cálculo, SÓ LEITURA (vale também para versão bloqueada): usado pelo relatório (4D), para que os
+     * números sejam exatamente os da tela.
+     *
+     * @return array{snapshot: array<string, mixed>, items: array<int, array{bdi_percent: string, total_cost: string, with_bdi: string, total_sale: string}>, models: Collection<int, BudgetItem>}
+     */
+    public function compute(BudgetVersion $version): array
+    {
+        $items = BudgetItem::query()->where('budget_version_id', $version->id)->get();
+        $resolve = $this->bdi->for($version);
+
+        $direct = '0';
+        $beforeDiscount = '0';
+        $itemsSale = '0';
+        $byGroup = [];
+        $lines = [];
+
+        foreach ($items as $item) {
+            $bdi = $resolve($item);
+            $cost = Dec::round(Dec::mul((string) $item->quantity, (string) $item->unit_cost));
+            $withBdi = Dec::round(Dec::mul($cost, Dec::factor($bdi)));
+            $sale = Dec::round(Dec::mul($withBdi, Dec::factor((string) $item->discount_percent, minus: true)));
+            $lines[$item->id] = ['bdi_percent' => $bdi, 'total_cost' => $cost, 'with_bdi' => $withBdi, 'total_sale' => $sale];
+
+            $direct = Dec::add($direct, $cost);
+            $beforeDiscount = Dec::add($beforeDiscount, $withBdi);
+            $itemsSale = Dec::add($itemsSale, $sale);
+            $byGroup[$item->group_id]['cost'] = Dec::add($byGroup[$item->group_id]['cost'] ?? '0', $cost);
+            $byGroup[$item->group_id]['sale'] = Dec::add($byGroup[$item->group_id]['sale'] ?? '0', $sale);
+        }
+
+        $indirect = $this->indirect($version, $direct);
+        $price = Dec::add($itemsSale, $indirect);
+        $globalDiscount = Dec::round(Dec::mul($price, Dec::div((string) $version->discount_percent, '100')));
+        $final = Dec::sub($price, $globalDiscount);
+
+        $snapshot = [
+            'direct_cost' => Dec::round($direct),
+            'indirect_cost' => Dec::round($indirect),
+            'total_cost' => Dec::round(Dec::add($direct, $indirect)),
+            'bdi_amount' => Dec::round(Dec::sub($beforeDiscount, $direct)),
+            'items_discount' => Dec::round(Dec::sub($beforeDiscount, $itemsSale)),
+            'items_sale' => Dec::round($itemsSale),
+            'global_discount_percent' => (string) $version->discount_percent,
+            'global_discount' => $globalDiscount,
+            'final_price' => Dec::round($final),
+            'groups' => $this->rollUp($version, $byGroup),
+            'item_count' => $items->count(),
+            'calculated_at' => now()->toIso8601String(),
+        ];
+
+        return ['snapshot' => $snapshot, 'items' => $lines, 'models' => $items];
     }
 
     /** Custos indiretos: valor fixo ou % do custo direto, cada linha arredondada (D-P02). */
