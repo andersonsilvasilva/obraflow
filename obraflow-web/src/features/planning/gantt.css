@@ -149,3 +149,48 @@
     font-size: 0.8125rem;
     white-space: normal;
 }
+
+/*
+ * Visual como o Brickup (A-58): linhas de 40 px com barras grossas e arredondadas, nome inteiro na barra ou logo à
+ * direita dela, etapa em cor escura, setas de dependência bem visíveis.
+ */
+.obraflow-gantt .wx-willow-theme {
+    --wx-gantt-bar-border-radius: 6px;
+    --wx-gantt-milestone-border-radius: 3px;
+    --wx-gantt-link-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+    --wx-gantt-link-marker-color: color-mix(in oklab, var(--foreground) 55%, transparent);
+}
+
+.obraflow-gantt .wx-bar .wx-content {
+    overflow: visible;
+}
+
+.obraflow-gantt .of-bar-label {
+    font-weight: 500;
+    text-align: center;
+}
+
+.obraflow-gantt .of-bar-label-out {
+    position: absolute;
+    left: calc(100% + 6px);
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    color: var(--foreground);
+    font-size: 0.75rem;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.obraflow-gantt .wx-bar.wx-summary .of-bar-label {
+    font-weight: 600;
+}
+
+/* cabeçalho da escala: mês em destaque, semana/dia em cinza */
+.obraflow-gantt .wx-scale .wx-row:first-child .wx-cell {
+    font-weight: 600;
+    color: var(--foreground);
+    text-transform: capitalize;
+}

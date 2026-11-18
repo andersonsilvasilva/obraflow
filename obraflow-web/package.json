@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
+    "@bryntum/gantt-community": "8.0.0",
+    "@bryntum/gantt-react-community": "8.0.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@fullcalendar/react": "7.0.2",
     "@hookform/resolvers": "^7.0.6",

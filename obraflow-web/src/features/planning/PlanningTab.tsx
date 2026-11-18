@@ -3,7 +3,7 @@ import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, ChevronsDownUp, ChevronsUpDown, CornerDownRight, Download, FileSpreadsheet, FileStack, Flag, Layers, Percent, Plus, Route, Save, Settings, Sparkles, Tag, Trash2, Upload, ZoomIn, ZoomOut } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useToast } from '@/app/providers/ToastProvider'
 import { Alert } from '@/components/feedback/Alert'
 import { ConfirmDialog, Modal } from '@/components/feedback/Modal'
@@ -51,6 +51,9 @@ function readPref(uuid: string): Pref {
   }
 }
 
+/** Protótipo de comparação (A-58), carregado só quando escolhido. */
+const BryntumPreview = lazy(() => import('./BryntumPreview'))
+
 const monthFmt = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
 
 const monthShort = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
@@ -68,7 +71,8 @@ const SCALES: Record<Zoom, { unit: string; step: number; format: (d: Date) => st
     { unit: 'month', step: 1, format: (d) => monthShort.format(d).replace('.', '') },
   ],
 }
-const CELL: Record<Zoom, number> = { day: 34, week: 70, month: 90 }
+/** Largura da célula da escala: semana larga (como o Brickup), para o nome caber na barra. */
+const CELL: Record<Zoom, number> = { day: 44, week: 160, month: 130 }
 
 /**
  * Planejamento da obra (Fase 6A, referência: Brickup). O servidor é a fonte da verdade: dias úteis, reprogramação
@@ -87,6 +91,22 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [baselineName, setBaselineName] = useState<string | null>(null)
   const [settings, setSettings] = useState(false)
+  // comparação de bibliotecas de Gantt (A-58): preferência do navegador
+  const [engine, setEngineState] = useState<'svar' | 'bryntum'>(() => {
+    try {
+      return localStorage.getItem('obraflow.planning.gantt-engine') === 'bryntum' ? 'bryntum' : 'svar'
+    } catch {
+      return 'svar'
+    }
+  })
+  const setEngine = (v: 'svar' | 'bryntum') => {
+    setEngineState(v)
+    try {
+      localStorage.setItem('obraflow.planning.gantt-engine', v)
+    } catch {
+      /* sem armazenamento: só nesta tela */
+    }
+  }
   const [importing, setImporting] = useState(false)
   const ganttApi = useRef<IApi | null>(null)
   const key = ['schedule', uuid, compare]
@@ -267,29 +287,46 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base (+ = atrasou).'}
       </p>
 
-      <GanttView
-        uuid={uuid}
-        tasks={tasks}
-        plan={plan!}
-        mode={pref.mode}
-        zoom={pref.zoom}
-        columns={pref.columns}
-        showCritical={pref.critical}
-        readonly={!canEdit}
-        apiRef={ganttApi}
-        onOpen={(id) => {
-          const t = byId.get(id)
-          if (t) setEditing({ task: t })
-        }}
-        onRowAction={(action, id) => {
-          const t = byId.get(id)
-          if (!t) return
-          if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
-          else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
-          else setRemoving(t)
-        }}
-        onRun={run}
-      />
+      <div className="mb-2 flex items-center justify-end gap-1 text-xs" role="group" aria-label="Visual do Gantt (comparação)">
+        <span className="text-muted-foreground mr-1">Visual do Gantt:</span>
+        {([
+          ['svar', 'Atual (SVAR)'],
+          ['bryntum', 'Bryntum Community (protótipo)'],
+        ] as const).map(([v, label]) => (
+          <button key={v} type="button" onClick={() => setEngine(v)} className={cn('rounded-md border px-2 py-1', engine === v ? 'border-primary bg-primary/10 text-primary font-medium' : 'text-muted-foreground')}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {engine === 'bryntum' ? (
+        <Suspense fallback={<LoadingState />}>
+          <BryntumPreview plan={plan!} />
+        </Suspense>
+      ) : (
+        <GanttView
+          uuid={uuid}
+          tasks={tasks}
+          plan={plan!}
+          mode={pref.mode}
+          zoom={pref.zoom}
+          columns={pref.columns}
+          showCritical={pref.critical}
+          readonly={!canEdit}
+          apiRef={ganttApi}
+          onOpen={(id) => {
+            const t = byId.get(id)
+            if (t) setEditing({ task: t })
+          }}
+          onRowAction={(action, id) => {
+            const t = byId.get(id)
+            if (!t) return
+            if (action === 'below') setEditing({ kind: 'task', parentId: t.parent_id })
+            else if (action === 'child') setEditing({ kind: 'task', parentId: t.id })
+            else setRemoving(t)
+          }}
+          onRun={run}
+        />
+      )}
 
       {settings && (
         <SettingsDialog
@@ -657,13 +694,17 @@ function GanttView({
   )
 
   const Bar = useCallback(
-    ({ data }: { data: { text?: string; critical?: boolean; progress?: number; type?: string } }) => (
-      <>
-        {showCritical && data.critical && data.type !== 'summary' && <span className="of-bar-critical" aria-hidden />}
-        {!!data.progress && data.type !== 'milestone' && <span className="of-bar-progress" style={{ width: `${data.progress}%` }} aria-hidden />}
-        {data.type !== 'milestone' && <span className="of-bar-label">{data.text}</span>}
-      </>
-    ),
+    ({ data }: { data: { text?: string; critical?: boolean; progress?: number; type?: string; $w?: number } }) => {
+      // o nome vai dentro da barra quando cabe; senão, logo à direita dela (como o Brickup)
+      const fits = (data.$w ?? 0) >= (data.text?.length ?? 0) * 6.6 + 18
+      return (
+        <>
+          {showCritical && data.critical && data.type !== 'summary' && <span className="of-bar-critical" aria-hidden />}
+          {!!data.progress && data.type !== 'milestone' && <span className="of-bar-progress" style={{ width: `${data.progress}%` }} aria-hidden />}
+          {data.type === 'milestone' ? <span className="of-bar-label-out">{data.text}</span> : <span className={fits ? 'of-bar-label' : 'of-bar-label-out'}>{data.text}</span>}
+        </>
+      )
+    },
     [showCritical],
   )
 
@@ -678,8 +719,8 @@ function GanttView({
             columns={columns}
             scales={SCALES[zoom]}
             cellWidth={CELL[zoom]}
-            cellHeight={34}
-            scaleHeight={34}
+            cellHeight={40}
+            scaleHeight={30}
             gridWidth={mode === 'all' ? 600 : undefined}
             displayMode={mode}
             readonly={readonly}
