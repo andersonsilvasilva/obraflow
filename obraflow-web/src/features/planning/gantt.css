@@ -123,3 +123,29 @@
         scrollbar-color: var(--muted-foreground) var(--muted);
     }
 }
+
+/* o rótulo fica dentro da faixa (o texto completo aparece na tela flutuante ao passar o mouse) */
+.obraflow-gantt .of-bar-label {
+    display: block;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* tela flutuante da faixa (Tooltip do SVAR, com a seta): cartão nas cores do ObraFlow */
+.obraflow-gantt .wx-willow-theme {
+    --wx-tooltip-background: var(--popover, var(--card));
+    --wx-tooltip-font-color: var(--popover-foreground, var(--foreground));
+    --wx-tooltip-border: var(--border);
+}
+
+.obraflow-gantt .wx-tooltip {
+    z-index: 30;
+    box-shadow: 0 8px 24px color-mix(in oklab, var(--foreground) 15%, transparent);
+}
+
+.obraflow-gantt .of-gantt-tip {
+    max-width: 22rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    white-space: normal;
+}

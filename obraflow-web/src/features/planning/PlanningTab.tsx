@@ -1,4 +1,4 @@
-import { Gantt, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt'
+import { Gantt, Tooltip, Willow, type IApi, type IColumnConfig } from '@svar-ui/react-gantt'
 import '@svar-ui/react-gantt/all.css'
 import './gantt.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -539,6 +539,7 @@ function GanttView({
     handlers.current = { onOpen, onRun, byId, onRowAction }
   }, [onOpen, onRun, byId, onRowAction])
   const [markers] = useState(() => [{ start: new Date(), text: 'Hoje' }])
+  const [ganttApi, setGanttApi] = useState<IApi | null>(null)
 
   // dias não úteis da obra no período (horário + exceções) para destacar no Gantt
   const range = plan.summary?.start && plan.summary?.end ? clampRange(plan.summary.start, plan.summary.end) : null
@@ -549,6 +550,7 @@ function GanttView({
   const init = useCallback(
     (api: IApi) => {
       apiRef.current = api
+      setGanttApi(api)
       // tudo que mudaria a estrutura localmente vira chamada à API (o servidor recalcula); o Gantt não muda sozinho
       api.intercept('show-editor', ({ id }) => (handlers.current.onOpen(Number(id)), false))
       api.intercept('add-task', () => false)
@@ -644,6 +646,16 @@ function GanttView({
     [plan.compared_baseline, visible, readonly, durationLabel],
   )
 
+  // tela flutuante ao passar o mouse na faixa: o texto completo e os dados da atividade
+  const TipContent = useCallback(
+    ({ data }: { data: unknown }) => {
+      const id = (data as { task?: { id?: unknown } }).task?.id
+      const t = id !== undefined ? handlers.current.byId.get(Number(id)) : undefined
+      return t ? <TaskTip task={t} durationLabel={durationLabel} /> : null
+    },
+    [durationLabel],
+  )
+
   const Bar = useCallback(
     ({ data }: { data: { text?: string; critical?: boolean; progress?: number; type?: string } }) => (
       <>
@@ -658,23 +670,76 @@ function GanttView({
   return (
     <div className="obraflow-gantt h-[60vh] min-h-96 overflow-hidden rounded-lg border">
       <Willow fonts={false}>
-        <Gantt
-          init={init}
-          tasks={gTasks}
-          links={links}
-          columns={columns}
-          scales={SCALES[zoom]}
-          cellWidth={CELL[zoom]}
-          cellHeight={34}
-          scaleHeight={34}
-          gridWidth={mode === 'all' ? 600 : undefined}
-          displayMode={mode}
-          readonly={readonly}
-          taskTemplate={Bar}
-          highlightTime={highlight}
-          markers={markers}
-        />
+        <Tooltip api={ganttApi ?? undefined} content={TipContent}>
+          <Gantt
+            init={init}
+            tasks={gTasks}
+            links={links}
+            columns={columns}
+            scales={SCALES[zoom]}
+            cellWidth={CELL[zoom]}
+            cellHeight={34}
+            scaleHeight={34}
+            gridWidth={mode === 'all' ? 600 : undefined}
+            displayMode={mode}
+            readonly={readonly}
+            taskTemplate={Bar}
+            highlightTime={highlight}
+            markers={markers}
+          />
+        </Tooltip>
       </Willow>
+    </div>
+  )
+}
+
+const KIND_LABEL: Record<PlanTask['kind'], string> = { task: 'Atividade', summary: 'Etapa', milestone: 'Marco' }
+const br = (ymd: string) => new Date(`${ymd}T00:00:00`).toLocaleDateString('pt-BR')
+
+/** Conteúdo da tela flutuante da faixa do Gantt. */
+function TaskTip({ task: t, durationLabel }: { task: PlanTask; durationLabel: string }) {
+  const percent = Number(t.percent)
+  return (
+    <div className="of-gantt-tip">
+      <p className="text-muted-foreground text-xs">
+        {t.wbs} · {KIND_LABEL[t.kind]}
+        {t.critical && <span className="text-destructive font-medium"> · caminho crítico</span>}
+        {t.late && <span className="text-destructive font-medium"> · atrasada</span>}
+      </p>
+      <p className="font-semibold">{t.name}</p>
+      <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+        <dt className="text-muted-foreground">{t.kind === 'milestone' ? 'Data' : 'Período'}</dt>
+        <dd>{t.kind === 'milestone' ? br(t.start) : `${br(t.start)} a ${br(t.end)}`}</dd>
+        {t.kind !== 'milestone' && (
+          <>
+            <dt className="text-muted-foreground">{durationLabel}</dt>
+            <dd>{t.duration_days}</dd>
+          </>
+        )}
+        {t.quantity !== null && (
+          <>
+            <dt className="text-muted-foreground">Quantidade</dt>
+            <dd>
+              {Number(t.quantity).toLocaleString('pt-BR')} {t.unit_code ?? ''}
+            </dd>
+          </>
+        )}
+        {percent > 0 && (
+          <>
+            <dt className="text-muted-foreground">Executado</dt>
+            <dd>{percent.toLocaleString('pt-BR')}%</dd>
+          </>
+        )}
+        {t.baseline && (
+          <>
+            <dt className="text-muted-foreground">Linha de base</dt>
+            <dd>
+              {br(t.baseline.start)} a {br(t.baseline.end)}
+              {t.baseline.delta_days !== 0 && ` (${t.baseline.delta_days > 0 ? '+' : ''}${t.baseline.delta_days} dia(s))`}
+            </dd>
+          </>
+        )}
+      </dl>
     </div>
   )
 }
