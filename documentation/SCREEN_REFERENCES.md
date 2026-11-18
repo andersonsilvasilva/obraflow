@@ -184,6 +184,12 @@ Enviadas pelo responsável em vídeo do Brickup, o sistema que ele usa hoje. Os 
   - **Total de custo** por tipo de insumo.
   - **Total de venda** e total de venda por tipo de insumo.
   - Na Fase 6, cada atividade soma os recursos dela separados por tipo. Os tipos já existem no catálogo (4C: material, mão de obra, equipamento, serviço), "cargo/função" é a mão de obra e "outros" fica para os demais. BDI e desconto seguem a mesma conta do orçamento (D-P02).
+- **Ações por linha do planejamento** (barra que aparece sobre a linha): Atividade, **Sub ativ.**, **Comp. própria**, **Comp. pública** (SINAPI), **Recursos** e Excluir. É como cada atividade recebe custo (6B).
+- **Composição simplificada** (Planejamento → Composições Próprias, painel lateral):
+  - Nome*, Unidade de medida*, Data de referência* e Estado (UF);
+  - valor por tipo: **Materiais**, **Serviços** e **Outros** com um valor; **Equipamentos** e **Cargo/Função** com **Valor sem encargos**, **Valor desonerado** e **Valor não desonerado**;
+  - rodapé com **Valor total sem encargos / desonerado / não desonerado**.
+  - Referência para as composições próprias (D-P42, adiada na 4C) dentro da 6B.
 - **RDO — Diário de Obra** (um por dia, navegação por data, "Exportar"):
   - cabeçalho com obra, endereço, responsável técnico, encarregado, data de início e prazo; Nº do RDO; "Aprovado por" + botão **Aprovar**;
   - **condição climática** de manhã, tarde e noite (sol, nublado, chuva);
