@@ -60,6 +60,15 @@ class ScheduleController extends Controller
         return $this->respond($request, $project, null, 201);
     }
 
+    /** Configuração do planejamento: como contar a duração (A-51). */
+    public function update(ScheduleRequest $request, string $uuid): JsonResponse
+    {
+        $project = $this->project($request, $uuid, 'edit');
+        $this->schedules->setDurationMode($this->schedule($project), $request->validated('duration_mode'), $request->user());
+
+        return $this->respond($request, $project);
+    }
+
     public function destroy(Request $request, string $uuid): JsonResponse
     {
         $project = $this->project($request, $uuid, 'edit');
@@ -233,7 +242,7 @@ class ScheduleController extends Controller
         $weight = $leaves->sum(fn ($t) => $t->kind === 'milestone' ? 0 : max(1, $t->duration_days));
 
         return response()->json(['data' => [
-            'schedule' => ['uuid' => $schedule->uuid, 'origin' => $schedule->origin, 'created_at' => $schedule->created_at?->toIso8601String(),
+            'schedule' => ['uuid' => $schedule->uuid, 'origin' => $schedule->origin, 'duration_mode' => $schedule->duration_mode, 'created_at' => $schedule->created_at?->toIso8601String(),
                 'budget' => $schedule->budgetVersion ? ['uuid' => $schedule->budgetVersion->budget?->uuid, 'code' => $schedule->budgetVersion->budget?->code,
                     'version' => $schedule->budgetVersion->version_number] : null],
             'summary' => [

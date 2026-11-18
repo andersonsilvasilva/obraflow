@@ -36,7 +36,7 @@ final class Scheduler
      */
     public function recompute(Schedule $schedule): array
     {
-        $this->calendar = WorkingCalendar::for(Project::query()->findOrFail($schedule->project_id));
+        $this->calendar = WorkingCalendar::forMode(Project::query()->findOrFail($schedule->project_id), (string) ($schedule->duration_mode ?? 'calendar'));
         $tasks = ScheduleTask::query()->where('schedule_id', $schedule->id)->orderBy('sort_order')->orderBy('id')->get()->keyBy('id');
         $deps = ScheduleDependency::query()->where('schedule_id', $schedule->id)->get();
         if ($tasks->isEmpty()) {

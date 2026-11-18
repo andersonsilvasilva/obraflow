@@ -30,7 +30,7 @@ export interface PlanTask {
 }
 
 export interface PlanData {
-  schedule: { uuid: string; origin: 'budget' | 'spreadsheet' | 'blank'; created_at: string; budget: { uuid: string; code: string; version: number } | null } | null
+  schedule: { uuid: string; origin: 'budget' | 'spreadsheet' | 'blank'; duration_mode: 'calendar' | 'working'; created_at: string; budget: { uuid: string; code: string; version: number } | null } | null
   summary?: { start: string | null; end: string | null; percent: string; tasks: number; critical: number; late: number }
   tasks?: PlanTask[]
   dependencies?: { id: number; predecessor_id: number; successor_id: number; type: DepType; lag_days: number }[]
@@ -51,6 +51,7 @@ const data = <T,>(r: { data: T }) => r.data
 export const planningApi = {
   get: (uuid: string, baseline?: number | null) => http<{ data: PlanData }>(s(uuid), { query: baseline ? { baseline } : undefined }).then(data),
   create: (uuid: string, body: Body) => http<{ data: PlanData }>(s(uuid), { method: 'POST', body }).then(data),
+  update: (uuid: string, body: Body) => http<{ data: PlanData }>(s(uuid), { method: 'PUT', body }).then(data),
   remove: (uuid: string) => http<void>(s(uuid), { method: 'DELETE' }),
   addTask: (uuid: string, body: Body) => http<{ data: PlanData }>(`${s(uuid)}/tasks`, { method: 'POST', body }).then(data),
   updateTask: (uuid: string, id: number, body: Body) => http<{ data: PlanData }>(`${s(uuid)}/tasks/${id}`, { method: 'PUT', body }).then(data),
@@ -115,4 +116,13 @@ export function toGanttTasks(tasks: PlanTask[]) {
       delta: t.baseline?.delta_days ?? null,
     }
   })
+}
+
+/** Número da semana ISO-8601 (a escala semanal mostra "Semana 47", como no Brickup). */
+export function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil(((+d - +yearStart) / 86_400_000 + 1) / 7)
 }

@@ -57,7 +57,8 @@ final class ScheduleSheetImporter
                 $codes[$key] = true;
             }
         }
-        $calendar = WorkingCalendar::for($project);
+        // modo do planejamento existente (vazio) ou o padrão, dias corridos (A-51)
+        $calendar = WorkingCalendar::forMode($project, (string) (Schedule::query()->where('project_id', $project->id)->value('duration_mode') ?? 'calendar'));
         $seen = [];
         $out = [];
 
@@ -137,7 +138,7 @@ final class ScheduleSheetImporter
                 $schedule->forceFill(['uuid' => (string) Str::uuid7(), 'project_id' => $project->id, 'created_by' => $actor->getKey()]);
             }
             $schedule->forceFill(['origin' => 'spreadsheet', 'budget_version_id' => null])->save();
-            $calendar = WorkingCalendar::for($project);
+            $calendar = WorkingCalendar::forMode($project, (string) ($schedule->duration_mode ?? 'calendar'));
             $ids = [];
             $order = [];
             $now = now();

@@ -16,7 +16,7 @@ import { calendarApi } from '@/features/projects/calendar/api'
 import { getErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { formatDateOrDash } from '@/utils/format'
-import { fromGanttLink, planningApi, toGanttLink, toGanttTasks, toYmd, type ImportPreview, type PlanData, type PlanTask } from './api'
+import { fromGanttLink, isoWeek, planningApi, toGanttLink, toGanttTasks, toYmd, type ImportPreview, type PlanData, type PlanTask } from './api'
 import { PeriodNotice } from './PeriodNotice'
 import { TaskDialog } from './TaskDialog'
 
@@ -27,7 +27,7 @@ type Zoom = 'day' | 'week' | 'month'
 const COLUMN_LABELS = {
   start: 'Início',
   end: 'Término',
-  duration_days: 'Dias úteis',
+  duration_days: 'Duração (dias)',
   preds: 'Predecessoras',
   unit: 'Un. medida',
   quantity: 'Quantidade',
@@ -37,7 +37,7 @@ type Pref = { mode: Mode; zoom: Zoom; critical: boolean; columns: Record<ColumnK
 const DEFAULT_PREF: Pref = {
   mode: 'all',
   zoom: 'week',
-  critical: true,
+  critical: false,
   columns: { start: true, end: true, duration_days: true, preds: false, unit: false, quantity: false },
 }
 
@@ -52,6 +52,7 @@ function readPref(uuid: string): Pref {
 }
 
 const monthFmt = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+
 const monthShort = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
 const SCALES: Record<Zoom, { unit: string; step: number; format: (d: Date) => string }[]> = {
   day: [
@@ -60,7 +61,7 @@ const SCALES: Record<Zoom, { unit: string; step: number; format: (d: Date) => st
   ],
   week: [
     { unit: 'month', step: 1, format: (d) => monthFmt.format(d) },
-    { unit: 'week', step: 1, format: (d) => `${d.getDate()}/${d.getMonth() + 1}` },
+    { unit: 'week', step: 1, format: (d) => `Semana ${isoWeek(d)}` },
   ],
   month: [
     { unit: 'year', step: 1, format: (d) => String(d.getFullYear()) },
@@ -256,7 +257,12 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
       </div>
 
       <p className="text-muted-foreground mb-2 text-xs">
-        Duração em <strong>dias úteis</strong> da obra (abas Horários e Calendário). {canEdit && (tasks.length === 0 ? 'Comece por "+ Atividade" ou "+ Etapa", ou importe a planilha.' : 'Arraste as barras para mudar datas e ligue as bolinhas para criar dependências; clique duas vezes para editar.')}
+        {plan!.schedule!.duration_mode === 'working' ? (
+          <>Duração em <strong>dias úteis</strong> da obra (abas Horários e Calendário). </>
+        ) : (
+          <>Duração em <strong>dias corridos</strong> (feriados e dias sem trabalho aparecem destacados). </>
+        )}
+        {canEdit && (tasks.length === 0 ? 'Comece por "+ Atividade" ou "+ Etapa", ou importe a planilha.' : 'Edite nome, início e duração direto na tabela (duplo clique na célula); arraste as barras e ligue as bolinhas para criar dependências.')}
         {plan!.compared_baseline && ' A coluna "Desvio" compara o término com a linha de base (+ = atrasou).'}
       </p>
 
@@ -284,7 +290,16 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
         onRun={run}
       />
 
-      {settings && <SettingsDialog pref={pref} onClose={() => setSettings(false)} onSave={(p) => (setPref(p), setSettings(false))} />}
+      {settings && (
+        <SettingsDialog
+          pref={pref}
+          durationMode={plan!.schedule!.duration_mode}
+          canEdit={canEdit}
+          onDurationMode={(mode) => run(planningApi.update(uuid, { duration_mode: mode }), mode === 'working' ? 'Duração agora em dias úteis.' : 'Duração agora em dias corridos.')}
+          onClose={() => setSettings(false)}
+          onSave={(p) => (setPref(p), setSettings(false))}
+        />
+      )}
       {importing && (
         <ImportDialog
           uuid={uuid}
@@ -299,6 +314,7 @@ export function PlanningTab({ project, canEditProject, onOpenCalendar }: { proje
           task={editing.task}
           kind={editing.kind}
           parentId={editing.parentId}
+          durationMode={plan!.schedule!.duration_mode}
           canEdit={canEdit}
           onClose={() => setEditing(null)}
           onSaved={(d, msg) => {
@@ -388,7 +404,21 @@ function SoonBadge() {
   return <span className="bg-muted text-muted-foreground rounded px-1 text-[0.65rem] font-medium">6B</span>
 }
 
-function SettingsDialog({ pref, onClose, onSave }: { pref: Pref; onClose: () => void; onSave: (p: Partial<Pref>) => void }) {
+function SettingsDialog({
+  pref,
+  durationMode,
+  canEdit,
+  onDurationMode,
+  onClose,
+  onSave,
+}: {
+  pref: Pref
+  durationMode: 'calendar' | 'working'
+  canEdit: boolean
+  onDurationMode: (mode: 'calendar' | 'working') => void
+  onClose: () => void
+  onSave: (p: Partial<Pref>) => void
+}) {
   const [mode, setMode] = useState(pref.mode)
   const [columns, setColumns] = useState(pref.columns)
   return (
@@ -412,6 +442,23 @@ function SettingsDialog({ pref, onClose, onSave }: { pref: Pref; onClose: () => 
         </>
       }
     >
+      <fieldset className="mb-4" disabled={!canEdit}>
+        <legend className="mb-2 text-sm font-medium">Contar a duração em</legend>
+        <p className="text-muted-foreground mb-2 text-xs">Vale para todos (é do planejamento). As durações ficam; as datas são recalculadas.</p>
+        <div className="flex flex-wrap gap-4 text-sm">
+          {(
+            [
+              ['calendar', 'Dias corridos (como o Brickup)'],
+              ['working', 'Dias úteis da obra (sem feriados e dias sem horário)'],
+            ] as const
+          ).map(([m, label]) => (
+            <label key={m} className="flex items-center gap-2">
+              <input type="radio" name="duration-mode" className="accent-(--primary) size-4" checked={durationMode === m} onChange={() => onDurationMode(m)} />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <fieldset className="mb-4">
         <legend className="mb-2 text-sm font-medium">Colunas visíveis</legend>
         <p className="text-muted-foreground mb-2 text-xs">ID e Atividade aparecem sempre. As colunas de custo e venda chegam com os recursos (6B).</p>
@@ -471,6 +518,7 @@ function GanttView({
   onRowAction: (action: 'below' | 'child' | 'delete', id: number) => void
   onRun: (p: Promise<PlanData>, ok?: string) => void
 }) {
+  const durationLabel = plan.schedule?.duration_mode === 'working' ? 'Dias úteis' : 'Duração (dias)'
   const gTasks = useMemo(() => {
     const wbsOf = new Map(tasks.map((t) => [t.id, t.wbs]))
     return toGanttTasks(tasks).map((g, i) => ({
@@ -510,17 +558,27 @@ function GanttView({
       api.intercept('update-task', (ev) => {
         if (ev.inProgress) return true
         const t = handlers.current.byId.get(Number(ev.id))
-        const { start, end } = ev.task ?? {}
-        if (!t || !start || t.kind === 'summary') return false
-        const body: Record<string, unknown> = { planned_start: toYmd(start) }
-        if (end && t.kind === 'task') {
-          const last = new Date(end)
-          last.setDate(last.getDate() - 1) // fim do Gantt é exclusivo
-          const sameLength = Math.round((+end - +start) / 86_400_000) === t.calendar_days
-          if (!sameLength) body.planned_end = toYmd(last)
+        if (!t) return false
+        const g = (ev.task ?? {}) as { text?: string; start?: Date; end?: Date; duration_days?: number | string }
+        const body: Record<string, unknown> = {}
+        if (typeof g.text === 'string' && g.text.trim() && g.text.trim() !== t.name) body.name = g.text.trim()
+        if (t.kind === 'task' && g.duration_days !== undefined && Number(g.duration_days) !== t.duration_days && Number(g.duration_days) >= 1) {
+          body.duration_days = Math.round(Number(g.duration_days))
         }
+        if (t.kind !== 'summary' && g.start && toYmd(g.start) !== t.start) body.planned_start = toYmd(g.start)
+        if (t.kind === 'task' && g.start && g.end && body.duration_days === undefined) {
+          // arrastar a ponta muda o tamanho: o fim do Gantt é exclusivo
+          const sameLength = Math.round((+g.end - +g.start) / 86_400_000) === t.calendar_days
+          if (!sameLength) {
+            const last = new Date(g.end)
+            last.setDate(last.getDate() - 1)
+            body.planned_end = toYmd(last)
+          }
+        }
+        if (Object.keys(body).length === 0) return false
         handlers.current.onRun(planningApi.updateTask(uuid, t.id, body))
-        return false
+        // a barra/célula acompanha na hora; o cronograma recalculado chega em seguida (etapa: só o nome)
+        return t.kind !== 'summary' || Object.keys(body).every((k) => k === 'name')
       })
       api.intercept('add-link', ({ link }) => {
         if (link?.source && link?.target) {
@@ -562,8 +620,8 @@ function GanttView({
             },
           ]),
       { id: 'wbs', header: 'ID', width: 64 },
-      { id: 'text', header: 'Atividade', flexgrow: 1 },
-      { id: 'start', header: 'Início', width: 92, template: (v: Date) => v.toLocaleDateString('pt-BR') },
+      { id: 'text', header: 'Atividade', flexgrow: 1, editor: readonly ? undefined : 'text' },
+      { id: 'start', header: 'Início', width: 100, editor: readonly ? undefined : 'datepicker', template: (v: Date) => v.toLocaleDateString('pt-BR') },
       {
         id: 'end',
         header: 'Término',
@@ -574,7 +632,7 @@ function GanttView({
           return d.toLocaleDateString('pt-BR')
         },
       },
-      { id: 'duration_days', header: 'Dias úteis', width: 96, align: 'center' },
+      { id: 'duration_days', header: durationLabel, width: 96, align: 'center', editor: readonly ? undefined : 'text' },
       { id: 'preds', header: 'Predecessoras', width: 110 },
       { id: 'unit', header: 'Un. medida', width: 80, align: 'center' },
       { id: 'quantity', header: 'Quantidade', width: 90, align: 'right' },
@@ -582,7 +640,7 @@ function GanttView({
         ? [{ id: 'delta', header: 'Desvio', width: 70, align: 'center' as const, template: (v: number | null) => (v === null ? '—' : v > 0 ? `+${v}` : String(v)) }]
         : []),
     ] as IColumnConfig[]).filter((c) => !(String(c.id) in visible) || visible[c.id as ColumnKey]),
-    [plan.compared_baseline, visible, readonly],
+    [plan.compared_baseline, visible, readonly, durationLabel],
   )
 
   const Bar = useCallback(

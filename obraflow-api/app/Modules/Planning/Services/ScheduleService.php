@@ -58,7 +58,7 @@ final class ScheduleService
         return DB::transaction(function () use ($project, $version, $actor) {
             $schedule = $this->newSchedule($project, 'budget', $version->id, $actor, recompute: false);
             $start = $this->startOf($project);
-            $calendar = WorkingCalendar::for($project);
+            $calendar = WorkingCalendar::forMode($project, $schedule->duration_mode ?? 'calendar');
             $first = $calendar->next($start)->toDateString();
             $now = now();
 
@@ -120,6 +120,16 @@ final class ScheduleService
             $schedule->delete();
             $this->audit->record(AuditEvent::SCHEDULE_DELETED, tenantId: $this->context->idOrFail(), userId: $actor->getKey(),
                 entityType: 'project', entityId: $schedule->project_id, metadata: ['tasks' => $count, 'origin' => $schedule->origin]);
+        });
+    }
+
+    /** Como contar a duração (A-51): dias corridos ou úteis. As durações ficam; as datas são recalculadas. */
+    public function setDurationMode(Schedule $schedule, string $mode, User $actor): void
+    {
+        DB::transaction(function () use ($schedule, $mode, $actor) {
+            $schedule->forceFill(['duration_mode' => $mode]);
+            $this->registry->update($schedule, [], $actor);
+            $this->scheduler->recompute($schedule);
         });
     }
 
@@ -279,7 +289,7 @@ final class ScheduleService
             throw new DomainRuleException('A obra já tem planejamento. Para recomeçar, apague o atual ("Deletar tudo").');
         }
         $schedule = new Schedule;
-        $schedule->forceFill(['uuid' => (string) Str::uuid7(), 'project_id' => $project->id, 'origin' => $origin,
+        $schedule->forceFill(['uuid' => (string) Str::uuid7(), 'project_id' => $project->id, 'origin' => $origin, 'duration_mode' => 'calendar',
             'budget_version_id' => $versionId, 'created_by' => $actor->getKey()])->save();
         $this->audit->record(AuditEvent::SCHEDULE_CREATED, tenantId: $this->context->idOrFail(), userId: $actor->getKey(),
             entityType: 'project', entityId: $project->id, metadata: array_filter(['origin' => $origin, 'budget_version_id' => $versionId]));
@@ -296,7 +306,7 @@ final class ScheduleService
     private function dates(Schedule $schedule, string $kind, array $data, ?ScheduleTask $parent): array
     {
         $project = Project::query()->findOrFail($schedule->project_id);
-        $calendar = WorkingCalendar::for($project);
+        $calendar = WorkingCalendar::forMode($project, (string) ($schedule->duration_mode ?? 'calendar'));
         $start = $calendar->next(CarbonImmutable::parse($data['planned_start'] ?? $parent?->planned_start?->toDateString() ?? $this->startOf($project)->toDateString()));
         if ($kind === 'milestone') {
             return [$start->toDateString(), $start->toDateString(), 0];

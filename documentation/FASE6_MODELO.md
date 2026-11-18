@@ -207,3 +207,11 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Altura:** o Gantt ocupa a área inteira (60% da tela, no mínimo 24rem). Antes, a barra de rolagem cobria a segunda linha.
 
 > **Escopo da 6B atualizado (A-50):** recursos avulsos + composição SINAPI + composição própria simplificada. A proposta detalhada da 6B será apresentada antes de começar.
+
+### 6A — ajuste A-51 (comportamento do Gantt como no Brickup)
+
+- **Como contar a duração** (Configurações ⚙, vale para o planejamento): dias corridos (padrão) ou dias úteis da obra. Migration `500006` (`schedules.duration_mode`). Ao trocar o modo, as durações ficam e as datas são recalculadas. O importador usa o modo do planejamento vazio ou, sem planejamento, dias corridos.
+- **Edição direta na tabela** (duplo clique na célula): Atividade (nome), Início (calendário) e Duração. O Término é calculado; para mudá-lo, use a janela da atividade ou arraste a ponta da barra.
+- **Arrastar:** a barra acompanha o movimento na hora, e o cronograma recalculado chega em seguida (antes voltava ao lugar até a resposta). Numa etapa, só o nome é editável.
+- **Visual:** escala semanal "Semana 47" (ISO); caminho crítico desligado por padrão, para as barras aparecerem nas cores normais.
+- **Testes:** API 454/454 (+ troca de modo); frontend 50/50 (+ semana ISO).

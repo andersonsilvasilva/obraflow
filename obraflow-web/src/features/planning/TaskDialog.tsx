@@ -15,13 +15,16 @@ interface Props {
   kind?: TaskKind
   /** Etapa onde a nova atividade nasce (ações da linha: abaixo / sub atividade). */
   parentId?: number | null
+  /** Como o planejamento conta a duração (A-51). */
+  durationMode?: 'calendar' | 'working'
   canEdit: boolean
   onClose: () => void
   onSaved: (d: PlanData, msg: string) => void
 }
 
 /** Incluir/editar etapa, atividade ou marco; predecessoras; mover e excluir. O servidor recalcula tudo (D-P67). */
-export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, canEdit, onClose, onSaved }: Props) {
+export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, durationMode = 'calendar', canEdit, onClose, onSaved }: Props) {
+  const working = durationMode === 'working'
   const editing = !!task
   const kind: TaskKind = task?.kind ?? initialKind ?? 'task'
   const [form, setForm] = useState({
@@ -77,7 +80,7 @@ export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, can
       open
       onClose={onClose}
       title={editing ? `${kindLabel[kind]} ${task!.wbs}` : `Incluir ${kindLabel[kind].toLowerCase()}`}
-      description={kind === 'summary' ? 'A etapa cobre o período das atividades dela; o avanço é calculado.' : kind === 'milestone' ? 'Marco: um evento sem duração (ex.: entrega).' : 'Duração em dias úteis da obra.'}
+      description={kind === 'summary' ? 'A etapa cobre o período das atividades dela; o avanço é calculado.' : kind === 'milestone' ? 'Marco: um evento sem duração (ex.: entrega).' : working ? 'Duração em dias úteis da obra.' : 'Duração em dias corridos.'}
       size="lg"
       footer={
         <>
@@ -122,7 +125,7 @@ export function TaskDialog({ uuid, tasks, task, kind: initialKind, parentId, can
           </FormField>
         )}
         {kind === 'task' && (
-          <FormField label="Duração (dias úteis)" required hint={task ? `${task.calendar_days} dia(s) corridos · término ${new Date(`${task.end}T00:00:00`).toLocaleDateString('pt-BR')}` : undefined}>
+          <FormField label={working ? 'Duração (dias úteis)' : 'Duração (dias)'} required hint={task ? `${working ? `${task.calendar_days} dia(s) corridos · ` : ''}término ${new Date(`${task.end}T00:00:00`).toLocaleDateString('pt-BR')}` : undefined}>
             <TextInput type="number" min={1} value={form.duration_days} onChange={(e) => set('duration_days', e.target.value)} />
           </FormField>
         )}

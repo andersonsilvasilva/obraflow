@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('tenant.required')->prefix('projects/{uuid}/schedule')->whereUuid('uuid')->group(function (): void {
     Route::get('/', [ScheduleController::class, 'show'])->middleware('can:schedules.view')->name('schedules.show');
     Route::post('/', [ScheduleController::class, 'store'])->middleware('can:schedules.manage')->name('schedules.store');
+    Route::put('/', [ScheduleController::class, 'update'])->middleware('can:schedules.manage')->name('schedules.update');
     Route::delete('/', [ScheduleController::class, 'destroy'])->middleware('can:schedules.manage')->name('schedules.destroy');
 
     Route::post('tasks', [ScheduleController::class, 'storeTask'])->middleware('can:schedules.manage')->name('schedules.tasks.store');

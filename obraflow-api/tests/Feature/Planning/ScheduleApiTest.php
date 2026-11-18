@@ -42,6 +42,8 @@ it('dias úteis pela obra (D-P66): horário seg–sex e feriado; feriado novo mo
     $this->b->get($this->url)->assertOk()->assertJsonPath('data.schedule', null)->assertJsonPath('data.abilities.edit', true);
     $this->b->post($this->url, ['origin' => 'blank'])->assertCreated()->assertJsonPath('data.schedule.origin', 'blank');
     $this->b->post($this->url, ['origin' => 'blank'])->assertUnprocessable(); // um por obra
+    expect(cronograma($this)['schedule']['duration_mode'])->toBe('calendar'); // padrão: dias corridos (A-51)
+    $this->b->put($this->url, ['duration_mode' => 'working'])->assertOk()->assertJsonPath('data.schedule.duration_mode', 'working');
 
     $semana = array_map(fn ($d) => in_array($d, [1, 2, 3, 4, 5], true) ? ['start_1' => '07:00', 'end_1' => '12:00', 'start_2' => '13:00', 'end_2' => '17:00'] : [], range(0, 6));
     $this->b->put("/api/v1/projects/{$this->obra}/work-schedule", ['days' => $semana])->assertOk();
@@ -60,6 +62,11 @@ it('dias úteis pela obra (D-P66): horário seg–sex e feriado; feriado novo mo
     // término informado → duração calculada em dias úteis
     $this->b->put("{$this->url}/tasks/{$a}", ['planned_end' => '2026-03-11'])->assertOk();
     expect(collect(cronograma($this)['tasks'])->firstWhere('id', $a))->toMatchArray(['duration_days' => 7]); // 2,3,5,6,9,10,11
+
+    // dias corridos (A-51): a mesma duração vira 7 dias seguidos, feriado e fim de semana contam
+    $this->b->put($this->url, ['duration_mode' => 'calendar'])->assertOk();
+    expect(collect(cronograma($this)['tasks'])->firstWhere('id', $a))->toMatchArray(['start' => '2026-03-02', 'end' => '2026-03-08', 'duration_days' => 7]);
+    $this->b->put($this->url, ['duration_mode' => 'x'])->assertUnprocessable();
 });
 
 it('dependências reprogramam (FS com atraso, SS, FF); caminho crítico e folga; ciclo recusado (D-P67)', function () {
@@ -205,6 +212,7 @@ it('desempenho: 500 atividades encadeadas com horário seg–sex são recalculad
     $this->b->post($this->url, ['origin' => 'blank'])->assertCreated();
     $semana = array_map(fn ($d) => in_array($d, [1, 2, 3, 4, 5], true) ? ['start_1' => '07:00', 'end_1' => '16:00'] : [], range(0, 6));
     $this->b->put("/api/v1/projects/{$this->obra}/work-schedule", ['days' => $semana])->assertOk();
+    $this->b->put($this->url, ['duration_mode' => 'working'])->assertOk();
     $schedule = DB::table('schedules')->first();
     $now = now();
     $ids = [];

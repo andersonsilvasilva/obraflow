@@ -26,8 +26,14 @@ final class WorkingCalendar
 
     private const MAX_SEARCH = 3660; // 10 anos sem dia útil = calendário inválido
 
-    public function __construct(private readonly Project $project, private readonly ProjectCalendar $calendar, WorkScheduleService $schedules)
+    public function __construct(private readonly Project $project, private readonly ProjectCalendar $calendar, WorkScheduleService $schedules, bool $calendarDays = false)
     {
+        if ($calendarDays) { // A-51: dias corridos — todo dia conta (feriados só aparecem destacados na tela)
+            $this->weekdays = array_fill(0, 7, true);
+            $this->rules = [];
+
+            return;
+        }
         $week = $schedules->forProject($project);
         $days = [];
         foreach ($week['days'] as $d) {
@@ -38,9 +44,16 @@ final class WorkingCalendar
         $this->rules = ProjectCalendarException::query()->where('project_id', $project->id)->get()->all();
     }
 
+    /** Dias úteis da obra (D-P66). */
     public static function for(Project $project): self
     {
         return new self($project, app(ProjectCalendar::class), app(WorkScheduleService::class));
+    }
+
+    /** Conforme o planejamento: `calendar` = dias corridos; `working` = dias úteis da obra (A-51). */
+    public static function forMode(Project $project, string $mode): self
+    {
+        return new self($project, app(ProjectCalendar::class), app(WorkScheduleService::class), $mode !== 'working');
     }
 
     public function isWorking(CarbonImmutable $day): bool

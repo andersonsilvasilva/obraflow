@@ -44,6 +44,7 @@ class ScheduleRequest extends TenantRequest
                 'lag_days' => ['sometimes', 'integer', 'between:-365,365'],
             ],
             'schedules.baselines.store' => ['name' => ['required', 'string', 'max:100']],
+            'schedules.update' => ['duration_mode' => ['required', Rule::in(['calendar', 'working'])]],
             'schedules.import.preview', 'schedules.import' => ['file' => ['required', 'file', 'mimes:xlsx', 'max:5120']],
             default => [],
         };
