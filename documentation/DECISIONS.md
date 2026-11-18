@@ -34,6 +34,13 @@ Formato: ID · data · decisão · justificativa. Decisões de dados: [DB_DECISI
 | A-29 | 2026-11-13 | **Fase 2 iniciada; D-P11…D-P18 aprovadas** (CNPJ no tenant e na 1ª empresa; contatos/endereços em tabelas dedicadas com FK composta; `active_marker` para soft delete × unicidade; unidades por tenant; documentos em disco privado + URL assinada; `user_companies` na Fase 3; clientes/fornecedores por empresa; backend antes das telas) | [FASE2_MODELO.md](FASE2_MODELO.md) |
 | A-30 | 2026-11-13 | CNPJ `61693043000194` gravado em `tenants.document_number` da HighTech (autorizado; auditado como `tenant.updated`). Razão social gravada na sequência (autorizada; `tenant.updated`); o nome de exibição (`name`) não foi alterado | [PROVISIONAMENTO.md](PROVISIONAMENTO.md) |
 | A-31 | 2026-11-13 | **Fase 2 implementada** (etapas 1–5). Banco `obraflow` migrado (33 migrations) e papel `admin` da HighTech com as 10 permissões de cadastros, com autorização expressa; `member` inalterado | [FASE2_RELATORIO.md](FASE2_RELATORIO.md) |
+| A-53 | 2026-11-18 | **Relatório do orçamento (4D)**, pedido do responsável: PDF, XLSX e DOCX com acabamento premium. Escolhas do responsável:
+- fazer agora, antes da 6B;
+- PDF pelo Chrome headless;
+- marca do ObraFlow (sem logo por empresa);
+- analítico (composições) já na primeira versão.
+
+As decisões D-P77…D-P86 aguardam aprovação | [FASE4D_MODELO.md](FASE4D_MODELO.md) |
 | A-52 | 2026-11-17 | **Parte 6A (Cronograma) homologada** pelo responsável:
 - planejamento da obra (do orçamento, por planilha ou do zero);
 - Gantt SVAR com edição na tabela, dependências e CPM;
