@@ -82,7 +82,7 @@ A lista exata será apresentada antes de executar, como sempre.
 
 ### Etapa 1 — banco e cálculo
 
-- **Migrations** `2026_11_18_510001` a `510003` (ainda **não** aplicadas no `obraflow`):
+- **Migrations** `2026_11_18_510001` a `510003` (aplicadas no `obraflow` em 2026-11-18 com autorização — A-59):
   - `own_compositions`: valores ≥ 0, UF válida, código único entre as ativas, exclusão lógica;
   - `schedules`: `bdi_percent`, `bdi_components` (parcelas do TCU) e `discount_percent`, com faixas válidas;
   - `schedule_task_items`: origem e tipo no domínio, **soma dos tipos = custo unitário** (CHECK), percentuais válidos, atividade do mesmo planejamento (FK composta), RESTRICT.
