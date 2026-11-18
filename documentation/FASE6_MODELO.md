@@ -1,6 +1,6 @@
 # FASE 6 — PLANEJAMENTO E DIÁRIO DE OBRA: MODELO APROVADO
 
-> **Aprovado em 2026-11-17** (D-P65 a D-P76 conforme a recomendação). A parte 6A (Cronograma) está autorizada; 6B e 6C seguem após a homologação da anterior.
+> **Aprovado em 2026-11-17** (D-P65 a D-P76 conforme a recomendação). A parte 6A (Cronograma) foi **homologada em 2026-11-17** (A-52); 6B e 6C seguem, cada uma com autorização expressa.
 > **Base:**
 > - modelagem original ([DATABASE.md](DATABASE.md) §2.8 e §2.9);
 > - telas do Brickup enviadas pelo responsável ([SCREEN_REFERENCES.md](SCREEN_REFERENCES.md), "Referências do Brickup": cronograma, recursos, orçamento sintético, importação, visualização, RDO);
@@ -188,7 +188,7 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - `admin` da HighTech com 37 permissões, `member` com 16 (`schedules.view`);
 - nenhum dado inserido.
 
-**6A aguarda homologação.**
+**6A homologada em 2026-11-17** (A-52), depois dos ajustes abaixo.
 
 ### 6A — ajuste de layout (pedido do responsável, tela do Brickup)
 
@@ -222,3 +222,10 @@ A obra ganha a navegação **Geral · RDO · Planejamento · Contratos · Calend
 - **Importação:** a unidade da planilha é reconhecida pelo **código ou pelo nome** cadastrado, ignorando maiúsculas, acentos, pontos, espaços e os sinais ² e ³. Assim "m²" vira M2, "m³" vira M3 e "metro cubico" vira M3. Os **apelidos** und, unid, unidade, pç e peça viram UN; verba vira VB.
   - A unidade não reconhecida fica como veio, com aviso na pré-visualização.
   - +1 teste (11 no planejamento).
+
+### 6A — Gantt: rolagem e tela flutuante
+
+- **Barras de rolagem sempre visíveis:** a vertical fica fixa e a horizontal não cobre a última linha. No Windows 11, o Chrome e o Edge escondiam as barras.
+- **Tela flutuante na faixa** (mouse sobre a barra), em cartão claro: ID e tipo, caminho crítico ou atrasada, nome completo, período, duração, quantidade e unidade, % executado e linha de base com desvio. O rótulo fica dentro da faixa.
+
+**6A homologada pelo responsável em 2026-11-17 (A-52).** A 6B começa pela proposta detalhada (escopo da A-50), só com autorização expressa.
